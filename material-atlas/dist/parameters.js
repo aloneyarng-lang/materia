@@ -14,9 +14,9 @@ export function parameterOptions(papers) {
   return [...map.values()].map(({paperIds,...item})=>({...item,paperCount:paperIds.size})).sort((a, b) => a.name.localeCompare(b.name) || a.unit.localeCompare(b.unit));
 }
 export function axisLabel(axis, options) {
-  if (axis === 'year') return '发表年份'; if (axis === 'impactFactor') return '期刊影响因子 IF';
+  if (axis === 'year') return tr('发表年份'); if (axis === 'impactFactor') return tr('期刊影响因子 IF');
   const item = options.find(p => 'm:' + p.key === axis);
-  return item ? `${item.name}${item.unit ? ` (${item.unit})` : '（单位未填）'}` : '请选择参数';
+  return item ? `${item.name}${item.unit ? ` (${item.unit})` : tr('（单位未填）')}` : tr('请选择参数');
 }
 export function measurementsCSV(papers) {
   const quote = (value, numeric = false) => {
@@ -27,3 +27,4 @@ export function measurementsCSV(papers) {
   for (const p of papers) for (const m of paperMeasurements(p)) rows.push([p.title, p.year, m.materialId, m.materialName, m.materialComposition, m.sample, m.name, m.value, m.unit, m.conditions, m.source, m.qualifier, m.uncertainty,p.id,p.doi||'',p.journal||'',p.authors||(p.authorDetails||[]).map(a=>a.name).join('; '),p.comparisonSubject?.key||'',m.id||'']);
   return '\uFEFF' + rows.map((r, i) => r.map((v, col) => quote(v, i > 0 && [1,7,12].includes(col))).join(',')).join('\r\n');
 }
+import {t as tr} from './i18n.js';

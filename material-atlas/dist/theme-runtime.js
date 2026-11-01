@@ -1,3 +1,4 @@
+import {t as tr,html,msg} from './i18n.js';
 import {applyThemeArtwork,artworkURL} from './theme-artwork.js';
 import {GRAPH_THEME_TOKENS,GRAPH_FIELDS} from './graph-appearance.js';
 import {THEME_TOKENS,fontBytes} from './theme-model.js';
@@ -10,9 +11,9 @@ const hash=text=>[...text].reduce((v,c)=>(v*31+c.charCodeAt(0))>>>0,7).toString(
 const properties={'--sans':'font-family','--serif':'font-family','--mono':'font-family','--numeric':'font-family','--radius':'border-radius','--theme-mode':'color-scheme','--font-size':'font-size','--font-weight':'font-weight','--heading-weight':'font-weight','--line-height':'line-height','--heading-line-height':'line-height','--heading-scale':'opacity'};
 const validToken=(key,value)=>Object.hasOwn(GRAPH_THEME_TOKENS,key)?(!Object.values(GRAPH_FIELDS).find(row=>row.token===key).color||value==='auto'||CSS.supports('color',value)):key==='--heading-scale'||CSS.supports(properties[key]||'color',value);
 export async function validateThemeResources(theme){
- for(const[key,value]of Object.entries(theme.tokens))if(!validToken(key,value))throw new Error('主题变量 '+key+' 的 CSS 值无法识别。');
- for(const asset of theme.assets?.fonts||[]){const face=new FontFace('MateriaValidation_'+asset.id,fontBytes(asset),{weight:asset.weight,style:asset.style});try{await face.load();}catch{throw new Error(`字体「${asset.family}」无法解码，主题未导入。`);}}
- for(const asset of Object.values(theme.assets?.artwork||{})){const image=new Image();image.src=artworkURL(asset);try{await image.decode();if(image.naturalWidth>8192||image.naturalHeight>8192)throw Error();}catch{throw new Error('主题图片无法解码或尺寸超过 8192 像素。');}}
+ for(const[key,value]of Object.entries(theme.tokens))if(!validToken(key,value))throw new Error(tr('主题变量 ',false)+key+tr(' 的 CSS 值无法识别。',false));
+ for(const asset of theme.assets?.fonts||[]){const face=new FontFace('MateriaValidation_'+asset.id,fontBytes(asset),{weight:asset.weight,style:asset.style});try{await face.load();}catch{throw new Error(msg`字体「${asset.family}」无法解码，主题未导入。`);}}
+ for(const asset of Object.values(theme.assets?.artwork||{})){const image=new Image();image.src=artworkURL(asset);try{await image.decode();if(image.naturalWidth>8192||image.naturalHeight>8192)throw Error();}catch{throw new Error(tr('主题图片无法解码或尺寸超过 8192 像素。'));}}
 }
 export function createThemeRuntime(changed){
  let generation=0,faces=[],ready=Promise.resolve(),status='';
@@ -37,9 +38,9 @@ export function createThemeRuntime(changed){
    if(builtin.loaded.length)status+=`内置字体已就绪：${builtin.loaded.join('、')}。`;
    if(failed)status+=` ${failed} 个字体未加载，已采用后备字体。`;
    if(!assets.length&&!builtin.requested&&!missing)status='使用系统字体，缺少字体时采用后备字体。';
-   root.dataset.themeFonts=failed?'fallback':assets.length||builtin.loaded.length?'loaded':'system';const node=document.querySelector('#theme-resource-status');if(node)node.textContent=status;changed?.();
+   root.dataset.themeFonts=failed?'fallback':assets.length||builtin.loaded.length?'loaded':'system';const node=document.querySelector('#theme-resource-status');if(node)node.textContent=tr(status);changed?.();
   });
   requestAnimationFrame(()=>changed?.());return theme;
  }
- return{apply,ready:()=>ready,status:()=>status};
+ return{apply,ready:()=>ready,status:()=>tr(status)};
 }

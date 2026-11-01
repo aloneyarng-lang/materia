@@ -1,3 +1,4 @@
+import {t as tr,html,msg} from './i18n.js';
 import {GRAPH_THEME_TOKENS,graphAppearance,nodeGeometry,edgeGeometry} from './graph-appearance.js';
 import {CosmicBackdrop,cosmicNodeParts,cosmicPartNode} from './graph-cosmos.js';
 import {getGraphSymbols,graphSymbolNode,SymbolBackdrop} from './graph-symbols.js';
@@ -34,8 +35,8 @@ export class StarMap {
     if (this.network) Object.assign(this.cache, networkSnapshot(this.network));
     this.papers = papers.slice(0, 350); this.selected = selected; this.groups = allGroups;
     this.network = createNetwork(this.papers, this.groups, this.cache,this.preferences.showRelations?this.associations:[]);
-    const colorNames=[...new Set(this.papers.map(p=>this.preferences.colorBy==='journal'?p.journal||'期刊未填':this.collections.find(c=>c.id===p.collection)?.name||'未分组'))].sort();
-    for(const node of this.network.nodes){node.radius*=this.preferences.nodeSize;if(node.type==='paper'&&this.preferences.colorBy!=='tag'){const name=this.preferences.colorBy==='journal'?node.paper.journal||'期刊未填':this.collections.find(c=>c.id===node.paper.collection)?.name||'未分组';node.color=PALETTE[colorNames.indexOf(name)%PALETTE.length];}if(node.type==='relation'&&this.preferences.colorBy!=='tag')node.color=node.color;}
+    const colorNames=[...new Set(this.papers.map(p=>this.preferences.colorBy==='journal'?p.journal||tr('期刊未填'):this.collections.find(c=>c.id===p.collection)?.name||tr('未分组')))].sort();
+    for(const node of this.network.nodes){node.radius*=this.preferences.nodeSize;if(node.type==='paper'&&this.preferences.colorBy!=='tag'){const name=this.preferences.colorBy==='journal'?node.paper.journal||tr('期刊未填'):this.collections.find(c=>c.id===node.paper.collection)?.name||tr('未分组');node.color=PALETTE[colorNames.indexOf(name)%PALETTE.length];}if(node.type==='relation'&&this.preferences.colorBy!=='tag')node.color=node.color;}
     this.svg.replaceChildren();
     this.viewport = el('g'); this.svg.append(this.viewport);
     this.edgeLayer = el('g', { 'aria-hidden': true, class: 'network-edges' });
@@ -48,9 +49,9 @@ export class StarMap {
     this.nodeLayer = el('g'); this.viewport.append(this.nodeLayer);
     this.nodes = this.network.nodes.map(node => {
       const isTag = node.type === 'relation', name = isTag ? node.tag : node.paper.title;
-      const group = el('g', { class: `graph-node ${isTag ? 'relation-node relation-'+node.kind : 'paper-node'}`, tabindex: 0, role: 'button', 'aria-label': isTag ? `${ASSOCIATION_KINDS[node.kind]}关联 ${name}` : name, 'data-node-id': node.id, ...(isTag ? { 'data-association-id': node.id } : { 'data-paper-id': node.paper.id }) });
+      const group = el('g', { class: `graph-node ${isTag ? 'relation-node relation-'+node.kind : 'paper-node'}`, tabindex: 0, role: 'button', 'aria-label': isTag ? msg`${ASSOCIATION_KINDS[node.kind]}关联 ${name}` : name, 'data-node-id': node.id, ...(isTag ? { 'data-association-id': node.id } : { 'data-paper-id': node.paper.id }) });
       group.style.setProperty('--node-color',node.color);
-      group.append(el('title', {}, `${name}\n拖动牵引，Shift 拖动固定，双击或 P 释放${isTag ? '；点击查看匹配，右键移除此关联节点' : '；右键打开文献操作'}`));
+      group.append(el('title', {}, msg`${name}\n拖动牵引，Shift 拖动固定，双击或 P 释放${isTag ? tr('；点击查看匹配，右键移除此关联节点') : tr('；右键打开文献操作')}`));
       group.append(el('circle',{r:Math.max(14,node.radius+5),fill:'transparent',class:'node-hit-area'}));
       const ring = el('circle', { r: node.radius + 3, fill: 'none', stroke: node.color, 'stroke-width': .8, opacity: .3, class: 'node-ring' });
       const core = el('circle', { r:node.radius, fill: node.color, stroke: 'var(--canvas)', 'stroke-width': isTag ? 1.6 : 1.8, class: 'node-core' });
@@ -70,7 +71,7 @@ export class StarMap {
       group.addEventListener('pointerenter', event => {
         if (this.drag) return;
         this.highlightNode(node.id);
-        this.onHover(isTag ? { title: `${ASSOCIATION_KINDS[node.kind]} · ${node.tag}`, journal: `${node.members.length} 篇可见匹配文献 · 拖动牵引，点击查看` } : node.paper, event);
+        this.onHover(isTag ? { title: `${ASSOCIATION_KINDS[node.kind]} · ${node.tag}`, journal: msg`${node.members.length} 篇可见匹配文献 · 拖动牵引，点击查看` } : node.paper, event);
       });
       group.addEventListener('pointerleave', () => { this.highlight(this.selected); this.onHover(null); });
       this.nodeLayer.append(group);

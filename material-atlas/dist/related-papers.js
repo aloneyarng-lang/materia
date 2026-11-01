@@ -1,3 +1,4 @@
+import {t as tr,html,msg} from './i18n.js';
 import { normalizeAuthors } from './catalog.js';
 
 const nameKey=value=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();
@@ -37,13 +38,13 @@ export function relatedPaperGroups(papers,current){
 export function relatedPaperSections(groups,esc){
   const section=(key,title,items,empty)=>{
     const row=item=>{
-      const reasons=key==='tags'?[`重合 ${item.tags.length} 个 Tag`,item.tags.join(' · ')]:[
-        item.authors.length?`共同作者：${item.authors.join('、')}`:'',
-        item.institutions.length?`共同机构：${item.institutions.join('、')}`:'',
+      const reasons=key==='tags'?[msg`重合 ${item.tags.length} 个 Tag`,item.tags.join(' · ')]:[
+        item.authors.length?msg`共同作者：${item.authors.join('、')}`:'',
+        item.institutions.length?msg`共同机构：${item.institutions.join('、')}`:'',
       ].filter(Boolean);
       return `<button type="button" class="related-paper" data-related="${esc(item.paper.id)}"><i class="related-dot" aria-hidden="true"></i><span><strong>${esc(item.paper.title)}</strong>${reasons.map(reason=>`<small>${esc(reason)}</small>`).join('')}</span></button>`;
     };
-    return `<section class="related-group" data-related-group="${key}" aria-label="${title}"><div class="related-header"><h3>${title}</h3><small>${items.length} 篇</small></div>${key==='tags'&&items.length?'<p class="related-order-note">按重合 Tag 数量从多到少</p>':''}<div class="related-list">${items.slice(0,3).map(row).join('')||`<p class="help-inline">${empty}</p>`}${items.length>3?`<details class="related-more"><summary>展开其余 ${items.length-3} 篇</summary>${items.slice(3).map(row).join('')}</details>`:''}</div></section>`;
+    return html`<section class="related-group" data-related-group="${key}" aria-label="${title}"><div class="related-header"><h3>${title}</h3><small>${items.length} 篇</small></div>${key==='tags'&&items.length?tr('<p class="related-order-note">按重合 Tag 数量从多到少</p>'):''}<div class="related-list">${items.slice(0,3).map(row).join('')||`<p class="help-inline">${empty}</p>`}${items.length>3?html`<details class="related-more"><summary>展开其余 ${items.length-3} 篇</summary>${items.slice(3).map(row).join('')}</details>`:''}</div></section>`;
   };
-  return section('people','作者 / 机构关联',groups.people,'尚未找到共同作者或机构，可补充作者与机构信息。')+section('tags','Tag 关联',groups.tags,'尚未找到共享 Tag 的文献。');
+  return section('people',tr('作者 / 机构关联'),groups.people,tr('尚未找到共同作者或机构，可补充作者与机构信息。'))+section('tags',tr('Tag 关联'),groups.tags,tr('尚未找到共享 Tag 的文献。'));
 }

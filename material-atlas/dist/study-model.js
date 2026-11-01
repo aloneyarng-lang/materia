@@ -1,4 +1,4 @@
-export const TRANSLATION_LANGUAGES={'zh-CN':'简体中文',en:'英语',ja:'日语',ko:'韩语',de:'德语',fr:'法语',es:'西班牙语'};
+export const TRANSLATION_LANGUAGES={'zh-CN':'简体中文',en:'英语',ja:'日语',de:'德语',ko:'韩语',fr:'法语',es:'西班牙语'};
 const own=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value);
 const string=(value,max,label)=>{if(typeof value!=='string'||value.length>max)throw new Error(`${label}格式不正确或过长。`);return value.trim();};

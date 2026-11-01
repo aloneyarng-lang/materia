@@ -2,10 +2,35 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {newCanvas,cleanCanvas,cleanCanvasStore,parseCanvasRules,serializeCanvasRules,arrangeCanvas,canvasBounds,findCanvasPosition,exportCanvasDocument,importCanvasDocument,CANVAS_EXAMPLE} from '../dist/research-canvas-model.js';
+import {newCanvas,cleanCanvas,cleanCanvasStore,parseCanvasRules,serializeCanvasRules,arrangeCanvas,arrangeCanvasMode,CANVAS_ARRANGEMENTS,canvasNodesInRect,canvasDescendants,moveCanvasNodes,canvasNodeSize,canvasBounds,findCanvasPosition,exportCanvasDocument,importCanvasDocument,CANVAS_EXAMPLE} from '../dist/research-canvas-model.js';
 import {exportCanvasSVG,canvasEdgeGeometry} from '../dist/research-canvas-render.js';
 import {CanvasFile} from '../desktop/canvases.mjs';
 const sample=()=>parseCanvasRules(CANVAS_EXAMPLE,{...newCanvas('canvas-test'),nodes:[]});
+
+function assertNoOverlap(board){for(let i=0;i<board.nodes.length;i++)for(let j=i+1;j<board.nodes.length;j++){const a=board.nodes[i],b=board.nodes[j],x=canvasNodeSize(a),y=canvasNodeSize(b);assert.ok(Math.abs(a.x-b.x)>=(x.width+y.width)/2||Math.abs(a.y-b.y)>=(x.height+y.height)/2,`${a.id} overlaps ${b.id}`);}}
+test('marquee hit testing handles reversed drags and actual node footprints',()=>{
+ const n={...newCanvas('hits').nodes[0],x:100,y:100},other={...n,id:'other',x:1000};
+ assert.deepEqual(canvasNodesInRect([n,other],{x:220,y:150,width:-240,height:-100}),['root']);
+ assert.deepEqual(canvasNodesInRect([n],{x:205,y:100,width:10,height:10}),['root']);
+ assert.deepEqual(canvasNodesInRect([n],{x:300,y:100,width:10,height:10}),[]);
+});
+test('group movement preserves relative positions at coordinate limits and does not move unselected nodes',()=>{
+ const nodes=[{id:'a',x:49900,y:5},{id:'b',x:49800,y:30},{id:'c',x:0,y:0}],positions=new Map(nodes.slice(0,2).map(n=>[n.id,{...n}]));
+ moveCanvasNodes(nodes,positions,500,20);assert.deepEqual(nodes,[{id:'a',x:50000,y:25},{id:'b',x:49900,y:50},{id:'c',x:0,y:0}]);moveCanvasNodes(nodes,positions,0,0);assert.equal(nodes[0].x,49900);
+});
+test('downstream selection terminates on cycles and layout choices preserve unrelated nodes and graph data',()=>{
+ const b=sample();b.edges.push({id:'back',source:'performance',target:'root',label:'',dashed:true,arrow:true});assert.equal(canvasDescendants(b,'root').length,b.nodes.length);assert.deepEqual(canvasDescendants(b,'missing'),[]);
+ for(const mode of Object.keys(CANVAS_ARRANGEMENTS).filter(m=>m!=='selection')){const out=arrangeCanvasMode(b,mode);assertNoOverlap(out);assert.deepEqual(out.edges,b.edges);assert.doesNotThrow(()=>cleanCanvas(out));}
+ const selection=['composition','structure'],out=arrangeCanvasMode(b,'selection',{selection});assert.deepEqual(out.nodes.filter(n=>!selection.includes(n.id)),b.nodes.filter(n=>!selection.includes(n.id)));assert.deepEqual(out.edges,b.edges);assert.throws(()=>arrangeCanvasMode(b,'selection',{selection:['root']}));assert.throws(()=>arrangeCanvasMode(b,'missing'));
+});
+test('automatic arrangement compacts long grouped process chains without changing content or connections',()=>{
+ const b=newCanvas('arrange'),template=b.nodes[0];b.nodes=Array.from({length:85},(_,i)=>({...template,id:'n'+i,text:'工艺与性能表征 '+i,group:i?'阶段 '+Math.floor((i-1)/11):'',x:i*350,y:0,note:'保留笔记',shape:i%3?'roundrect':'diamond'}));b.edges=b.nodes.slice(1).map((n,i)=>({id:'e'+i,source:'n'+i,target:n.id,label:'下一步骤',dashed:false,arrow:true}));
+ const before=structuredClone(b),out=arrangeCanvas(b,{compact:true});assert.deepEqual(b,before);assert.deepEqual(out.edges,b.edges);assert.deepEqual(out.nodes.map(({x,y,...n})=>n),b.nodes.map(({x,y,...n})=>n));assertNoOverlap(out);assert.ok(canvasBounds(out).width<canvasBounds(b).width/3);assert.deepEqual(arrangeCanvas(b,{compact:true}),out);assert.doesNotThrow(()=>cleanCanvas(out));
+});
+test('varying node heights and shapes stay separated in every tree direction, including cycles and disconnected roots',()=>{
+ const b=newCanvas('varying'),template=b.nodes[0];b.nodes=Array.from({length:30},(_,i)=>({...template,id:'n'+i,text:('不同尺寸的研究节点 '+i+' ').repeat(i%4+1),shape:i%3?'roundrect':'diamond'}));b.edges=b.nodes.slice(1,27).map((n,i)=>({id:'e'+i,source:'n'+Math.floor(i/3),target:n.id,label:'',dashed:false,arrow:true}));b.edges.push({id:'cycle',source:'n26',target:'n0',label:'',dashed:true,arrow:true});
+ for(const direction of ['both','left','right','down']){const out=arrangeCanvas({...b,direction});assertNoOverlap(out);assert.deepEqual(out.edges,b.edges);assert.doesNotThrow(()=>cleanCanvas(out));}
+});
 test('rules create typed nodes, directed relations, notes, groups and style with a stable export round trip',()=>{const b=sample();assert.equal(b.nodes.length,5);assert.equal(b.edges.length,4);assert.equal(b.nodes.find(n=>n.id==='structure').shape,'hexagon');assert.equal(b.nodes.find(n=>n.id==='composition').group,'实验变量');const copy=parseCanvasRules(serializeCanvasRules(b),b);assert.deepEqual(copy,b);assert.deepEqual(importCanvasDocument(exportCanvasDocument(b)),b);});
 test('regeneration preserves existing manual positions, accepts explicit coordinates and allocates collision-free edge IDs',()=>{const b=sample();b.nodes.find(n=>n.id==='structure').x=1723;b.nodes.find(n=>n.id==='structure').y=-301;const next=parseCanvasRules(CANVAS_EXAMPLE+'\nnode evidence "证据"\nevidence -> root\n',b);assert.equal(next.nodes.find(n=>n.id==='structure').x,1723);assert.equal(next.nodes.find(n=>n.id==='structure').y,-301);assert.ok(Number.isFinite(next.nodes.find(n=>n.id==='evidence').x));const explicit=parseCanvasRules(CANVAS_EXAMPLE+'\nposition structure 42 -18\n',b);assert.equal(explicit.nodes.find(n=>n.id==='structure').x,42);const first=parseCanvasRules('node a "A"\nnode b "B"\na -> b',newCanvas('c'));assert.doesNotThrow(()=>parseCanvasRules('node a "A"\nnode b "B"\nnode c "C"\nc -> a\na -> b',first));});
 test('invalid syntax and unknown references fail with line numbers without mutating the original board',()=>{const b=sample(),before=JSON.stringify(b);for(const source of ['node a "A"\nnode a "B"','node a "A"\na -> missing','node a "A"\nstyle a shape=script','node a "A"\nposition a 999999 0','node a "A"\nimage a "https://example.com/x.png"','node a "A"\nwindow.alert(1)']){assert.throws(()=>parseCanvasRules(source,b),/第 \d+ 行/);assert.equal(JSON.stringify(b),before);}assert.throws(()=>parseCanvasRules('node a "A"\na -> a',b));});

@@ -94,3 +94,24 @@ html[data-theme-mode=dark]{--activity-0:#293231;--activity-1:#0e4429;--activity-
  .notes-library-toolbar select{width:200px}
 }
 @media(prefers-reduced-motion:reduce){:is(.view-tab,.note-card,.note-card-meta .text-button){transition:none}}
+/* Language names stay readable at all supported interface text sizes. */
+.language-settings { gap: 20px; flex-wrap: wrap; }
+.language-settings > div { flex: 1 1 220px; }
+.language-settings select { min-width: 148px; max-width: 100%; }
+html[lang="en"] .network-header { flex-wrap: wrap; }
+html[lang="en"] .surface-toolbar { flex-wrap: wrap; }
+html[lang="en"] .reader-v2 #reader-flow { width: 164px; }
+html[lang="en"] .reader-v2 .reader-mode button[data-reader-mode=read]::after { content: 'Read'; }
+html[lang="ja"] .reader-v2 .reader-mode button[data-reader-mode=read]::after { content: '閲覧'; }
+html[lang="en"] .has-conflict::after { content: 'The minimum exceeds the maximum. Adjust the year or IF range.'; }
+html[lang="ja"] .has-conflict::after { content: '最小値が最大値を超えています。年またはIFの範囲を変更してください。'; }
+html[lang="de"] .network-header,html[lang="de"] .surface-toolbar { flex-wrap: wrap; }
+html[lang="de"] .quick-sort { max-width: 190px; }
+html[lang="de"] .reader-v2 #reader-flow { width: 190px; max-width: 190px; flex-shrink: 0; }
+html[lang="de"] .reader-v2 #reader-layout { width: 210px; max-width: 210px; }
+html[lang="de"] .reader-v2 .reader-note-tabs button { flex: 1 1 120px; white-space: normal; line-height: 1.4; }
+html[lang="de"] .reader-v2 .reader-mode button[data-reader-mode=read]::after { content: 'Lesen'; }
+html[lang="de"] .has-conflict::after { content: 'Das Minimum ist größer als das Maximum. Jahres- oder IF-Bereich anpassen.'; }
+html[lang="de"] .rc-header { flex-wrap: wrap; }
+html[lang="de"] .rc-library-footer button { min-width: 0; white-space: normal; text-align: left; }
+html[lang="de"] .rc-library-footer button span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }

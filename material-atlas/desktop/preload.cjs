@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  getLocale: () => ipcRenderer.invoke('preferences:get-locale'),
+  setLocale: value => ipcRenderer.invoke('preferences:set-locale',value),
   translateText: payload => ipcRenderer.invoke('translation:run',payload),
   translationCancel: id => ipcRenderer.invoke('translation:cancel',id),
   studyRead: () => ipcRenderer.invoke('study:read'),

@@ -1,6 +1,6 @@
 ﻿import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage } from 'electron';
-import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, copyFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { prepareLibraryLocation,portableLibraryRoot } from './library-location.mjs';
@@ -9,12 +9,14 @@ import { AgentSettings, completeWithProvider,testAgentConnection,listAgentModels
 import { runResearchAgent } from '../dist/ai-agent-core.js';
 import { AgentHistoryFile } from './agent-history.mjs';
 import { translateText } from './translation.mjs';
+import {t,setLocale,normalizeLocale} from '../dist/i18n.js';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(appRoot, '.local', 'desktop-profile'));
 app.setPath('userData', profile);
 let mainWindow, library, agentHistory, canvasStore;
+let preferenceQueue=Promise.resolve();
 function observeLibrary(store){store.onFolderChange=result=>{if(store===library&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('library:changed',{path:store.root,...result});};return store;}
 let canvasCloseReady=false,canvasAllowClose=false;
 let agentRun = null,connectionTest=null,modelDiscovery=null;
@@ -31,7 +33,7 @@ let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
   event.preventDefault();quitPending=true;agentRun?.controller.abort();cancelTranslations();
-  Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue]).then(()=>app.quit());
+  Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,preferenceQueue]).then(()=>app.quit());
 });
 
 async function start() {
@@ -40,6 +42,15 @@ async function start() {
   await agentSettings.load().catch(() => {});
   let config = {};
   try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  await setLocale(config.locale,{persist:false});
+  const savePreferences=patch=>{
+    const operation=preferenceQueue.then(async()=>{
+      const next={...config,...patch};
+      const target=path.join(profile,'preferences.json');
+      await writeFile(target+'.tmp',JSON.stringify(next,null,2));await rename(target+'.tmp',target);config=next;
+    });
+    preferenceQueue=operation.catch(()=>{});return operation;
+  };
   const defaultRoot = process.env.MATERIA_LIBRARY_DIR || portableLibraryRoot(appRoot,path.dirname(app.getPath('exe')));
   const previousRoot = app.isPackaged ? path.resolve(path.dirname(app.getPath('exe')), '..', '..', 'Materia-win32-x64', '文献库') : '';
   const legacyRoots=[previousRoot,path.join(path.dirname(app.getPath('exe')),'文献库'),path.resolve(appRoot,'../../../../Materia-win32-x64/文献库'),path.join(appRoot,'.local','desktop-library')];
@@ -48,8 +59,8 @@ async function start() {
   observeLibrary(library);
   agentHistory = new AgentHistoryFile(library.root);
   canvasStore=new CanvasFile(library.root);
-  await writeFile(path.join(profile, 'preferences.json'), JSON.stringify({ libraryPath: library.root }, null, 2));
-  mainWindow = new BrowserWindow({ show: process.env.MATERIA_HEADLESS !== '1', width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: 'Materia · 材料文献星图', backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
+  await savePreferences({libraryPath:library.root});
+  mainWindow = new BrowserWindow({ show: process.env.MATERIA_HEADLESS !== '1', width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
   mainWindow.webContents.on('render-process-gone',()=>{canvasCloseReady=false;});
   Menu.setApplicationMenu(null);
   mainWindow.on('close',event=>{if(canvasCloseReady&&!canvasAllowClose){event.preventDefault();mainWindow.webContents.send('canvas:prepare-close');}});
@@ -65,6 +76,11 @@ async function start() {
   handle('canvas:request-close',()=>{mainWindow.close();return true;});
   handle('canvas:ready',()=>{canvasCloseReady=true;return true;});
   handle('canvas:confirm-close',async()=>{await canvasStore.queue;canvasAllowClose=true;mainWindow.close();return true;});
+  handle('preferences:get-locale',()=>normalizeLocale(config.locale));
+  handle('preferences:set-locale',async value=>{
+    if(normalizeLocale(value)!==value)throw Error('Invalid interface language.');
+    await savePreferences({locale:value});await setLocale(value,{persist:false});return value;
+  });
   handle('library:get-papers', () => library.getPapers());
   handle('library:put-papers', papers => library.putPapers(papers));
   handle('library:delete-paper', id => library.deletePaper(id));
@@ -140,31 +156,31 @@ async function start() {
   handle('library:open-pdf', async id => { const result = await shell.openPath(await library.pdfPath(id)); if (result) throw new Error(result); });
   handle('library:save-pdf', async id => {
     const p = library.data.papers.find(p => p.id === id); if (!p) throw new Error('找不到文献。');
-    const chosen = await dialog.showSaveDialog(mainWindow, { title: '另存 PDF', defaultPath: p.filename, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+    const chosen = await dialog.showSaveDialog(mainWindow, { title: t('另存 PDF'), defaultPath: p.filename, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
     if (!chosen.canceled) await copyFile(await library.pdfPath(id), chosen.filePath);
     return { canceled: chosen.canceled };
   });
   handle('library:open-folder', async () => { const result = await shell.openPath(library.root); if (result) throw new Error(result); });
   handle('library:choose-folder', async () => {
-    const chosen = await dialog.showOpenDialog(mainWindow, { title: '选择或新建文献库文件夹', defaultPath: library.root, properties: ['openDirectory', 'createDirectory'] });
+    const chosen = await dialog.showOpenDialog(mainWindow, { title: t('选择或新建文献库文件夹'), defaultPath: library.root, properties: ['openDirectory', 'createDirectory'] });
     if (chosen.canceled) return null;
     agentRun?.controller.abort();
     cancelTranslations();
     await library.queue;
     await agentHistory.queue;
     const next = await new LocalLibrary(chosen.filePaths[0]).init();
-    await writeFile(path.join(profile, 'preferences.json'), JSON.stringify({ libraryPath: next.root }, null, 2));
+    await savePreferences({libraryPath:next.root});
     await canvasStore.queue;library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
   });
   handle('library:save-backup', async json => {
     if (typeof json !== 'string' || json.length > 1024 * 1024 * 1024) throw new Error('备份内容过大。');
-    const chosen = await dialog.showSaveDialog(mainWindow, { title: '导出完整文献备份', defaultPath: path.join(library.root, 'backups', `materia-backup-${new Date().toISOString().slice(0, 10)}.json`), filters: [{ name: 'Materia 备份', extensions: ['json'] }] });
+    const chosen = await dialog.showSaveDialog(mainWindow, { title: t('导出完整文献备份'), defaultPath: path.join(library.root, 'backups', `materia-backup-${new Date().toISOString().slice(0, 10)}.json`), filters: [{ name: t('Materia 备份'), extensions: ['json'] }] });
     if (chosen.canceled) return { canceled: true };
     await writeFile(chosen.filePath, json, 'utf8'); return { canceled: false, path: chosen.filePath };
   });
   handle('library:save-text', async ({ filename, content, type }) => {
     if (!['json', 'csv', 'md', 'svg', 'css'].includes(type) || typeof content !== 'string' || content.length > 30 * 1024 * 1024) throw new Error('导出格式不正确。');
-    const chosen = await dialog.showSaveDialog(mainWindow, { title: '保存导出文件', defaultPath: path.basename(filename), filters: [{ name: type.toUpperCase(), extensions: [type] }] });
+    const chosen = await dialog.showSaveDialog(mainWindow, { title: t('保存导出文件'), defaultPath: path.basename(filename), filters: [{ name: type.toUpperCase(), extensions: [type] }] });
     if (!chosen.canceled) await writeFile(chosen.filePath, content, 'utf8');
     return { canceled: chosen.canceled };
   });

@@ -1,3 +1,4 @@
+import {t as tr,html,msg} from './i18n.js';
 // Safe graph appearance tokens shared by CSS themes, complete packages and the SVG renderer.
 export const GRAPH_APPEARANCE_VERSION=5;
 export const GRAPH_FIELDS={
@@ -33,22 +34,22 @@ export const GRAPH_FIELDS={
 export const GRAPH_THEME_TOKENS=Object.fromEntries(Object.values(GRAPH_FIELDS).map(row=>[row.token,row.default]));
 const byToken=new Map(Object.entries(GRAPH_FIELDS).map(([key,row])=>[row.token,{key,...row}]));
 export function cleanGraphToken(key,input){
- const row=byToken.get(key);if(!row)throw Error('未知星图变量 '+key);const value=String(input).trim();
- if(row.values){if(!row.values.includes(value))throw Error(`${key} 可选：${row.values.join(' / ')}。`);}
- else if(row.color){if(value!=='auto'&&!/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)&&! /^(?:rgb|rgba|hsl|hsla)\([\d\s.,%+\-/]+\)$/i.test(value))throw Error(key+' 请填写 auto 或颜色。');}
- else{const numeric=row.unit?value.replace(/px$/,''):value;if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(numeric)||row.unit&&!value.endsWith(row.unit)||Number(numeric)<row.range[0]||Number(numeric)>row.range[1]||row.integer&&!Number.isInteger(Number(numeric)))throw Error(`${key} 需为 ${row.range.join(' 至 ')}${row.unit||''}${row.integer?' 的整数':''}。`);}
+ const row=byToken.get(key);if(!row)throw Error(tr('未知星图变量 ',false)+key);const value=String(input).trim();
+ if(row.values){if(!row.values.includes(value))throw Error(msg`${key} 可选：${row.values.join(' / ')}。`);}
+ else if(row.color){if(value!=='auto'&&!/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)&&! /^(?:rgb|rgba|hsl|hsla)\([\d\s.,%+\-/]+\)$/i.test(value))throw Error(key+tr(' 请填写 auto 或颜色。',false));}
+ else{const numeric=row.unit?value.replace(/px$/,''):value;if(!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(numeric)||row.unit&&!value.endsWith(row.unit)||Number(numeric)<row.range[0]||Number(numeric)>row.range[1]||row.integer&&!Number.isInteger(Number(numeric)))throw Error(msg`${key} 需为 ${row.range.join(tr(' 至 '))}${row.unit||''}${row.integer?tr(' 的整数'):''}。`);}
  return value;
 }
 export function graphTokens(graph={}){
- if(!graph||typeof graph!=='object'||Array.isArray(graph))throw Error('graph 需为对象。');const tokens={};
- for(const[key,value]of Object.entries(graph)){const row=GRAPH_FIELDS[key];if(!row)throw Error('graph 不支持字段 '+key);if(row.range&&(typeof value!=='number'||!Number.isFinite(value)))throw Error('graph.'+key+' 需为有限数值。');tokens[row.token]=cleanGraphToken(row.token,row.range?String(value)+(row.unit||''):value);}return tokens;
+ if(!graph||typeof graph!=='object'||Array.isArray(graph))throw Error(tr('graph 需为对象。'));const tokens={};
+ for(const[key,value]of Object.entries(graph)){const row=GRAPH_FIELDS[key];if(!row)throw Error(tr('graph 不支持字段 ',false)+key);if(row.range&&(typeof value!=='number'||!Number.isFinite(value)))throw Error('graph.'+key+tr(' 需为有限数值。',false));tokens[row.token]=cleanGraphToken(row.token,row.range?String(value)+(row.unit||''):value);}return tokens;
 }
 export function graphFromTokens(tokens={}){return Object.fromEntries(Object.entries(GRAPH_FIELDS).map(([key,row])=>{let value;try{value=cleanGraphToken(row.token,tokens[row.token]??row.default);}catch{value=row.default;}return[key,row.range?parseFloat(value):value];}));}
 export const GRAPH_PRESETS={
- classic:{name:'经典圆点',graph:graphFromTokens()},
- orbital:{name:'轨道圆环',graph:graphFromTokens(graphTokens({nodeFill:'hollow',relationShape:'diamond',edgeStyle:'curve',edgeOpacity:.3,nodeStroke:1.5,nodeScale:1.25,background:'dots'}))},
- crystal:{name:'晶格节点',graph:graphFromTokens(graphTokens({nodeShape:'hexagon',relationShape:'diamond',edgeStyle:'straight',background:'grid',nodeStroke:1.2,nodeScale:1.35,edgeOpacity:.3,edgeDash:'dashed'}))},
- cosmos:{name:'宇宙星野',graph:graphFromTokens(graphTokens({nodeShape:'star',relationShape:'planet',background:'nebula',nodeFill:'solid',colorMode:'accent',nodeScale:1.15,nodeStroke:.5,edgeStyle:'straight',edgeOpacity:.34,glow:4,twinkle:'subtle'}))},
+ classic:{name:tr('经典圆点'),graph:graphFromTokens()},
+ orbital:{name:tr('轨道圆环'),graph:graphFromTokens(graphTokens({nodeFill:'hollow',relationShape:'diamond',edgeStyle:'curve',edgeOpacity:.3,nodeStroke:1.5,nodeScale:1.25,background:'dots'}))},
+ crystal:{name:tr('晶格节点'),graph:graphFromTokens(graphTokens({nodeShape:'hexagon',relationShape:'diamond',edgeStyle:'straight',background:'grid',nodeStroke:1.2,nodeScale:1.35,edgeOpacity:.3,edgeDash:'dashed'}))},
+ cosmos:{name:tr('宇宙星野'),graph:graphFromTokens(graphTokens({nodeShape:'star',relationShape:'planet',background:'nebula',nodeFill:'solid',colorMode:'accent',nodeScale:1.15,nodeStroke:.5,edgeStyle:'straight',edgeOpacity:.34,glow:4,twinkle:'subtle'}))},
 };
 let themeProfiles=new Map();
 export function setGraphThemeOptions(themes){themeProfiles=new Map(themes.map(t=>['theme:'+t.id,{id:'theme:'+t.id,name:t.name,graph:t.graph||graphFromTokens(t.tokens),symbols:t.assets?.graphSymbols||{}}]));}

@@ -49,20 +49,104 @@ export function wrapCanvasText(input,width=184,maxLines=6){
 }
 export function canvasNodeSize(node){const width=node.shape==='diamond'?260:node.shape==='ellipse'?240:216,lines=wrapCanvasText(node.text,width-(node.shape==='diamond'?100:node.shape==='ellipse'?70:32)),height=Math.max(node.shape==='diamond'?116:72,lines.length*22+34+(node.image?126:0)+(node.paperId||node.tag||node.note?20:0));return{width,height,lines};}
 export function canvasBounds(board){if(!board.nodes.length)return{x:-200,y:-120,width:400,height:240};const boxes=board.nodes.map(n=>{const s=canvasNodeSize(n);return{x:n.x-s.width/2,y:n.y-s.height/2,right:n.x+s.width/2,bottom:n.y+s.height/2};});const x=Math.min(...boxes.map(b=>b.x))-70,y=Math.min(...boxes.map(b=>b.y))-70;return{x,y,width:Math.max(...boxes.map(b=>b.right))+70-x,height:Math.max(...boxes.map(b=>b.bottom))+70-y};}
+export function canvasNodesInRect(nodes,rect){
+ const left=Math.min(rect.x,rect.x+rect.width),right=Math.max(rect.x,rect.x+rect.width),top=Math.min(rect.y,rect.y+rect.height),bottom=Math.max(rect.y,rect.y+rect.height);
+ return nodes.filter(n=>{const s=canvasNodeSize(n);return n.x+s.width/2>=left&&n.x-s.width/2<=right&&n.y+s.height/2>=top&&n.y-s.height/2<=bottom;}).map(n=>n.id);
+}
+export function canvasDescendants(board,id){
+ const children=new Map(board.nodes.map(n=>[n.id,[]]));if(!children.has(id))return[];
+ for(const edge of board.edges)children.get(edge.source)?.push(edge.target);
+ const found=new Set([id]),queue=[id];for(let i=0;i<queue.length;i++)for(const child of children.get(queue[i])||[])if(!found.has(child)){found.add(child);queue.push(child);}return queue;
+}
+export function moveCanvasNodes(nodes,positions,dx,dy){
+ const originals=[...positions.values()];if(!originals.length)return;
+ dx=Math.max(-50000-Math.min(...originals.map(n=>n.x)),Math.min(50000-Math.max(...originals.map(n=>n.x)),dx));
+ dy=Math.max(-50000-Math.min(...originals.map(n=>n.y)),Math.min(50000-Math.max(...originals.map(n=>n.y)),dy));
+ for(const node of nodes){const original=positions.get(node.id);if(original){node.x=original.x+dx;node.y=original.y+dy;}}
+}
+export const CANVAS_ARRANGEMENTS={auto:'智能紧凑整理',both:'左右平衡树',right:'向右分层',left:'向左分层',down:'向下分层',grid:'整齐网格',selection:'仅整理所选节点'};
+export function arrangeCanvasMode(board,mode='auto',{aspect=1.5,selection=[]}={}){
+ if(!Object.hasOwn(CANVAS_ARRANGEMENTS,mode))throw Error('请选择有效的整理方式。');
+ const ids=new Set(selection),scoped=mode==='selection',nodes=scoped?board.nodes.filter(n=>ids.has(n.id)):board.nodes;
+ if(scoped&&nodes.length<2)throw Error('请先选择至少两个节点。');
+ const original={...board,nodes,edges:scoped?board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)):board.edges};
+ const tree=['both','left','right','down'].includes(mode),arranged=arrangeCanvas({...original,...(tree?{layout:'mindmap',direction:mode}:mode==='grid'?{layout:'free'}:{})},{compact:mode==='auto'||scoped,aspect});
+ if(!scoped)return{...arranged,...(mode==='grid'?{layout:board.layout}:{} )};
+ const a=canvasBounds(original),b=canvasBounds(arranged),dx=a.x+a.width/2-b.x-b.width/2,dy=a.y+a.height/2-b.y-b.height/2;
+ const updates=new Map(arranged.nodes.map(n=>[n.id,{...n,x:n.x+dx,y:n.y+dy}]));
+ return{...board,nodes:board.nodes.map(n=>updates.get(n.id)||{...n})};
+}
 export function findCanvasPosition(nodes,node){
  const size=canvasNodeSize(node),dx=size.width+90,dy=size.height+50,free=(x,y)=>Math.abs(x)<49000&&Math.abs(y)<49000&&nodes.every(other=>{const s=canvasNodeSize(other);return Math.abs(other.x-x)>(s.width+size.width)/2+24||Math.abs(other.y-y)>(s.height+size.height)/2+30;});
  for(let i=0;i<220;i++){const points=i?[[node.x,node.y+dy*i],[node.x,node.y-dy*i],[node.x+dx*i,node.y],[node.x-dx*i,node.y]]:[[node.x,node.y]];for(const[x,y]of points)if(free(x,y))return{x,y};}throw Error('节点附近过于拥挤，请移动视图后添加。');
 }
-export function arrangeCanvas(board){
+// Build a stable breadth-first forest: cross links cannot make a node needlessly deep.
+export function arrangeCanvas(board,{compact=false,aspect=1.5}={}){
  const result={...board,nodes:board.nodes.map(n=>({...n}))},nodes=result.nodes;if(!nodes.length)return result;
- if(board.layout==='free'){const cols=Math.max(2,Math.ceil(Math.sqrt(nodes.length)));nodes.forEach((n,i)=>{n.x=(i%cols)*320;n.y=Math.floor(i/cols)*280;});return result;}
- const byId=new Map(nodes.map(n=>[n.id,n])),children=new Map(nodes.map(n=>[n.id,[]])),parent=new Map(),cycle=(from,to)=>{for(let cur=from;cur;cur=parent.get(cur))if(cur===to)return true;return false;};
- for(const e of board.edges)if(byId.has(e.source)&&byId.has(e.target)&&!parent.has(e.target)&&!cycle(e.source,e.target)){children.get(e.source).push(e.target);parent.set(e.target,e.source);}
- const roots=nodes.filter(n=>!parent.has(n.id)),size=new Map();
- const measure=id=>{const n=byId.get(id),span=Math.max(canvasNodeSize(n).height+60,children.get(id).reduce((s,c)=>s+measure(c),0));size.set(id,span);return span;};for(const root of roots)measure(root.id);
- const place=(id,depth,center,sign)=>{const n=byId.get(id);n.x=depth*350*sign;n.y=center;let top=center-size.get(id)/2;for(const c of children.get(id)){place(c,depth+1,top+size.get(c)/2,sign);top+=size.get(c);}};
- let forestY=0;for(const root of roots){const list=children.get(root.id);if(board.direction==='both'&&list.length>1){root.x=0;root.y=forestY;const sides=[[],[]],heights=[0,0];for(const c of list){const side=heights[0]<=heights[1]?0:1;sides[side].push(c);heights[side]+=size.get(c);}for(let side=0;side<2;side++){let top=forestY-heights[side]/2;for(const c of sides[side]){place(c,1,top+size.get(c)/2,side?-1:1);top+=size.get(c);}}forestY+=Math.max(...heights,canvasNodeSize(root).height)+160;}else{place(root.id,0,forestY,board.direction==='left'?-1:1);forestY+=size.get(root.id)+160;}}
- if(board.direction==='down')for(const n of nodes){const x=n.x;n.x=n.y*1.6;n.y=x*.9;}return result;
+ const dimensions=new Map(nodes.map(n=>[n.id,canvasNodeSize(n)]));
+ const pack=blocks=>{
+  const gap=180,total=blocks.reduce((sum,b)=>sum+(b.width+gap)*(b.height+gap),0),limit=Math.max(...blocks.map(b=>b.width),Math.sqrt(total*Math.max(.6,Math.min(2.4,aspect))));
+  let x=0,y=0,rowHeight=0;
+  for(const block of blocks){if(x&&x+block.width>limit){x=0;y+=rowHeight+gap;rowHeight=0;}for(const n of block.nodes){n.x+=x-block.x;n.y+=y-block.y;}x+=block.width+gap;rowHeight=Math.max(rowHeight,block.height);}
+ };
+ const bounds=rows=>{const boxes=rows.map(n=>{const d=dimensions.get(n.id);return{x:n.x-d.width/2,y:n.y-d.height/2,right:n.x+d.width/2,bottom:n.y+d.height/2};}),x=Math.min(...boxes.map(b=>b.x)),y=Math.min(...boxes.map(b=>b.y));return{nodes:rows,x,y,width:Math.max(...boxes.map(b=>b.right))-x,height:Math.max(...boxes.map(b=>b.bottom))-y};};
+ const grid=rows=>{
+  const cols=Math.max(1,Math.ceil(Math.sqrt(rows.length*1.3))),w=Math.max(...rows.map(n=>dimensions.get(n.id).width))+64,h=Math.max(...rows.map(n=>dimensions.get(n.id).height))+48;
+  rows.forEach((n,i)=>{const row=Math.floor(i/cols),col=i%cols;n.x=(row%2?cols-1-col:col)*w;n.y=row*h;});
+ };
+ const named=[...new Set(nodes.map(n=>n.group).filter(Boolean))];
+ if(compact&&named.length>=3){
+  // Pack existing semantic groups as separate blocks, rather than a 20+ column chain.
+  const groups=new Map();for(const n of nodes){const key=n.group||'';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(n);}
+  const blocks=[];
+  for(const rows of groups.values()){
+   const ids=new Set(rows.map(n=>n.id)),local=arrangeCanvas({...board,nodes:rows,edges:board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)),direction:'right'});
+   const b=canvasBounds(local);
+   if(b.width>Math.max(1200,b.height*2.4)||b.height>Math.max(1200,b.width*2.4))grid(rows);
+   else{const positions=new Map(local.nodes.map(n=>[n.id,n]));for(const n of rows){n.x=positions.get(n.id).x;n.y=positions.get(n.id).y;}}
+   blocks.push(bounds(rows));
+  }
+  pack(blocks);return result;
+ }
+ if(board.layout==='free'){grid(nodes);return result;}
+ const byId=new Map(nodes.map(n=>[n.id,n])),out=new Map(nodes.map(n=>[n.id,[]])),incoming=new Map(nodes.map(n=>[n.id,0]));
+ for(const e of board.edges)if(byId.has(e.source)&&byId.has(e.target)){out.get(e.source).push(e.target);incoming.set(e.target,incoming.get(e.target)+1);}
+ const children=new Map(nodes.map(n=>[n.id,[]])),visited=new Set(),roots=[];
+ const candidates=[...nodes.filter(n=>!incoming.get(n.id)),...nodes.filter(n=>n.id==='root'),...nodes];
+ for(const root of candidates){if(visited.has(root.id))continue;roots.push(root);visited.add(root.id);const queue=[root.id];for(let i=0;i<queue.length;i++)for(const id of out.get(queue[i]))if(!visited.has(id)){visited.add(id);children.get(queue[i]).push(id);queue.push(id);}}
+ const down=board.direction==='down',sideSize=id=>{const d=dimensions.get(id);return down?d.width:d.height;},depthSize=id=>{const d=dimensions.get(id);return down?d.height:d.width;};
+ // Merge subtree contours; siblings need space only at depths they both occupy.
+ const merge=trees=>{
+  const positions=new Map(),contours=[];let first=0,last=0;
+  for(const [index,tree] of trees.entries()){
+   let shift=0;if(index)for(let depth=0;depth<tree.contours.length;depth++)if(contours[depth])shift=Math.max(shift,contours[depth][1]+40-tree.contours[depth][0]);
+   for(const [id,p]of tree.positions)positions.set(id,{depth:p.depth,side:p.side+shift});
+   tree.contours.forEach((c,d)=>{const lo=c[0]+shift,hi=c[1]+shift;contours[d]=contours[d]?[Math.min(contours[d][0],lo),Math.max(contours[d][1],hi)]:[lo,hi];});
+   if(!index)first=shift;last=shift;
+  }
+  const center=(first+last)/2;for(const p of positions.values())p.side-=center;for(const c of contours){c[0]-=center;c[1]-=center;}return{positions,contours};
+ };
+ const cache=new Map(),tree=id=>{
+  if(cache.has(id))return cache.get(id);const merged=merge(children.get(id).map(tree)),positions=new Map([[id,{depth:0,side:0}]]);
+  for(const [child,p]of merged.positions)positions.set(child,{depth:p.depth+1,side:p.side});
+  const result={positions,contours:[[-sideSize(id)/2,sideSize(id)/2],...merged.contours]};cache.set(id,result);return result;
+ };
+ const blocks=[];
+ for(const root of roots){
+  const branches=children.get(root.id),sides=board.direction==='both'&&branches.length>1?[[],[]]:[branches];
+  if(sides.length===2){const height=[0,0];for(const id of branches){const t=tree(id),extent=Math.max(...t.contours.map(c=>c[1]))-Math.min(...t.contours.map(c=>c[0]))+40,side=height[0]<=height[1]?0:1;sides[side].push(id);height[side]+=extent;}}
+  const component=[root];root.x=0;root.y=0;
+  for(let side=0;side<sides.length;side++){
+   const merged=merge(sides[side].map(tree)),widths=[depthSize(root.id)];for(const [id,p]of merged.positions)widths[p.depth+1]=Math.max(widths[p.depth+1]||0,depthSize(id));
+   const offsets=[0];for(let depth=1;depth<widths.length;depth++)offsets[depth]=offsets[depth-1]+widths[depth-1]/2+80+widths[depth]/2;
+   const sign=board.direction==='left'||side===1?-1:1;
+   for(const [id,p]of merged.positions){const n=byId.get(id),depth=offsets[p.depth+1]*sign;n.x=down?p.side:depth;n.y=down?depth:p.side;component.push(n);}
+  }
+  blocks.push(bounds(component));
+ }
+ pack(blocks);
+ if(compact){const b=bounds(nodes);if(b.width>Math.max(1800,b.height*3.2)||b.height>Math.max(1800,b.width*3.2))grid(nodes);}
+ return result;
 }
 export function exportCanvasDocument(board){return JSON.stringify({format:CANVAS_FORMAT,version:1,board:cleanCanvas(board)},null,2)+'\n';}
 export function importCanvasDocument(input){if(typeof input==='string'){if(input.length>CANVAS_LIMITS.documentBytes+10000)fail('画布文件超过 12 MB。');try{input=JSON.parse(input);}catch{fail('画布文件不是有效 JSON。');}}if(!object(input)||input.format!==CANVAS_FORMAT||input.version!==1)fail('请选择版本 1 的 Materia 画布文件。');return cleanCanvas(input.board);}

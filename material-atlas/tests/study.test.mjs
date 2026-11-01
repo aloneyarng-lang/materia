@@ -8,9 +8,34 @@ import {translateText} from '../desktop/translation.mjs';
 import {LocalLibrary} from '../desktop/library.mjs';
 import {createBackup,readBackup} from '../dist/storage.js';
 import {handleAgentRequest} from '../desktop/agent-http.mjs';
+import {translationKey} from '../dist/study-client.js';
 const source={paperId:'p1',title:'Fixture',page:1,fingerprint:'',quote:'Strength of the alloy.'};
 const word={id:'w1',term:'Strength',translation:'强度',targetLanguage:'zh-CN',note:'',status:'new',sources:[source],createdAt:1,updatedAt:1};
 const cache={key:'tx-'+'a'.repeat(64),paperId:'p1',page:1,fingerprint:'',targetLanguage:'zh-CN',sourceText:'Strength',translatedText:'强度',updatedAt:1};
+
+test('Chinese, English, Japanese and German are explicit targets for selected text and full-page translation',async()=>{
+  for(const [targetLanguage,label,text]of [['zh-CN','简体中文','Strength'],['en','英语','合金强度'],['ja','日语','Strength of alloy'],['de','德语','合金强度']]){
+    assert.equal(cleanTranslationPreferences({targetLanguage}).targetLanguage,targetLanguage);
+    for(const mode of ['selection','page']){
+      let sent;
+      const result=await translateText({}, {mode,text,targetLanguage}, {complete:async(_,request)=>{sent=request;return{content:'Synthetic translation'};}});
+      assert.equal(result.targetLanguage,targetLanguage);assert.deepEqual(sent.tools,[]);
+      assert.ok(sent.messages[0].content.includes(`翻译成${label}`));
+      assert.ok(sent.messages[0].content.includes(`必要说明也必须使用${label}`));
+      assert.equal(JSON.parse(sent.messages[1].content).text,text);
+    }
+  }
+});
+
+test('the same PDF page keeps separate Chinese, English, Japanese and German translations',async()=>{
+  const keys=[],paper={id:'p1',fingerprint:'synthetic-pdf'};let rows=[];
+  for(const targetLanguage of ['zh-CN','en','ja','de']){
+    const key=await translationKey(paper,1,targetLanguage,'Strength');keys.push(key);
+    rows=saveTranslationCache(rows,{...cache,key,targetLanguage,translatedText:targetLanguage});
+  }
+  assert.equal(new Set(keys).size,4);assert.deepEqual(rows.map(row=>row.targetLanguage),['zh-CN','en','ja','de']);
+  assert.deepEqual(rows.map(row=>row.translatedText),['zh-CN','en','ja','de']);
+});
 test('manual translation is mandatory for defaults, legacy instant preferences and restored study backups',()=>{
   assert.equal(cleanTranslationPreferences().instant,false);assert.equal(cleanTranslationPreferences({instant:true,targetLanguage:'en'}).instant,false);assert.equal(cleanStudy({preferences:{instant:true}}).preferences.instant,false);assert.equal(readBackup({format:'materia-backup',version:3,papers:[],collections:[],study:{preferences:{instant:true,targetLanguage:'ja'}}}).study.preferences.instant,false);assert.equal(cleanTranslationPreferences({instant:true,targetLanguage:'ja'}).targetLanguage,'ja');
 });

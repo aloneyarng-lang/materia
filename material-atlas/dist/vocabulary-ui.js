@@ -3,6 +3,7 @@ import {bindStaticDOM} from './i18n.js';
 import {readStudy,updateStudy} from './study-client.js';
 import {icon} from './icons.js';
 import {TRANSLATION_LANGUAGES,vocabularyMarkdown} from './study-model.js';
+import {createOfflineDictionaryView,offlineDictionaryShell} from './offline-dictionary-ui.js';
 const statuses={get new(){return tr('未学习');},get learning(){return tr('学习中');},get mastered(){return tr('已掌握');}};
 export function vocabularyShell(){return html`<div class="vocab-tools"><input type="search" data-vocab-search aria-label="搜索生词" placeholder="搜索词语、词义或文献…"><select data-vocab-filter aria-label="学习状态"><option value="">全部状态</option>${Object.entries(statuses).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')}</select><button type="button" data-vocab-export>导出 MD</button></div><p data-vocab-status role="status"></p><div class="vocab-list"></div>`;}
 export function createVocabularyView(root,options){
@@ -31,13 +32,15 @@ export function createVocabularyView(root,options){
   return{refresh,dispose(){active=false;epoch++;}};
 }
 export function createVocabularyController(options){
-  const dialog=document.createElement('dialog');dialog.className='vocabulary-dialog';dialog.id='vocabulary-dialog';dialog.setAttribute('aria-label',tr('生词本'));
-  dialog.innerHTML=tr('<header><h2>生词本</h2><button type="button" data-vocab-close aria-label="关闭生词本">×</button></header><div class="vocabulary-content">',false)+vocabularyShell()+'</div>';
+  const dialog=document.createElement('dialog');dialog.className='vocabulary-dialog';dialog.id='vocabulary-dialog';dialog.setAttribute('aria-label',tr('本地词典与生词本'));
+  dialog.innerHTML=tr('<header><h2>本地词典与生词本</h2><button type="button" data-vocab-close aria-label="关闭生词本">×</button></header><div class="dictionary-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-dictionary-tab="offline">离线词典</button><button type="button" role="tab" aria-selected="false" data-dictionary-tab="vocabulary">生词本</button></div><section class="offline-dictionary-content">',false)+offlineDictionaryShell()+'</section><section class="vocabulary-content" hidden>'+vocabularyShell()+'</section>';
   bindStaticDOM(dialog,{translated:true});document.body.append(dialog);
   dialog.addEventListener('keydown',event=>event.stopPropagation());
   const view=createVocabularyView(dialog.querySelector('.vocabulary-content'),{...options,openSource:async source=>{dialog.close();await options.openSource(source);}});
+  const offline=createOfflineDictionaryView(dialog.querySelector('.offline-dictionary-content'),{escape:options.escape,onVocabularyChanged:()=>view.refresh()});
+  dialog.addEventListener('click',event=>{const tab=event.target.closest('[data-dictionary-tab]');if(!tab)return;const showOffline=tab.dataset.dictionaryTab==='offline';dialog.querySelector('.offline-dictionary-content').hidden=!showOffline;dialog.querySelector('.vocabulary-content').hidden=showOffline;dialog.querySelectorAll('[data-dictionary-tab]').forEach(button=>button.setAttribute('aria-selected',String(button===tab)));if(showOffline)offline.focus();else view.refresh();});
   dialog.querySelector('[data-vocab-close]').onclick=()=>dialog.close();
-  const button=document.createElement('button');button.className='ribbon-button';button.title=tr('生词本');button.setAttribute('aria-label',tr('生词本'));button.innerHTML=icon('dictionary');button.dataset.action='vocabulary';document.querySelector('.workspace-ribbon')?.insertBefore(button,document.querySelector('.ribbon-spacer'));
+  const button=document.createElement('button');button.className='ribbon-button';button.title=tr('本地词典与生词本');button.setAttribute('aria-label',tr('本地词典与生词本'));button.innerHTML=icon('dictionary');button.dataset.action='vocabulary';document.querySelector('.workspace-ribbon')?.insertBefore(button,document.querySelector('.ribbon-spacer'));
   bindStaticDOM(button,{translated:true});
-  return{async open(){await view.refresh();if(!dialog.open)dialog.showModal();dialog.querySelector('input').focus();}};
+  return{async open(){await Promise.all([view.refresh(),offline.initialize()]);if(!dialog.open)dialog.showModal();offline.focus();}};
 }

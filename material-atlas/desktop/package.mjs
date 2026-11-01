@@ -14,7 +14,7 @@ await mkdir(path.join(stage, 'desktop'), { recursive: true });
 for(const file of ['i18n.js','locales.js','locales-de.js'])await copyFile(path.join(root,'dist',file),path.join(stage,'dist',file));
 await copyFile(path.join(root,'dist','graph-cosmos.js'),path.join(stage,'dist','graph-cosmos.js'));
 for(const file of ['graph-symbols.js','reimu-presets.js'])await copyFile(path.join(root,'dist',file),path.join(stage,'dist',file));
-for (const file of ['agent-providers.js','agent-service-settings.js','agent-auth.js','study-model.js','study-client.js','reader-study.js','vocabulary-ui.js','study.css','ai-agent.js','ai-agent-core.js','ai-agent.css','agent-markdown.js','agent-history.js']) await copyFile(path.join(root,'dist',file),path.join(stage,'dist',file));
+for (const file of ['agent-providers.js','agent-service-settings.js','agent-auth.js','study-model.js','study-client.js','reader-study.js','vocabulary-ui.js','offline-dictionary.js','offline-dictionary-ui.js','study.css','ai-agent.js','ai-agent-core.js','ai-agent.css','agent-markdown.js','agent-history.js']) await copyFile(path.join(root,'dist',file),path.join(stage,'dist',file));
 await copyFile(path.join(root,'desktop','agent.mjs'),path.join(stage,'desktop','agent.mjs'));
 await copyFile(path.join(root,'desktop','agent-history.mjs'),path.join(stage,'desktop','agent-history.mjs'));
 await copyFile(path.join(root,'dist','glass-interactions.js'),path.join(stage,'dist','glass-interactions.js'));

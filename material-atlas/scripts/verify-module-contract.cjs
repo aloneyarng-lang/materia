@@ -15,7 +15,7 @@ const fixture=`export const fixture={id:'fixture',label:'测试功能',title:'�
   if(pathname==='/modules/index.js'&&includeFixture)content=Buffer.from(content.toString()+"\nimport {fixture} from '/fixture.js';WORKSPACE_MODULES.push(fixture);\n");
   res.setHeader('Content-Type',/\.(?:mjs|js)$/.test(target)?'text/javascript':/\.css$/.test(target)?'text/css':/\.html$/.test(target)?'text/html':'application/octet-stream');res.end(content);
  }catch{res.statusCode=404;res.end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
- browser=await chromium.launch({headless:true,executablePath:path.join(process.env.ProgramFiles,'Google/Chrome/Application/chrome.exe')});page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
+ browser=await chromium.launch({headless:true,executablePath:process.env.MATERIA_CHROME||path.join(process.env['ProgramFiles(x86)'],'Microsoft/Edge/Application/msedge.exe')});page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.exposeFunction('__moduleAPI',(name,...args)=>{if(name==='getPapers')return[];if(name==='getSetting')return structuredClone(settings[args[0]]);if(name==='setSetting'){settings[args[0]]=structuredClone(args[1]);return true;}if(name==='info')return{path:'ISOLATED MODULE CONTRACT'};if(name==='canvasReady')return true;throw Error(name);});
  await page.addInitScript(()=>{globalThis.materiaDesktop=Object.fromEntries(['getPapers','getSetting','setSetting','info','canvasReady'].map(name=>[name,(...args)=>__moduleAPI(name,...args)]));});
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});

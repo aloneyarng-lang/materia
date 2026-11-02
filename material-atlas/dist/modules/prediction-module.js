@@ -1,5 +1,5 @@
 export const predictionModule = {
-  id:'prediction',label:'性能预测',title:'性能预测',icon:'chart',panelId:'prediction-workspace',bodyClass:'prediction-view',
+  id:'prediction',label:'材料预测',title:'材料机器学习',icon:'chart',panelId:'prediction-workspace',bodyClass:'prediction-view',
   desktopStorage:true,storageKey:'predictionWorkspace',
   styles:[new URL('../prediction.css',import.meta.url).href],
   async create(context){

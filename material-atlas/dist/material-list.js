@@ -18,7 +18,7 @@ export function createMaterialList(config) {
     const host = $('#material-list');
     host.innerHTML = html`<div class="material-library-tools"><label class="material-library-search">${icon('search')}<input id="material-list-query" type="search" maxlength="1000" placeholder="搜索材料、成分、性能参数或来源文献…" value="${esc(query)}" aria-label="搜索材料"></label><label class="material-library-only"><input id="material-list-only-selected" type="checkbox" ${onlySelected ? 'checked' : ''}>只看已选</label><button class="outline-button" data-material-list-action="create-group">${icon('plus')}新建分组</button></div>
       <div class="material-library-groups" role="group" aria-label="材料分组"></div>
-      <div class="material-library-selection"><span id="material-list-selected-count" role="status"></span>${actionMenu('material-organize-menu',tr('整理'),tr('<button data-material-list-action="select-results">全选当前结果</button><button data-material-list-action="clear">清空选择</button><hr><button data-material-list-action="assign-group">归入 / 移出分组…</button><button data-material-list-action="table">参数对照</button>'),{iconName:'folder'})}<button class="primary" data-material-list-action="chart">${icon('chart')}对比与作图</button></div>
+      <div class="material-library-selection"><span id="material-list-selected-count" role="status"></span>${actionMenu('material-organize-menu',tr('整理'),tr('<button data-material-list-action="select-results">全选当前结果</button><button data-material-list-action="clear">清空选择</button><hr><button data-material-list-action="assign-group">归入 / 移出分组…</button>'),{iconName:'folder'})}<button class="primary" data-material-list-action="chart">${icon('chart')}对比与作图</button></div>
       <div class="material-library-status"><span data-material-save-status role="status"></span><button class="text-button" data-material-retry hidden>重试保存</button></div>
       <p id="material-list-result-count" class="material-library-count"></p><div id="material-list-rows"></div><button class="outline-button list-load-more" data-material-list-action="more" hidden>显示更多材料</button>`;
     refreshSelection();
@@ -41,7 +41,7 @@ export function createMaterialList(config) {
     const totalCohorts = all.reduce((count, entry) => count + entry.cohorts.length, 0);
     $('#material-list-result-count').textContent = msg`当前 ${rows.length} / 全库 ${all.length} 个材料 · 全库 ${totalCohorts} 组样品 / 条件${rows.length > limit ? msg` · 已显示前 ${limit} 个` : ''}`;
     config.onCount?.(rows.length, all.length);
-    for (const action of ['assign-group', 'table', 'chart']) $(`[data-material-list-action="${action}"]`).disabled = !r.selected.length;
+    for (const action of ['assign-group', 'chart']) $(`[data-material-list-action="${action}"]`).disabled = !r.selected.length;
     $('[data-material-list-action="clear"]').disabled = !selection().keys.length;
     $('[data-material-list-action="select-results"]').disabled = !rows.length;
     $('[data-material-list-action="more"]').hidden = rows.length <= limit;

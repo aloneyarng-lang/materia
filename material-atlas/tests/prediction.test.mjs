@@ -1,0 +1,81 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,readFile,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+import {parseComposition,compositionKey,exactNumber,validateComposition,suggestMapping,buildDataset,freshWorkspace,trainProperty,predictProperty,trainingRows,validateWorkspace} from '../dist/prediction-model.js';
+import {parseDelimited,toCSV} from '../dist/prediction-import.js';
+import {PredictionFile} from '../desktop/prediction-store.mjs';
+
+const fixture=()=>{const w=freshWorkspace();w.datasets.push({id:'fixture',name:'SYNTHETIC TEST ONLY',form:'powder',basis:'at',rows:Array.from({length:60},(_,i)=>({id:String(i),composition:{Fe:70+i*.3,B:30-i*.3},features:{particleSize:10+i%5},targets:{Tg:500+i*5,Tx:540+i*5},source:'source-'+Math.floor(i/4)})),issues:[],duplicates:0,qualified:0});return w;};
+const options={target:'Tg',form:'powder',basis:'at',datasetIds:['fixture']};
+test('element percentages, nested alloy groups and input rejection are explicit',()=>{
+ assert.deepEqual(parseComposition('Fe80Si9B11'),{Fe:80,Si:9,B:11});
+ const c=parseComposition('(Fe71.2B24Y4.8)98Nb2');assert.ok(Math.abs(c.Fe-69.776)<1e-10);assert.equal(c.Nb,2);
+ assert.equal(compositionKey(parseComposition('B20Fe80')),compositionKey(parseComposition('Fe80B20')));
+ for(const value of ['Fe80B10','FeB','Fe72B22Ln6','Fe80B20 (x=2)','Fe80B20)','Fe-1B101'])assert.throws(()=>parseComposition(value),value);
+ assert.throws(()=>validateComposition({Fe:100.1,B:-.1}));
+});
+test('uncertain values stay distinct from exact numbers and CSV escaping round trips',()=>{
+ for(const v of ['',null,'?','<1','1-2','~0.32','100±5','1,000'])assert.equal(exactNumber(v),null);
+ assert.equal(exactNumber('0'),0);assert.equal(exactNumber('1.2e3'),1200);
+ const rows=[['composition','notes','Tg'],['Fe80B20','source "A", line\n2','0']];assert.deepEqual(parseDelimited(toCSV(rows)),rows);
+ assert.deepEqual(parseDelimited('a\tb\r\n1\t2'),[['a','b'],['1','2']]);assert.throws(()=>parseDelimited('a,b\n"oops'));
+});
+test('header mapping separates B modulus, Bs magnetism, composition and source',()=>{
+ assert.deepEqual(suggestMapping('Alloys'),{role:'composition',id:''});assert.deepEqual(suggestMapping('Fe'),{role:'element',id:'Fe'});
+ assert.equal(suggestMapping('B(GPa)').id,'bulkModulus');assert.equal(suggestMapping('Bs(T)').id,'Bs');assert.equal(suggestMapping('URL/DOI').role,'source');
+});
+test('import retains partial labels, rejects invalid alloys and deduplicates exact repeats',()=>{
+ const w=freshWorkspace(),table=[['Alloys','Tg(K)','Tx(K)','DOI'],['Fe80B20','800','850','A'],['Fe80B20','800','850','A'],['Fe79B21','<800','860','B'],['Fe78B22','','','C'],['Fe70B20','810','860','D']];
+ const d=buildDataset({name:'test',basis:'at',form:'reference',table,mapping:table[0].map(h=>suggestMapping(h)),features:w.features,properties:w.properties});
+ assert.equal(d.rows.length,2);assert.equal(d.duplicates,1);assert.equal(d.issues.length,2);assert.equal(d.qualified,1);assert.equal(d.rows[1].targets.Tg,undefined);assert.equal(d.rows[1].original.Tg,'<800');assert.equal(d.rows[1].targets.Tx,860);
+ assert.throws(()=>buildDataset({name:'bad',basis:'at',form:'powder',table,mapping:[{role:'composition'},{role:'target',id:'Tg'},{role:'target',id:'Tg'}],features:w.features,properties:w.properties}),/两列/);
+});
+test('training isolates shape, percentage basis and missing performance labels',()=>{
+ const w=fixture();w.datasets.push({...structuredClone(w.datasets[0]),id:'core',form:'core'});w.datasets.push({...structuredClone(w.datasets[0]),id:'wt',basis:'wt'});w.datasets[0].rows[0].targets={Tx:540};
+ assert.equal(trainingRows(w,{...options,datasetIds:['fixture','core','wt']}).length,59);
+ assert.throws(()=>trainProperty(w,{...options,form:'reference'}),/参考形态/);
+});
+test('real fitted forest beats a held-out baseline and survives model serialization',()=>{
+ const w=fixture(),before=JSON.stringify(w),m=trainProperty(w,options);assert.equal(JSON.stringify(w),before);assert.equal(m.usable,true);assert.equal(m.metrics.n,60);assert.equal(m.metrics.groups,60);assert.ok(m.metrics.mae<m.metrics.baselineMAE);assert.ok(m.metrics.r2>.9);assert.equal(m.metrics.folds.reduce((n,f)=>n+f.testing,0),60);
+ const restored=JSON.parse(JSON.stringify(m)),row={composition:{Fe:80,B:20},features:{particleSize:12}};
+ assert.equal(predictProperty(m,row).value,predictProperty(restored,row).value);assert.ok(Math.abs(predictProperty(m,row).value-(500+(10/.3)*5))<20);
+ assert.throws(()=>predictProperty(m,{composition:{Fe:80,Cu:20},features:{particleSize:12}}),/未包含元素/);
+ assert.throws(()=>predictProperty(m,{composition:{Fe:80,B:20},features:{}}),/补充/);
+ assert.ok(predictProperty(m,{composition:{Fe:95,B:5},features:{particleSize:30}}).warnings.length>=2);
+ assert.throws(()=>predictProperty({...m,usable:false},row),/基线/);
+});
+test('repeated compositions remain one validation group and source grouping joins connected alloys',()=>{
+ const w=fixture();w.datasets[0].rows.push(...structuredClone(w.datasets[0].rows.slice(0,10)).map(r=>({...r,features:{particleSize:20},targets:{Tg:r.targets.Tg+2}})));
+ const a=trainProperty(w,options);assert.equal(a.metrics.n,70);assert.equal(a.metrics.groups,60);
+ const b=trainProperty(w,{...options,validation:'source'});assert.equal(b.metrics.groups,15);
+ for(const r of w.datasets[0].rows)r.source='same-source';assert.throws(()=>trainProperty(w,{...options,validation:'source'}),/独立分组/);
+});
+test('too little data, too few alloys and constant labels do not become usable predictors',()=>{
+ const w=fixture();w.datasets[0].rows=w.datasets[0].rows.slice(0,10);assert.throws(()=>trainProperty(w,options),/15/);
+ w.datasets[0].rows=Array.from({length:20},(_,i)=>({composition:{Fe:80,B:20},features:{particleSize:i},targets:{Tg:i}}));assert.throws(()=>trainProperty(w,options),/5/);
+ const c=fixture();c.datasets[0].rows.forEach(r=>r.targets.Tg=800);const m=trainProperty(c,options);assert.equal(m.usable,false);assert.equal(m.metrics.r2,null);
+});
+test('arbitrary new numerical properties and categorical input conditions train without code changes',()=>{
+ const w=fixture();w.properties.push({id:'custom',name:'新性能',unit:'unit'});w.features.push({id:'process',name:'工艺',unit:'',type:'category'});
+ w.datasets[0].rows.forEach((r,i)=>{r.targets.custom=100+i*2;r.features.process=i%2?'gas':'water';});
+ const m=trainProperty(w,{...options,target:'custom'});assert.equal(m.usable,true);assert.ok(m.encoder.specs.some(s=>s.id==='process'));
+ assert.throws(()=>predictProperty(m,{composition:{Fe:80,B:20},features:{particleSize:12,process:'unknown'}}),/未见/);
+ assert.ok(Number.isFinite(predictProperty(m,{composition:{Fe:80,B:20},features:{particleSize:12,process:'gas'}}).value));
+});
+test('condition-dependent magnetic properties require their measurement conditions before training',()=>{
+ const w=fixture();for(const r of w.datasets[0].rows)r.targets.coreLoss=r.targets.Tg;
+ assert.throws(()=>trainProperty(w,{...options,target:'coreLoss'}),/测试频率/);
+ for(const r of w.datasets[0].rows)r.features.frequency=100;
+ assert.throws(()=>trainProperty(w,{...options,target:'coreLoss'}),/磁感应强度/);
+ for(const r of w.datasets[0].rows)r.features.induction=50;
+ const m=trainProperty(w,{...options,target:'coreLoss'});assert.equal(m.usable,true);
+ assert.throws(()=>predictProperty(m,{composition:{Fe:80,B:20},features:{particleSize:12}}),/补充/);
+});
+test('prediction files preserve data across reopen and keep library roots isolated',async()=>{
+ await mkdir('.local/tests',{recursive:true});const root=await mkdtemp(path.resolve('.local/tests/prediction-')),a=new PredictionFile(path.join(root,'a')),b=new PredictionFile(path.join(root,'b')),w=fixture();
+ await a.save(w);const second=structuredClone(w);second.revision=2;await a.save(second);assert.equal((await new PredictionFile(a.root).load()).revision,2);assert.equal((await b.load()).datasets.length,0);
+ assert.equal(JSON.parse(await readFile(path.join(a.root,'prediction-workspace.previous.json'),'utf8')).revision,0);
+ await writeFile(a.file,'broken');await assert.rejects(a.load(),/原文件已保留/);assert.equal(await readFile(a.file,'utf8'),'broken');
+ assert.throws(()=>validateWorkspace({...w,version:999}));
+});

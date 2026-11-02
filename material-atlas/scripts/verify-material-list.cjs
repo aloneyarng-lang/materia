@@ -62,7 +62,7 @@ async function group(name) {await page.getByRole('button', {name, exact: false})
     await page.locator('[data-material-list-group]').first().click(); await page.screenshot({path: path.join(output, 'material-list-groups.png')});
   });
   await check('table and chart consume only selected cohorts and leave paper selection independent', async () => {
-    await action('table'); await page.locator('.material-matrix').waitFor(); assert.equal(await page.locator('.material-matrix thead strong').count(), 3);
+    await action('chart'); await page.locator('[data-comparison-tab="table"]').click(); await page.locator('.material-matrix').waitFor(); assert.equal(await page.locator('.material-matrix thead strong').count(), 3);
     const table = await page.locator('.material-matrix').textContent(); assert.ok(table.includes('130')); assert.ok(!table.includes('100'));
     assert.deepEqual(settings.comparisonSelection, []); await page.locator('#modal [data-action="close-modal"]').last().click();
     await action('chart'); await page.waitForFunction(() => document.querySelector('#chart-point-count')?.textContent.includes('3 个观测点'));

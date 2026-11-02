@@ -20,6 +20,8 @@ ai-agent.json
 ai-chats*.json
 research-canvases.json
 research-canvases.previous.json
+prediction-workspace.json
+prediction-workspace.previous.json
 library.json
 library.previous.json
 preferences.json

@@ -1,5 +1,7 @@
 ﻿import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage } from 'electron';
+import {DesktopModuleServices} from './module-services.mjs';
+import {DESKTOP_MODULES} from './modules/index.mjs';
 import { mkdir, readFile, writeFile, copyFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +17,7 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(appRoot, '.local', 'desktop-profile'));
 app.setPath('userData', profile);
-let mainWindow, library, agentHistory, canvasStore;
+let mainWindow, library, agentHistory, canvasStore, moduleServices;
 let preferenceQueue=Promise.resolve();
 function observeLibrary(store){store.onFolderChange=result=>{if(store===library&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('library:changed',{path:store.root,...result});};return store;}
 let canvasCloseReady=false,canvasAllowClose=false;
@@ -33,7 +35,7 @@ let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
   event.preventDefault();quitPending=true;agentRun?.controller.abort();cancelTranslations();
-  Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,preferenceQueue]).then(()=>app.quit());
+  Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,moduleServices?.flush(),preferenceQueue]).then(()=>app.quit());
 });
 
 async function start() {
@@ -59,6 +61,7 @@ async function start() {
   observeLibrary(library);
   agentHistory = new AgentHistoryFile(library.root);
   canvasStore=new CanvasFile(library.root);
+  moduleServices=new DesktopModuleServices(DESKTOP_MODULES,library.root);
   await savePreferences({libraryPath:library.root});
   mainWindow = new BrowserWindow({ show: process.env.MATERIA_HEADLESS !== '1', width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
   mainWindow.webContents.on('render-process-gone',()=>{canvasCloseReady=false;});
@@ -72,6 +75,7 @@ async function start() {
     return fn(...args);
   });
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
+  moduleServices.register(handle);
   handle('canvas:save',payload=>{if(!payload||payload.libraryKey!==canvasStore.root)throw Error('文献库已切换，画布未写入其他文献库。');return canvasStore.save(payload.state);});
   handle('canvas:request-close',()=>{mainWindow.close();return true;});
   handle('canvas:ready',()=>{canvasCloseReady=true;return true;});
@@ -170,7 +174,7 @@ async function start() {
     await agentHistory.queue;
     const next = await new LocalLibrary(chosen.filePaths[0]).init();
     await savePreferences({libraryPath:next.root});
-    await canvasStore.queue;library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
+    await canvasStore.queue;await moduleServices.changeLibrary(next.root);library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
   });
   handle('library:save-backup', async json => {
     if (typeof json !== 'string' || json.length > 1024 * 1024 * 1024) throw new Error('备份内容过大。');

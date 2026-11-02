@@ -1,5 +1,6 @@
 import {cleanIconShapes,ICON_DEFAULTS} from './theme-model.js';
 const icons = {
+  command:'<path d="M9 9H6a3 3 0 1 1 3-3v12a3 3 0 1 1-3-3h12a3 3 0 1 1-3 3V6a3 3 0 1 1 3 3H9Z"/>',
   dictionary:'<path d="M5 3h14v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 14h14M6 3v14M9 12l2-6 2 6m-3.4-2h2.8M15 7h2m-2 3h2"/>',
   notebook:'<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M3 7h4M3 12h4M3 17h4M10 8h6M10 12h6M10 16h4"/>',
   'natural-layout':'<path d="M4 18c1-9 4-10 8-10s6 3 8 8"/><circle cx="4" cy="18" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M17 3v4M15 5h4"/>',

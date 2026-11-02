@@ -20,7 +20,7 @@ export async function deployLocal({source,target,backupRoot,shortcuts=[],checkRu
     if(result.status!==0)throw Error('请保存内容并完全退出正在使用的 Materia，再运行更新。');
   }
   const files=await walkFiles(source);
-  for(const name of files)if(name.split(path.sep).some(p=>['文献库','papers','backups','.local','desktop-profile'].includes(p))||/^(?:ai-agent|ai-chats.*|library(?:\.previous)?|preferences|research-canvases.*)\.json$/.test(path.basename(name)))throw Error('构建目录混入个人数据，更新已停止：'+name);
+  for(const name of files)if(name.split(path.sep).some(p=>['文献库','papers','backups','.local','desktop-profile'].includes(p))||/^(?:ai-agent|ai-chats.*|library(?:\.previous)?|preferences|research-canvases.*|prediction-workspace.*)\.json$/.test(path.basename(name)))throw Error('构建目录混入个人数据，更新已停止：'+name);
   const changes=[];for(const name of files){const dest=path.join(target,name);if(!await exists(dest)||await sha(path.join(source,name))!==await sha(dest))changes.push(name);}
   const backup=path.join(path.resolve(backupRoot),new Date().toISOString().replaceAll(':','-')+'-'+randomUUID().slice(0,6));await mkdir(backup,{recursive:true});
   for(const name of changes){const dest=path.join(target,name);if(await exists(dest)){await mkdir(path.dirname(path.join(backup,name)),{recursive:true});await copyFile(dest,path.join(backup,name));}}

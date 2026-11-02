@@ -1,6 +1,6 @@
 {
   "name": "materia-atlas",
-  "version": "2.0.7",
+  "version": "2.2.1",
   "private": true,
   "type": "module",
   "main": "desktop/main.mjs",
@@ -16,6 +16,9 @@
     "verify:i18n-desktop": "node scripts/verify-i18n-desktop.cjs",
     "verify:typography": "node scripts/verify-typography.cjs",
     "verify:materials": "node scripts/verify-materials.cjs",
+    "verify:prediction": "node scripts/verify-prediction.cjs",
+    "verify:modules": "node scripts/verify-module-contract.cjs",
+    "verify:workspace": "node scripts/verify-workspace-polish.cjs",
     "verify:agent": "node scripts/verify-agent.cjs",
     "verify:agent-desktop": "electron scripts/verify-agent-desktop.mjs",
     "verify:elastic": "node scripts/verify-elastic.cjs",

@@ -1,0 +1,1683 @@
+[
+  {
+    "p_idx": 2,
+    "p_id": "paper-4eda38cc-0563-44a4-9ee5-bf77d347d0aa",
+    "p_file": "Cai 等 - 2023 - Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarizat.pdf",
+    "p_title": "Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarization by stress annealing",
+    "m_id": "fe75co8b10si3c3p1-sa",
+    "m_name": "Fe75Co8B10Si3C3P1 应力退火高磁极化非晶合金薄带 (Co8-SA)",
+    "comp": "Fe75Co8B10Si3C3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.1,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Js",
+        1.71,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 2,
+    "p_id": "paper-4eda38cc-0563-44a4-9ee5-bf77d347d0aa",
+    "p_file": "Cai 等 - 2023 - Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarizat.pdf",
+    "p_title": "Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarization by stress annealing",
+    "m_id": "fe83b10si3c3p1-sa",
+    "m_name": "Fe83B10Si3C3P1 无钴基准应力退火非晶合金薄带 (Co0-SA)",
+    "comp": "Fe83B10Si3C3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Js",
+        1.66,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 2,
+    "p_id": "paper-4eda38cc-0563-44a4-9ee5-bf77d347d0aa",
+    "p_file": "Cai 等 - 2023 - Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarizat.pdf",
+    "p_title": "Improvement of soft-magnetic properties for Fe-based amorphous alloys with high saturation polarization by stress annealing",
+    "m_id": "fe67co16b10si3c3p1-sa",
+    "m_name": "Fe67Co16B10Si3C3P1 高钴高饱和非晶合金薄带 (Co16-SA)",
+    "comp": "Fe67Co16B10Si3C3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Js",
+        1.75,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 4,
+    "p_id": "paper-64cf5e14-dcc2-4527-8cdc-ef3016921568",
+    "p_file": "Gautam 等 - 2025 - Ultra-low core loss in Fe-enriched soft magnetic ribbons enabled by nanostructure and high-frequency.pdf",
+    "p_title": "Ultra-low core loss in Fe-enriched soft magnetic ribbons enabled by nanostructure and high-frequency domain engineering",
+    "m_id": "fe84-8si0-5b9-4p3-4cu0-8c1-1-lcl",
+    "m_name": "Fe84.8Si0.5B9.4P3.4Cu0.8C1.1 超低铁损微结构工程软磁薄带 (L-CL)",
+    "comp": "Fe84.8Si0.5B9.4P3.4Cu0.8C1.1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.0,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 μ0Ms",
+        1.53,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 4,
+    "p_id": "paper-64cf5e14-dcc2-4527-8cdc-ef3016921568",
+    "p_file": "Gautam 等 - 2025 - Ultra-low core loss in Fe-enriched soft magnetic ribbons enabled by nanostructure and high-frequency.pdf",
+    "p_title": "Ultra-low core loss in Fe-enriched soft magnetic ribbons enabled by nanostructure and high-frequency domain engineering",
+    "m_id": "fe84-8si0-5b9-4p3-4cu0-8c1-1-as",
+    "m_name": "Fe84.8Si0.5B9.4P3.4Cu0.8C1.1 快淬非晶初始态合金薄带 (As-spun)",
+    "comp": "Fe84.8Si0.5B9.4P3.4Cu0.8C1.1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        5.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 μ0Ms",
+        1.76,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "bshc-fe85si2b8p4cu1",
+    "m_name": "Fe85Si2B8P4Cu1 高磁感低铁损纳米晶软磁合金",
+    "comp": "Fe85Si2B8P4Cu1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        6.1,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.85,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "bshc-fe83p3si4b8p4cu0p7",
+    "m_name": "Fe83.3Si4B8P4Cu0.7 (NANOMET) 纳米晶合金",
+    "comp": "Fe83.3Si4B8P4Cu0.7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.6,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.8,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "bshc-fe73p5si13p5b9nb3cu1",
+    "m_name": "Fe73.5Si13.5B9Nb3Cu1 (FINEMET) 纳米晶软磁合金对照样",
+    "comp": "Fe73.5Si13.5B9Nb3Cu1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        0.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.24,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "bshc-fe90zr7b3",
+    "m_name": "Fe90Zr7B3 (NANOPERM) 纳米晶软磁合金对照样",
+    "comp": "Fe90Zr7B3",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        5.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.7,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "bshc-fe78si9b13",
+    "m_name": "Fe78Si9B13 (Metglas 2605) 典型非晶合金薄带对照样",
+    "comp": "Fe78Si9B13",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.6,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.54,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 8,
+    "p_id": "paper-437aeb5f-6bbb-4986-8b3e-d9002b6b5fe4",
+    "p_file": "Kubota 等 - 2011 - Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800.pdf",
+    "p_title": "Low core loss of Fe85Si2B8P4Cu1 nanocrystalline alloys with high Bs and B800",
+    "m_id": "fe84p3si4b8p3cu0p7",
+    "m_name": "Fe84.3Si4B8P3Cu0.7 超低矫顽力高磁感纳米晶合金",
+    "comp": "Fe84.3Si4B8P3Cu0.7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.6,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.84,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 9,
+    "p_id": "paper-fe1ba232-5e40-48fe-9482-4608fad9842a",
+    "p_file": "Li 等 - 2019 - Fe-based bulk metallic glasses Glass formation, fabrication, properties and applications.pdf",
+    "p_title": "Fe-based bulk metallic glasses: Glass formation, fabrication, properties and applications",
+    "m_id": "fe76p5si0-3b0-5c0-2-19-bmg",
+    "m_name": "Fe76P5(Si0.3B0.5C0.2)19 高形成能力软磁块体非晶合金 (3 mm)",
+    "comp": "Fe76P5Si5.7B9.5C3.8",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.51,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 10,
+    "p_id": "paper-6c7db43e-5b93-4a7a-920f-e55fa66d9df6",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop 1.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "legacy-material-2",
+    "m_name": "Fe80.3Si4B13Cu1.7Nb1 纳米晶合金 (Cu1.7Nb1)",
+    "comp": "Fe80.3Si4B13Cu1.7Nb1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        11.9,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.69,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 10,
+    "p_id": "paper-6c7db43e-5b93-4a7a-920f-e55fa66d9df6",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop 1.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "fe81-3si4b13cu1-7-x0",
+    "m_name": "Fe81.3Si4B13Cu1.7 高铜无铌纳米晶前驱合金 (Cu1.7Nb0)",
+    "comp": "Fe81.3Si4B13Cu1.7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        7.1,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.77,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 10,
+    "p_id": "paper-6c7db43e-5b93-4a7a-920f-e55fa66d9df6",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop 1.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "fe77-3si4b13cu1-7nb4",
+    "m_name": "Fe77.3Si4B13Cu1.7Nb4 超细晶粒超软磁合金 (Cu1.7Nb4)",
+    "comp": "Fe77.3Si4B13Cu1.7Nb4",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.9,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.42,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 11,
+    "p_id": "paper-328b2df6-9bfe-4a54-8d14-ade1a3839a3d",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "legacy-material-1",
+    "m_name": "Fe81.3Si4B13Cu1.7 纳米晶合金 (Cu1.7Nb0)",
+    "comp": "Fe81.3Si4B13Cu1.7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        7.1,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.77,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 11,
+    "p_id": "paper-328b2df6-9bfe-4a54-8d14-ade1a3839a3d",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "fe80-3si4b13cu1-7nb1",
+    "m_name": "Fe80.3Si4B13Cu1.7Nb1 纳米晶合金 (Cu1.7Nb1)",
+    "comp": "Fe80.3Si4B13Cu1.7Nb1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        11.9,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.69,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 11,
+    "p_id": "paper-328b2df6-9bfe-4a54-8d14-ade1a3839a3d",
+    "p_file": "Li 等 - 2021 - Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanop.pdf",
+    "p_title": "Formation and crystallization behavior of Fe-based amorphous precursors with pre-existing α-Fe nanoparticles—Structure and magnetic properties of high-Cu-content Fe-Si-B-Cu-Nb nanocrystalline alloys",
+    "m_id": "fe77-3si4b13cu1-7nb4",
+    "m_name": "Fe77.3Si4B13Cu1.7Nb4 超细晶超软磁纳米晶合金 (Cu1.7Nb4)",
+    "comp": "Fe77.3Si4B13Cu1.7Nb4",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.9,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.42,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 12,
+    "p_id": "paper-09a223da-65d2-4630-946e-66c53652bc7b",
+    "p_file": "Li 等 - 2023 - Exceptionally High Saturation Magnetic Flux Density and Ultralow Coercivity via an Amorphous–Nanocry.pdf",
+    "p_title": "Exceptionally High Saturation Magnetic Flux Density and Ultralow Coercivity via an Amorphous–Nanocrystalline Transitional Microstructure in an FeCo‐Based Alloy",
+    "m_id": "legacy-material-1",
+    "m_name": "(Fe0.7Co0.3)87.5B11.5Cu1 非晶-纳米晶过渡态高磁感合金",
+    "comp": "(Fe0.7Co0.3)87.5B11.5Cu1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        3.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.95,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 12,
+    "p_id": "paper-09a223da-65d2-4630-946e-66c53652bc7b",
+    "p_file": "Li 等 - 2023 - Exceptionally High Saturation Magnetic Flux Density and Ultralow Coercivity via an Amorphous–Nanocry.pdf",
+    "p_title": "Exceptionally High Saturation Magnetic Flux Density and Ultralow Coercivity via an Amorphous–Nanocrystalline Transitional Microstructure in an FeCo‐Based Alloy",
+    "m_id": "fe-co-b-cu-as-spun",
+    "m_name": "(Fe0.7Co0.3)87.5B11.5Cu1 快淬非晶初始态合金薄带",
+    "comp": "(Fe0.7Co0.3)87.5B11.5Cu1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        18.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.83,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 14,
+    "p_id": "paper-c07734fb-f11c-43cf-84d3-3fd1ec98dd67",
+    "p_file": "Lin 等 - 2007 - Fe–Y–M–B (M = Nb or Ta) bulk metallic glasses with ultrahigh strength and good soft magnetic propert.pdf",
+    "p_title": "Fe–Y–M–B (M = Nb or Ta) bulk metallic glasses with ultrahigh strength and good soft magnetic properties",
+    "m_id": "fe72y4nb2b22-bmg",
+    "m_name": "Fe72Y4Nb2B22 超高强软磁块体金属玻璃棒材",
+    "comp": "Fe72Y4Nb2B22",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Js",
+        0.98,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 18,
+    "p_id": "paper-8cd0d5d3-35b0-4c8d-995d-8937d5cf51ae",
+    "p_file": "Prabhu 等 - 2012 - Effect of addition of aluminum on the evolution of microstructure in HITPERM class Fe44Co44Zr7B4Cu1.pdf",
+    "p_title": "Effect of addition of aluminum on the evolution of microstructure in HITPERM class Fe44Co44Zr7B4Cu1 alloy",
+    "m_id": "fe43co43al2zr7b4cu1-hitperm",
+    "m_name": "Fe43Co43Al2Zr7B4Cu1 (2 at% Al) 掺铝HITPERM高温纳米晶合金",
+    "comp": "Fe43Co43Al2Zr7B4Cu1",
+    "hc": [
+      [
+        "矫顽力 Hc (600 °C 1 h 退火)",
+        12.5,
+        "A/m",
+        "600 °C, 1 h"
+      ]
+    ],
+    "bs": [
+      [
+        "室温饱和磁极化强度 Ms",
+        1.72,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 21,
+    "p_id": "paper-9118f896-6c1c-4b46-aed7-edec90cae99f",
+    "p_file": "Shen和Inoue - 2002 - Bulk Glassy Fe-Ga-P-C-B-Si Alloys with High Glass-Forming Ability, High Saturation Magnetization and 1.pdf",
+    "p_title": "Bulk Glassy Fe-Ga-P-C-B-Si Alloys with High Glass-Forming Ability, High Saturation Magnetization and Good Soft Magnetic Properties",
+    "m_id": "fe77ga3p9-5c4b4si2-5-rod",
+    "m_name": "Fe77Ga3P9.5C4B4Si2.5 软磁大块金属玻璃棒材 (3 at% Ga)",
+    "comp": "Fe77Ga3P9.5C4B4Si2.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.25,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.36,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 21,
+    "p_id": "paper-9118f896-6c1c-4b46-aed7-edec90cae99f",
+    "p_file": "Shen和Inoue - 2002 - Bulk Glassy Fe-Ga-P-C-B-Si Alloys with High Glass-Forming Ability, High Saturation Magnetization and 1.pdf",
+    "p_title": "Bulk Glassy Fe-Ga-P-C-B-Si Alloys with High Glass-Forming Ability, High Saturation Magnetization and Good Soft Magnetic Properties",
+    "m_id": "fe78ga2p9-5c4b4si2-5-rod",
+    "m_name": "Fe78Ga2P9.5C4B4Si2.5 高磁感大块金属玻璃棒材 (2 at% Ga)",
+    "comp": "Fe78Ga2P9.5C4B4Si2.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        3.35,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.4,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 22,
+    "p_id": "paper-ea1a8247-99bc-48c5-afba-8577170ec126",
+    "p_file": "Shi 等 - 2021 - The complementary effects of Fe and metalloids on the saturation magnetization of Fe-based amorphous.pdf",
+    "p_title": "The complementary effects of Fe and metalloids on the saturation magnetization of Fe-based amorphous alloys",
+    "m_id": "fe83si2b11c2p2-opt",
+    "m_name": "Fe83Si2B11C2P2 互补合金化高磁感非晶薄带",
+    "comp": "Fe83Si2B11C2P2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.71,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 24,
+    "p_id": "paper-df972fa5-e8d2-4531-81e0-7149ca0ceafd",
+    "p_file": "Thorsson 等 - 2022 - Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric moto 1.pdf",
+    "p_title": "Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric motor rotor with record dimensions",
+    "m_id": "fe-si-cr-b-c-slm-rotor",
+    "m_name": "Fe70.8Si11.7Cr5.6B9.9C2.0 激光选区熔化(SLM)非晶电机转子",
+    "comp": "Fe70.8Si11.7Cr5.6B9.9C2.0",
+    "hc": [
+      [
+        "面内矫顽力 Hc (in-plane)",
+        510.0,
+        "A/m",
+        ""
+      ],
+      [
+        "面外矫顽力 Hc (out-of-plane)",
+        680.0,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.22,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 24,
+    "p_id": "paper-df972fa5-e8d2-4531-81e0-7149ca0ceafd",
+    "p_file": "Thorsson 等 - 2022 - Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric moto 1.pdf",
+    "p_title": "Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric motor rotor with record dimensions",
+    "m_id": "fe-si-cr-b-c-slm-powder",
+    "m_name": "Fe70.8Si11.7Cr5.6B9.9C2.0 气雾化非晶合金前驱体粉末",
+    "comp": "Fe70.8Si11.7Cr5.6B9.9C2.0",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        61.0,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.22,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 24,
+    "p_id": "paper-df972fa5-e8d2-4531-81e0-7149ca0ceafd",
+    "p_file": "Thorsson 等 - 2022 - Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric moto 1.pdf",
+    "p_title": "Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric motor rotor with record dimensions",
+    "m_id": "fe-si-cr-b-c-slm-ribbon",
+    "m_name": "Fe70.8Si11.7Cr5.6B9.9C2.0 单辊急冷非晶薄带对照基准",
+    "comp": "Fe70.8Si11.7Cr5.6B9.9C2.0",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        50.0,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.24,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 25,
+    "p_id": "paper-7e8fccd6-e73a-4b03-91ea-3d04a9417ecd",
+    "p_file": "Thorsson 等 - 2022 - Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric moto.pdf",
+    "p_title": "Selective laser melting of a Fe-Si-Cr-B-C-based complex-shaped amorphous soft-magnetic electric motor rotor with record dimensions",
+    "m_id": "fe-si-cr-b-c-slm-bulk",
+    "m_name": "Fe70.8Si11.7Cr5.6B9.9C2.0 增材制造块体电机转子材料 (P25)",
+    "comp": "Fe70.8Si11.7Cr5.6B9.9C2.0",
+    "hc": [
+      [
+        "面内矫顽力 Hc",
+        510.0,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁化强度 Ms",
+        1.22,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 30,
+    "p_id": "paper-968558b8-3980-4479-b1d1-5eeb719e476b",
+    "p_file": "Xu 等 - 2018 - Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of Fe.pdf",
+    "p_title": "Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of FeSiB amorphous alloys",
+    "m_id": "legacy-material-2",
+    "m_name": "Fe77.5Si9.5B11Cr2 (2 at% Cr) 优异软磁耐蚀非晶合金薄带",
+    "comp": "Fe77.5Si9.5B11Cr2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.25,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.44,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 30,
+    "p_id": "paper-968558b8-3980-4479-b1d1-5eeb719e476b",
+    "p_file": "Xu 等 - 2018 - Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of Fe.pdf",
+    "p_title": "Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of FeSiB amorphous alloys",
+    "m_id": "fe79-5si9-5b11-x0",
+    "m_name": "Fe79.5Si9.5B11 (0 at% Cr) 无Cr基准非晶合金薄带",
+    "comp": "Fe79.5Si9.5B11",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.46,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.63,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 30,
+    "p_id": "paper-968558b8-3980-4479-b1d1-5eeb719e476b",
+    "p_file": "Xu 等 - 2018 - Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of Fe.pdf",
+    "p_title": "Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of FeSiB amorphous alloys",
+    "m_id": "fe76-5si9-5b11cr3-x3",
+    "m_name": "Fe76.5Si9.5B11Cr3 (3 at% Cr) 兼顾型非晶合金薄带",
+    "comp": "Fe76.5Si9.5B11Cr3",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.3,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.35,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 30,
+    "p_id": "paper-968558b8-3980-4479-b1d1-5eeb719e476b",
+    "p_file": "Xu 等 - 2018 - Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of Fe.pdf",
+    "p_title": "Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of FeSiB amorphous alloys",
+    "m_id": "fe74-5si9-5b11cr5-x5",
+    "m_name": "Fe74.5Si9.5B11Cr5 (5 at% Cr) 高耐蚀自钝化非晶合金薄带",
+    "comp": "Fe74.5Si9.5B11Cr5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.02,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.19,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 30,
+    "p_id": "paper-968558b8-3980-4479-b1d1-5eeb719e476b",
+    "p_file": "Xu 等 - 2018 - Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of Fe.pdf",
+    "p_title": "Effects of Cr addition on thermal stability, soft magnetic properties and corrosion resistance of FeSiB amorphous alloys",
+    "m_id": "fe72-5si9-5b11cr7-x7",
+    "m_name": "Fe72.5Si9.5B11Cr7 (7 at% Cr) 超强耐蚀宽钝化区非晶合金薄带",
+    "comp": "Fe72.5Si9.5B11Cr7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.97,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Is",
+        1.01,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 32,
+    "p_id": "paper-13f49a8e-126b-4ed9-8174-8e7a5395ab2f",
+    "p_file": "Zhang 等 - 2024 - Novel Fe–B–P–C–Cu–Co amorphousnanocrystalline alloys with excellent comprehensive performance via C.pdf",
+    "p_title": "Novel Fe–B–P–C–Cu–Co amorphous/nanocrystalline alloys with excellent comprehensive performance via Co substitution for Fe",
+    "m_id": "fe80-5b12p2c1cu0-5co4-co4",
+    "m_name": "Fe80.5Co4B12P2C1Cu0.5 高饱和低电阻率纳米晶合金 (Co4)",
+    "comp": "Fe80.5Co4B12P2C1Cu0.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        7.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.81,
+        "T",
+        "Ta = 653 K"
+      ]
+    ]
+  },
+  {
+    "p_idx": 32,
+    "p_id": "paper-13f49a8e-126b-4ed9-8174-8e7a5395ab2f",
+    "p_file": "Zhang 等 - 2024 - Novel Fe–B–P–C–Cu–Co amorphousnanocrystalline alloys with excellent comprehensive performance via C.pdf",
+    "p_title": "Novel Fe–B–P–C–Cu–Co amorphous/nanocrystalline alloys with excellent comprehensive performance via Co substitution for Fe",
+    "m_id": "fe76-5b12p2c1cu0-5co8-co8",
+    "m_name": "Fe76.5Co8B12P2C1Cu0.5 超高磁感纳米晶合金薄带 (Co8)",
+    "comp": "Fe76.5Co8B12P2C1Cu0.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        14.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.92,
+        "T",
+        "Ta = 653 K"
+      ]
+    ]
+  },
+  {
+    "p_idx": 32,
+    "p_id": "paper-13f49a8e-126b-4ed9-8174-8e7a5395ab2f",
+    "p_file": "Zhang 等 - 2024 - Novel Fe–B–P–C–Cu–Co amorphousnanocrystalline alloys with excellent comprehensive performance via C.pdf",
+    "p_title": "Novel Fe–B–P–C–Cu–Co amorphous/nanocrystalline alloys with excellent comprehensive performance via Co substitution for Fe",
+    "m_id": "fe84-5b12p2c1cu0-5-co0",
+    "m_name": "Fe84.5B12P2C1Cu0.5 无钴基准纳米晶软磁合金 (Co0)",
+    "comp": "Fe84.5B12P2C1Cu0.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        5.6,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁极化强度 Ms",
+        1.7,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 33,
+    "p_id": "paper-eca7bcd2-4a31-4ac1-b00c-82dce959a066",
+    "p_file": "Zhang 等 - 2024 - Tailoring microstructure in a soft-magnetic Fe-based amorphous-nanocrystalline alloy for high resist.pdf",
+    "p_title": "Tailoring microstructure in a soft-magnetic Fe-based amorphous-nanocrystalline alloy for high resistivity according to electrical percolation threshold",
+    "m_id": "fe82-5co2b12p2c1cu0-5-opt",
+    "m_name": "Fe82.5Co2B12P2C1Cu0.5 电学渗流调控高电阻率纳米晶合金薄带",
+    "comp": "Fe82.5Co2B12P2C1Cu0.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        3.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁化强度 Ms",
+        1.81,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 36,
+    "p_id": "paper-3e557fb1-c5ce-408f-817d-b778f2dd88e5",
+    "p_file": "Lashgari 等 - 2014 - Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous.pdf",
+    "p_title": "Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous/nanocrystalline alloys: A review study",
+    "m_id": "finemet-fe73-5",
+    "m_name": "FINEMET 典型合金 (Fe73.5Cu1Nb3Si13.5B9)",
+    "comp": "Fe73.5Cu1Nb3Si13.5B9",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        0.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.2,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 36,
+    "p_id": "paper-3e557fb1-c5ce-408f-817d-b778f2dd88e5",
+    "p_file": "Lashgari 等 - 2014 - Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous.pdf",
+    "p_title": "Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous/nanocrystalline alloys: A review study",
+    "m_id": "finemet-fe73-5-si15-5",
+    "m_name": "FINEMET 高硅变体合金 (Fe73.5Cu1Nb3Si15.5B7)",
+    "comp": "Fe73.5Cu1Nb3Si15.5B7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        0.4,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.2,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 36,
+    "p_id": "paper-3e557fb1-c5ce-408f-817d-b778f2dd88e5",
+    "p_file": "Lashgari 等 - 2014 - Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous.pdf",
+    "p_title": "Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous/nanocrystalline alloys: A review study",
+    "m_id": "nanoperm-fe86",
+    "m_name": "NANOPERM 典型合金 (Fe86Cu1Zr7B6)",
+    "comp": "Fe86Cu1Zr7B6",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        3.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.5,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 36,
+    "p_id": "paper-3e557fb1-c5ce-408f-817d-b778f2dd88e5",
+    "p_file": "Lashgari 等 - 2014 - Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous.pdf",
+    "p_title": "Composition dependence of the microstructure and soft magnetic properties of Fe-based amorphous/nanocrystalline alloys: A review study",
+    "m_id": "nanomet-fe84-8",
+    "m_name": "NANOMET 原型合金 (Fe84.8B8P6Cu1.2)",
+    "comp": "Fe84.8B8P6Cu1.2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        9.4,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.78,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 37,
+    "p_id": "paper-22781bea-3554-49e8-a498-6e8e1bf74277",
+    "p_file": "Li 等 - 2017 - Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations.pdf",
+    "p_title": "Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations",
+    "m_id": "fe81-3-si4-b13-cu1-7",
+    "m_name": "Fe81.3Si4B13Cu1.7 高铜纳米晶软磁合金薄带",
+    "comp": "Fe81.3Si4B13Cu1.7",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.8,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.8,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 37,
+    "p_id": "paper-22781bea-3554-49e8-a498-6e8e1bf74277",
+    "p_file": "Li 等 - 2017 - Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations.pdf",
+    "p_title": "Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations",
+    "m_id": "fe81-si4-b13-cu2-0",
+    "m_name": "Fe81Si4B13Cu2.0 超高铜纳米晶合金薄带 (2.0 at% Cu)",
+    "comp": "Fe81Si4B13Cu2.0",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.79,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 37,
+    "p_id": "paper-22781bea-3554-49e8-a498-6e8e1bf74277",
+    "p_file": "Li 等 - 2017 - Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations.pdf",
+    "p_title": "Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations",
+    "m_id": "fe81-7-si4-b13-cu1-3",
+    "m_name": "Fe81.7Si4B13Cu1.3 较低铜对照合金薄带 (1.3 at% Cu)",
+    "comp": "Fe81.7Si4B13Cu1.3",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        12.6,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.76,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 37,
+    "p_id": "paper-22781bea-3554-49e8-a498-6e8e1bf74277",
+    "p_file": "Li 等 - 2017 - Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations.pdf",
+    "p_title": "Soft magnetic Fe-Si-B-Cu nanocrystalline alloys with high Cu concentrations",
+    "m_id": "bshc-fe81p5si4b13cu1p5",
+    "m_name": "Fe81.5Si4B13Cu1.5 中铜纳米晶合金薄带 (1.5 at% Cu)",
+    "comp": "Fe81.5Si4B13Cu1.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        6.5,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.78,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 38,
+    "p_id": "paper-1f488b8f-1edc-4223-9871-f754002c4f17",
+    "p_file": "Li 等 - 2021 - Design of Fe-based nanocrystalline alloys with superior magnetization and manufacturability.pdf",
+    "p_title": "Design of Fe-based nanocrystalline alloys with superior magnetization and manufacturability",
+    "m_id": "fe85-5b10si2p2c0-5",
+    "m_name": "Fe85.5B10Si2P2C0.5 贫合金化高磁通纳米晶合金 (HBNA)",
+    "comp": "Fe85.5B10Si2P2C0.5",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        5.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.83,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 42,
+    "p_id": "paper-3554c8be-bb41-4b18-8b72-0d9b3d2c1c67",
+    "p_file": "Luo 等 - 2022 - Excellent magnetic softness-magnetization synergy and suppressed defect activation in soft magnetic.pdf",
+    "p_title": "Excellent magnetic softness-magnetization synergy and suppressed defect activation in soft magnetic amorphous alloys by magnetic field annealing",
+    "m_id": "fe66-65co16si2b14cu1-35-fa",
+    "m_name": "Fe66.65Co16Si2B14Cu1.35 纵向磁场退火非晶带材 (FA)",
+    "comp": "Fe66.65Co16Si2B14Cu1.35",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.2,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.86,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 42,
+    "p_id": "paper-3554c8be-bb41-4b18-8b72-0d9b3d2c1c67",
+    "p_file": "Luo 等 - 2022 - Excellent magnetic softness-magnetization synergy and suppressed defect activation in soft magnetic.pdf",
+    "p_title": "Excellent magnetic softness-magnetization synergy and suppressed defect activation in soft magnetic amorphous alloys by magnetic field annealing",
+    "m_id": "fe82-65si2b14cu1-35-fa",
+    "m_name": "Fe82.65Si2B14Cu1.35 无钴基准磁场退火非晶合金薄带",
+    "comp": "Fe82.65Si2B14Cu1.35",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.1,
+        "A/m",
+        ""
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.72,
+        "T",
+        ""
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "fe86b5c8p1-amorphous",
+    "m_name": "Fe86B5C8P1 超高铁含量非晶合金",
+    "comp": "Fe86B5C8P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.8,
+        "A/m",
+        "纵向磁场退火；表1脚注a同一样品态"
+      ],
+      [
+        "矫顽力 Hc",
+        24.7,
+        "A/m",
+        "自由无场退火状态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.71,
+        "T",
+        "纵向磁场退火；表1脚注a同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "fe83b10c3si3p1-amorphous",
+    "m_name": "Fe83B10C3Si3P1 高磁感非晶合金",
+    "comp": "Fe83B10C3Si3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        1.5,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.71,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "fe84b9c3si3p1-amorphous",
+    "m_name": "Fe84B9C3Si3P1 非晶合金",
+    "comp": "Fe84B9C3Si3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.2,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.65,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe83b9c3si4p1",
+    "m_name": "Fe83B9C3Si4P1",
+    "comp": "Fe83B9C3Si4P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        6.2,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.64,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe83b10c2si3p2",
+    "m_name": "Fe83B10C2Si3P2",
+    "comp": "Fe83B10C2Si3P2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        5.5,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.66,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe83b10c2si4p1",
+    "m_name": "Fe83B10C2Si4P1",
+    "comp": "Fe83B10C2Si4P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.5,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.64,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe84b10c2si2p2",
+    "m_name": "Fe84B10C2Si2P2",
+    "comp": "Fe84B10C2Si2P2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        4.5,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.64,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe84b10c2si3p1",
+    "m_name": "Fe84B10C2Si3P1",
+    "comp": "Fe84B10C2Si3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        2.9,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.64,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 43,
+    "p_id": "paper-23af85a3-d6f4-4de0-964a-fa17e3a57eee",
+    "p_file": "Shi和Yao - 2020 - Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content.pdf",
+    "p_title": "Composition design for Fe-based soft magnetic amorphous and nanocrystalline alloys with high Fe content",
+    "m_id": "bshc-fe85b8c3si3p1",
+    "m_name": "Fe85B8C3Si3P1",
+    "comp": "Fe85B8C3Si3P1",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        7.2,
+        "A/m",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁感应强度 Bs",
+        1.65,
+        "T",
+        "测磁前近居里温度退火；具体温度/时间原文此表未给；原表1同一样品态"
+      ]
+    ]
+  },
+  {
+    "p_idx": 46,
+    "p_id": "paper-2473e8b1-f7d4-47a2-a16e-a539a6da8eab",
+    "p_file": "11脉冲放电法制备Fe基非晶合金及性能研究-刘车凯博士论文.pdf",
+    "p_title": "脉冲放电法制备Fe基非晶合金粉末及性能研究",
+    "m_id": "Fe85P9B2C2Si2-ribbon",
+    "m_name": "Fe85P9B2C2Si2 非晶合金薄带",
+    "comp": "Fe85P9B2C2Si2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        11.1,
+        "A/m",
+        "直流 B-H 回线测量仪，室温 295 K，磁场强度 800 A/m"
+      ],
+      [
+        "矫顽力 Hc",
+        4.4,
+        "A/m",
+        "598 K 保温 10 min，室温测试"
+      ],
+      [
+        "矫顽力 Hc",
+        2.4,
+        "A/m",
+        "638 K (Tx-40K) 保温 10 min，内应力充分消除"
+      ],
+      [
+        "矫顽力 Hc",
+        5.8,
+        "A/m",
+        "658 K 保温 10 min，室温测试"
+      ],
+      [
+        "矫顽力 Hc",
+        18.6,
+        "A/m",
+        "678 K 保温 10 min，发生微晶化"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁化强度 Ms",
+        1.63,
+        "T",
+        "振动样品磁强计 VSM，室温 295 K，外加场 20000 Oe"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.64,
+        "T",
+        "真空封管，598 K 保温 10 min 随炉冷却"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.65,
+        "T",
+        "638 K (Tx-40K) 保温 10 min 随炉冷却"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.62,
+        "T",
+        "658 K 保温 10 min 随炉冷却"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.51,
+        "T",
+        "678 K (Tx) 保温 10 min 随炉冷却"
+      ]
+    ]
+  },
+  {
+    "p_idx": 46,
+    "p_id": "paper-2473e8b1-f7d4-47a2-a16e-a539a6da8eab",
+    "p_file": "11脉冲放电法制备Fe基非晶合金及性能研究-刘车凯博士论文.pdf",
+    "p_title": "脉冲放电法制备Fe基非晶合金粉末及性能研究",
+    "m_id": "Fe85B9P2C2Si2-ribbon",
+    "m_name": "Fe85B9P2C2Si2 非晶合金薄带",
+    "comp": "Fe85B9P2C2Si2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        12.8,
+        "A/m",
+        "直流 B-H 回线测量仪，室温 295 K"
+      ],
+      [
+        "矫顽力 Hc",
+        5.8,
+        "A/m",
+        "603 K 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        4.1,
+        "A/m",
+        "643 K (Tx-40K) 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        7.1,
+        "A/m",
+        "663 K 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        13.1,
+        "A/m",
+        "683 K 保温 10 min"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁化强度 Ms",
+        1.65,
+        "T",
+        "VSM，室温 295 K"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.66,
+        "T",
+        "603 K 保温 10 min 随炉冷却"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.67,
+        "T",
+        "643 K (Tx-40K) 保温 10 min"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.62,
+        "T",
+        "663 K 保温 10 min"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.53,
+        "T",
+        "683 K 保温 10 min"
+      ]
+    ]
+  },
+  {
+    "p_idx": 46,
+    "p_id": "paper-2473e8b1-f7d4-47a2-a16e-a539a6da8eab",
+    "p_file": "11脉冲放电法制备Fe基非晶合金及性能研究-刘车凯博士论文.pdf",
+    "p_title": "脉冲放电法制备Fe基非晶合金粉末及性能研究",
+    "m_id": "Fe83C11B2P2Si2-ribbon",
+    "m_name": "Fe83C11B2P2Si2 非晶合金薄带",
+    "comp": "Fe83C11B2P2Si2",
+    "hc": [
+      [
+        "矫顽力 Hc",
+        20.8,
+        "A/m",
+        "直流 B-H 仪，室温 295 K"
+      ],
+      [
+        "矫顽力 Hc",
+        12.3,
+        "A/m",
+        "514 K 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        9.3,
+        "A/m",
+        "554 K 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        7.1,
+        "A/m",
+        "574 K 保温 10 min"
+      ],
+      [
+        "矫顽力 Hc",
+        22.7,
+        "A/m",
+        "594 K 保温 10 min"
+      ]
+    ],
+    "bs": [
+      [
+        "饱和磁化强度 Ms",
+        1.71,
+        "T",
+        "VSM，室温 295 K"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.72,
+        "T",
+        "514 K 保温 10 min"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.73,
+        "T",
+        "554 K (Tx-40K) 保温 10 min"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.59,
+        "T",
+        "574 K 保温 10 min"
+      ],
+      [
+        "饱和磁化强度 Ms",
+        1.48,
+        "T",
+        "594 K 保温 10 min"
+      ]
+    ]
+  }
+]

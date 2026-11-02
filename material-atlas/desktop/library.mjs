@@ -101,7 +101,13 @@ export class LocalLibrary {
   getSetting(key) { return this.data.settings[key]; }
   async setSetting(key, value) {
     const previousGroups=key==='collections'?structuredClone(this.data.settings.collections||[]):null;
-    if (!['collections', 'notes', 'mode', 'journalMetrics', 'comparisonSelection', 'comparisonState', 'graphLayout', 'chartPreferences', 'graphPreferences', 'graphAssociations', 'themePreferences', 'readerState', 'readerDrafts', 'vocabulary', 'translationCache', 'translationPreferences'].includes(key)) throw new Error('不支持的文献库设置。');
+    const moduleData=typeof key==='string'&&/^module:[a-z][a-z0-9-]{0,63}$/.test(key);
+    if (!moduleData&&!['workspaceModules','collections', 'notes', 'mode', 'journalMetrics', 'comparisonSelection', 'comparisonState', 'graphLayout', 'chartPreferences', 'graphPreferences', 'graphAssociations', 'themePreferences', 'readerState', 'readerDrafts', 'vocabulary', 'translationCache', 'translationPreferences'].includes(key)) throw new Error('不支持的文献库设置。');
+    if(key==='workspaceModules'){
+      if(!value||value.version!==1||!Array.isArray(value.disabled)||value.disabled.length>256||value.disabled.some(id=>typeof id!=='string'||!/^[a-z][a-z0-9-]{0,63}$/.test(id)))throw Error('功能管理设置无效。');
+      value={version:1,disabled:[...new Set(value.disabled)]};
+    }
+    if(moduleData){const text=JSON.stringify(value);if(typeof text!=='string'||Buffer.byteLength(text)>5*1024*1024)throw Error('模块数据格式无效或超过 5 MB，请使用独立存储服务。');value=JSON.parse(text);}
     if(key==='vocabulary')value=cleanVocabulary(value);
     if(key==='translationCache')value=cleanTranslationCache(value);
     if(key==='translationPreferences')value=cleanTranslationPreferences(value);

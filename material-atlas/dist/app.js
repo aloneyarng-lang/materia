@@ -6,6 +6,8 @@ import {createGroupActions} from './group-actions.js';
 import {activityHTML} from './import-activity.js';
 import {createResearchCanvas} from './research-canvas.js';
 import {createMaterialList} from './material-list.js';
+import {createWorkspaceModules} from './workspace-modules.js';
+import {createWorkspaceChrome} from './workspace-chrome.js';
 import { paperMaterials, paperMeasurements, normalizePaperMaterials } from './materials.js';
 import { relatedPaperGroups, relatedPaperSections } from './related-papers.js';
 import {icon,hydrateIcons} from './icons.js';
@@ -44,7 +46,7 @@ const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
 const emptyFilters = () => ({ tags: [], excludeTags: [], parameterName: '', parameterUnit: '*', tagMode: 'all', journal: '', author: '', institution: '', yearFrom: '', yearTo: '', minIF: '', maxIF: '', impactYear: '', hasNotes: false, onlyFavorites: false, onlyRelated: false });
 const state = { papers: [], collections: [], notes: {}, compareIds: new Set(), hiddenIds: new Set(), hiddenTagNodes: new Set(), focusGraph: true, leftPanelOpen: false, detailOpen: true, graphPreferences: {...GRAPH_DEFAULTS}, associations: [], journalMetrics: [], desktopInfo: null, searchScope: 'all', readingStatus: '', filters: emptyFilters(), showEdges: true, showLabels: true, mode: 'own', nav: 'all', collection: '', query: '', tag: '', year: '', sort: 'newest', view: 'graph', selected: '', listLimit: 100, ready: false, pendingFiles: [], storageError: false };
 let modalContext = '';
-let agentController, researchCanvas, vocabularyController;
+let agentController, researchCanvas, vocabularyController, workspaceModules, workspaceChrome;
 let batch, comparison, materialList, performanceEditor, bulkEditor, paperActions, parameterFinder, associationController, themeController, reader;
 let layoutTimer, graphPreferenceTimer, switchingLibrary = false;
 let pendingRemovalIds = [], removalBusy = false, lastRemoval = null;
@@ -98,9 +100,11 @@ const notes = createNotesController({
 
 function render() {
   paperActions?.close();
+  const standaloneView=!workspaceModules?.current()?.libraryView;
+  document.body.classList.toggle('module-full-width',standaloneView);
   document.body.classList.toggle('map-focus', state.focusGraph);
   document.body.classList.toggle('sidebar-collapsed',!state.leftPanelOpen);document.body.classList.toggle('detail-collapsed',!state.detailOpen);
-  $('#toggle-sidebar').setAttribute('aria-expanded',String(state.leftPanelOpen));$('#toggle-detail').setAttribute('aria-expanded',String(state.detailOpen));$('#toggle-local').classList.toggle('active',state.graphPreferences.localMode);$('#local-scope-label').hidden=!state.graphPreferences.localMode;
+  $('#toggle-sidebar').setAttribute('aria-expanded',String(state.leftPanelOpen));$('#workspace-details').setAttribute('aria-expanded',String(state.detailOpen));$('#toggle-local').classList.toggle('active',state.graphPreferences.localMode);$('#local-scope-label').hidden=!state.graphPreferences.localMode;
   $('#graph-focus').hidden = false;
   $('#graph-focus').title=state.focusGraph?tr('展开统计概览'):tr('收起统计概览');$('#graph-focus').setAttribute('aria-label',$('#graph-focus').title);
   const all = papers(), folders = collections(), eligible = eligibleTags(all);
@@ -124,11 +128,11 @@ function render() {
   $('#breadcrumb-current').textContent = navTitle;
   $('#page-title').textContent = navTitle;
   $('#page-description').textContent = state.collection ? tr('把同一个研究主题，收进有序的坐标。') : ({ all: tr('让独立的阅读，在这里彼此连接。'), library: tr('每一篇文献，都有迹可循。'), favorites: tr('留住那些让你停下思考的阅读。'), recent: tr('新的阅读，新的研究坐标。') }[state.nav]);
-  document.querySelectorAll('[data-nav]').forEach(button => { button.classList.toggle('active', !state.collection && button.dataset.nav === state.nav); button.setAttribute('aria-current', !state.collection && button.dataset.nav === state.nav ? 'page' : 'false'); });
+  document.querySelectorAll('[data-nav]').forEach(button => { button.classList.toggle('active', !state.collection && (button.dataset.nav === state.nav||(button.dataset.nav==='library'&&state.nav==='all'))); button.setAttribute('aria-current', !state.collection && (button.dataset.nav === state.nav||(button.dataset.nav==='library'&&state.nav==='all')) ? 'page' : 'false'); });
   $('#collection-list').innerHTML = folders.length ? folders.map(c => `<button class="collection-item ${state.collection === c.id ? 'active' : ''}" data-collection="${escape(c.id)}"><i class="collection-dot" style="background:${/^#[\da-f]{6}$/i.test(c.color) ? c.color : PALETTE[0]}"></i><span>${escape(c.name)}</span><small>${all.filter(p => p.collection === c.id).length}</small></button>`).join('') : tr('<p class="empty-folders">暂无文献分组</p>');
   $('#library-location').title = state.desktopInfo?.path || tr('本地文献库');
   $('.network-header-controls [data-action="associations"]').hidden=state.view!=='graph';$('#toggle-local').hidden=state.view!=='graph';
-  $('#graph-caption').textContent = state.view==='notes'?tr('研究笔记'):state.view==='materials'?tr('材料列表'):state.view==='list'?tr('文献列表'):state.tag ? `# ${state.tag}` : state.collection ? navTitle : tr('研究星图');
+  $('#graph-caption').textContent = state.view==='graph'?(state.tag?`# ${state.tag}`:state.collection?navTitle:tr('研究星图')):workspaceModules.title();
   $('#visible-count').textContent = msg`${filtered.length} 篇文献${state.view === 'graph' && filtered.length > 350 ? tr(' · 展示前 350 篇') : ''}`;
   const years = [...new Set(all.map(p => p.year).filter(Boolean))].sort().reverse();
   $('#year-filter').innerHTML = tr('<option value="">全部年份</option>',false) + years.map(year => `<option value="${escape(year)}">${escape(year)}</option>`).join('');
@@ -137,17 +141,15 @@ function render() {
   renderFilterOptions();
   renderParameterSummary(filtered);
   const noteView=state.view==='notes';
-  $('#notes-library').hidden=!noteView;
   const materialView = state.view === 'materials';
-  $('#material-list').hidden = !materialView;
-  $('.surface-toolbar .search-box').hidden = materialView;
-  $('#sort-order').hidden = materialView;
+  $('.surface-toolbar .search-box').hidden = standaloneView;
+  $('#sort-order').hidden = standaloneView;
   $('#sort-order option[value="newest"]').textContent=noteView?tr('笔记最近更新'):tr('最近添加');
-  $('.quick-filters').hidden = materialView;
-  if (materialView) $('#parameter-filter-summary').hidden = true;
+  $('.quick-filters').hidden = standaloneView;
+  if (standaloneView) $('#parameter-filter-summary').hidden = true;
   $('#network-stats').hidden = state.view !== 'graph';
-  $('#filter-button').hidden = materialView;
-  $('.map-footer').hidden = materialView||noteView;
+  $('#filter-button').hidden = standaloneView;
+  $('.map-footer').hidden = standaloneView||noteView;
   const filterCount = state.filters.excludeTags.length + Object.entries(state.filters).filter(([key, value]) => !['tags', 'excludeTags', 'tagMode', 'parameterName', 'parameterUnit'].includes(key) && Boolean(value)).length;
   $('#active-filter-count').textContent = filterCount;
   $('#active-filter-count').hidden = !filterCount;
@@ -156,8 +158,6 @@ function render() {
   $('#restore-hidden').innerHTML=icon('eye')+tr('<span>恢复隐藏文献</span>',false);$('#restore-hidden').title=msg`恢复隐藏的 ${state.hiddenIds.size} 篇文献`;
   $('#hide-node').disabled = !state.selected;
   $('#legend').innerHTML = groups.slice(0, 6).map(g => html`<button data-tag="${escape(g.name)}" class="${state.tag === g.name ? 'active' : ''}" title="按 ${escape(g.name)} 筛选"><i style="background:${g.color}"></i>${escape(g.name)}</button>`).join('') + (state.tag ? tr('<button data-action="clear-tag" class="tag-filter-clear">清除筛选 ×</button>') : '');
-  $('#graph-wrap').hidden = state.view !== 'graph';
-  $('#paper-list').hidden = state.view !== 'list';
   document.querySelectorAll('[data-view]').forEach(button => { const active = button.dataset.view === state.view; button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
   map.options = { showEdges: state.showEdges, showLabels: state.showLabels };
   const graphPapers=state.graphPreferences.localMode?associationLocalPapers(filtered,state.associations,state.selected,state.graphPreferences.localDepth):filtered;
@@ -169,16 +169,16 @@ function render() {
     if (all.length > 0) empty.innerHTML = html`<span data-icon="search"></span><h2>还没有找到这颗星</h2><p>尝试其他关键词，或清除筛选条件。</p><button class="outline-button" data-action="reset-filters">清除筛选</button>`;
     else empty.innerHTML = html`<span data-icon="orbit"></span><h2>从第一篇文献开始</h2><p>导入 PDF，添加你的研究标签，<br>让文献在星图中找到位置。</p><button class="primary" data-action="import"><span data-icon="plus"></span>导入文献</button><button class="text-button" data-action="download-md-template">下载 Markdown 规范模板</button>`;
   }
-  if (state.view === 'list') renderList(filtered);
-  if (materialView) materialList?.render();
-  if(noteView){const count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=msg`${count} 条笔记 · ${filtered.length} 篇文献`;}
+  workspaceModules?.render();
   renderDetail();
   hydrateIcons();
   comparison?.refreshBar();
+  if(standaloneView)$('#comparison-bar').hidden=true;
   readingStatusController?.render();
   $('#removal-undo').hidden = !lastRemoval?.count;
   $('#removal-undo-count').textContent = lastRemoval?.count || 0;
   $('#quick-undo').hidden = !lastRemoval?.count || state.view !== 'graph' || !state.focusGraph;
+  workspaceChrome?.sync();
 }
 
 async function applyParameterFilter(name, unit = '*') {
@@ -241,6 +241,7 @@ function selectPaper(id, showMobile = false) {
   if (state.view === 'list') { document.querySelectorAll('.paper-row').forEach(row => row.classList.toggle('selected', row.dataset.select === id)); }
   if (showMobile && matchMedia('(max-width: 850px)').matches) $('#detail-panel').classList.add('mobile-open');
   hydrateIcons($('#detail-panel'));
+  workspaceChrome?.sync();
 }
 
 function toast(message, error = false) {
@@ -355,7 +356,8 @@ async function settingsModal() {
   const size=state.papers.reduce((sum,p)=>sum+(p.file?.size||p.size||0),0);settingsActivity=await getImportActivity();
   showModal(tr('设置'),'',html`
     <div class="settings-card language-settings"><div><strong>界面语言</strong><p>切换后立即生效，自动记住本机选择。</p></div><select id="interface-language" aria-label="界面语言">${LANGUAGES.map(language=>`<option value="${language.id}" ${language.id===getLocale()?'selected':''}>${language.name}</option>`).join('')}</select></div>
-    <div class="settings-card"><div><strong>主题与字体</strong><p>配色、明暗外观与字号</p></div><button class="outline-button" data-action="themes">外观…</button></div>
+    <div class="settings-card"><div><strong>功能管理</strong><p>选择工作区中需要的页面</p></div><button class="outline-button" data-action="module-settings">管理…</button></div>
+    <div class="settings-card"><div><strong>主题与字体</strong><p>配色、明暗外观与字号</p></div><button id="ribbon-theme" class="outline-button" data-action="themes">外观…</button></div>
     ${native?html`<div class="settings-card folder-card"><div><strong>文献库</strong><p class="folder-path">${escape(state.desktopInfo?.path||'')}</p><small>${state.papers.length} 篇 · ${bytesLabel(size)}</small></div><div class="settings-inline-actions"><button class="outline-button" data-action="open-folder">打开</button>${actionMenu('storage-options',tr('文献库选项'),tr('<button data-action="choose-folder">切换文献库…</button><button data-action="sync-folders">立即同步文件夹</button>'),{iconOnly:true,className:'icon-button'})}</div></div>`:tr('<div class="info-box">网页预览 · 数据保存在当前浏览器</div>')}
     <div class="settings-card"><div><strong>文献信息</strong><p>补充信息与期刊指标</p></div>${actionMenu('metadata-options',tr('管理'),tr('<button data-action="import-metadata">导入文献信息…</button><button data-action="journal-catalog">期刊影响因子…</button>'),{iconName:'folder'})}</div>
     <div class="settings-card"><div><strong>备份与恢复</strong><p>PDF、笔记、分组与导入记录</p></div>${actionMenu('backup-options',tr('备份'),tr('<button data-action="export">导出完整备份…</button><button data-action="restore">从备份恢复…</button>'),{iconName:'download'})}</div>
@@ -414,7 +416,7 @@ function helpModal() {
   showModal(tr('从阅读，到连接'), tr('一个安静、专注的材料文献研究空间。'), html`<div class="guide-step"><span>1</span><div><strong>收录原始 PDF</strong><p>选择或拖入多份 PDF；相同文件自动去重。桌面版将文件保存至本地文献库文件夹，可在设置里更换位置。</p></div></div><div class="guide-step"><span>2</span><div><strong>补充完整信息</strong><p>编辑标题、全部作者与机构、期刊和标签，或导入其他 AI 整理的 JSON。年度影响因子可通过 CSV / JSON 导入。</p></div></div><div class="guide-step"><span>3</span><div><strong>让思考彼此连接</strong><p>点击标题或标签，分别添加多条笔记。使用 [[完整标题]] 和 [[#标签]] 互相跳转，目标处会显示反向链接。</p></div></div><div class="guide-step"><span>4</span><div><strong>搜索与探索</strong><p>搜索标题、标签、作者、机构和笔记。过滤支持多标签、期刊、年份与 IF 范围，星图和列表同步更新，IF 支持升降序排列。</p></div></div><div class="guide-step"><span>译</span><div><strong>对照翻译与生词复习</strong><p>在 PDF 中选中文字后，点击弹窗「翻译」才会发送请求；译文出现后点击「添加批注」贴到原文附近。也可在右侧「译文」主动翻译当前页或整篇。短词可保存到生词本，记录原句与页码，左侧字典图标可搜索、复习与导出。</p></div></div><div class="guide-step"><span>5</span><div><strong>把积累带走</strong><p>导出完整备份，包含 PDF、笔记、作者机构、期刊指标、生词本和译文；可在其他设备恢复。桌面版也可直接复制整个文献库文件夹。</p></div></div><div class="info-box">所有文献信息由你填写或导入，PDF 文件留在本地。主动翻译时会把选文或页面文字发给已配置的 AI 服务；程序不自动生成标签或影响因子。</div><div class="modal-footer"><button class="primary" data-action="close-modal">开始探索</button></div>`, 'help');
 }
 function shortcutsModal() {
-  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
+  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>快速操作</span><kbd>Ctrl / ⌘ K</kbd></div><div class="shortcut-row"><span>切换主要视图</span><kbd>Ctrl / ⌘ 1–5</kbd></div><div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
 }
 
 function renderGraphPreferences(){const select=document.querySelector('[data-graph-setting="appearance"]');if(select){const options=[['theme',tr('跟随主题包')],['classic',tr('经典圆点')],['orbital',tr('轨道圆环')],['crystal',tr('晶格节点')],['cosmos',tr('宇宙星野')],...getGraphThemeOptions().map(t=>[t.id,tr('主题形态 · ',false)+t.name])];if(!options.some(([id])=>id===state.graphPreferences.appearance))options.push([state.graphPreferences.appearance,tr('原主题已移除 · 暂时跟随当前主题')]);select.replaceChildren(...options.map(([id,name])=>new Option(name,id)));}document.querySelectorAll('[data-graph-setting]').forEach(input=>{const value=state.graphPreferences[input.dataset.graphSetting];if(input.type==='checkbox')input.checked=Boolean(value);else input.value=String(value);});document.querySelectorAll('[data-graph-output]').forEach(output=>{output.textContent=state.graphPreferences[output.dataset.graphOutput];});}
@@ -453,16 +455,20 @@ const actions = {
   menu: () => $('#sidebar').classList.toggle('mobile-open'),
   'parameter-index': () => parameterFinder.open(), 'clear-parameter': () => { state.filters.parameterName='';state.filters.parameterUnit='*';render(); }, 'plot-parameter-results': plotActiveParameter, 'select-parameter-results': async()=>{await comparison.selectIds(visiblePapers().map(p=>p.id));renderParameterSummary(visiblePapers());},
   'tag-index': () => notes.openIndex(),
+  'module-settings':()=>showModal(tr('功能管理'),'',workspaceModules.settingsHTML()+html`<div class="modal-footer"><button class="primary" data-action="close-modal">完成</button></div>`,'modules'),
   'paper-notes': () => { if (state.selected) notes.open('paper', state.selected); },
   'open-folder': () => native?.openFolder(),
   'sync-folders':async()=>{await native?.syncFolders();await reloadLibrary();render();await settingsModal();},
   'choose-folder': async () => {
-    await comparison.flushSelection();await researchCanvas.flush();
+    await comparison.flushSelection();await workspaceModules.flush();await researchCanvas.flush();
     switchingLibrary = true; clearTimeout(layoutTimer);
     let info;
     try { info = await native?.chooseFolder(); } finally { switchingLibrary = false; }
     if (!info) return;
     researchCanvas.reset();
+    await workspaceModules.reset();
+    workspaceChrome.restore(info.path);
+    await workspaceModules.loadPreferences(await getSetting('workspaceModules'));
     await agentController.changeLibrary();
     themeController.load(await getSetting('themePreferences'));
     map.setLayout(await getSetting('graphLayout') || {});
@@ -531,6 +537,7 @@ document.addEventListener('dragleave', event => { if (!event.dataTransfer || ![.
 document.addEventListener('drop', async event => { if (!event.dataTransfer.files.length) return; event.preventDefault(); dragDepth = 0; $('#drop-overlay').hidden = true; $('.upload-zone')?.classList.remove('dragging'); if ($('#modal').open && modalContext !== 'import') { toast(tr('请先关闭当前弹窗，再拖入 PDF。')); return; } try { await addFiles([...event.dataTransfer.files]); } catch (error) { toast(error.message, true); } });
 
 document.addEventListener('keydown', event => {
+  if(event.defaultPrevented||event.target.closest('#workspace-command-dialog'))return;
   if (event.key === 'Escape') { $('#detail-panel').classList.remove('mobile-open'); $('#sidebar').classList.remove('mobile-open'); return; }
   if (event.target.closest('#vocabulary-dialog') || event.target.matches('input,textarea,select') || event.target.isContentEditable || event.metaKey || event.ctrlKey || event.altKey || $('#modal').open || reader?.isOpen() || researchCanvas?.isOpen()) return;
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-select]')) { event.preventDefault(); selectPaper(event.target.dataset.select, true); return; }
@@ -637,7 +644,7 @@ comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.vie
 materialList=createMaterialList({escape,showModal,closeModal,toast,comparison,getPapers:papers,isVisible:()=>state.view==='materials',onCount:(count,total)=>{$('#visible-count').textContent=msg`${count} / ${total} 个材料`;}});
 batch=createBatchImporter({escape,showModal,toast,bytesLabel,normalizeTags,folderOptions,getPapers:papers,isOpen:()=>modalContext==='import',putPapers,saveText,persistNotes:async incoming=>{const next=mergeImportNotes(await getSetting('notes') || {},incoming);await setSetting('notes',next);},reload:reloadLibrary,onDone:id=>{closeModal();state.nav='all';state.mode='own';state.selected=id || '';resetFilters(false);map.fit();render();}});
 bulkEditor=createBulkEditor({escape,showModal,toast,normalizeTags,getPapers:papers,getCollections:collections,getSelection:()=>state.compareIds,save:bulkEdit,reload:reloadLibrary,done:()=>{closeModal();render();}});
-readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>state.readingStatus,isVisible:()=>state.view!=='materials',getScopePapers:()=>filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{state.readingStatus=value;state.listLimit=100;state.selected='';render();},persist:setReadingStatus,reload:async()=>{await reloadLibrary();render();}});
+readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>state.readingStatus,isVisible:()=>Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{state.readingStatus=value;state.listLimit=100;state.selected='';render();},persist:setReadingStatus,reload:async()=>{await reloadLibrary();render();}});
 paperActions=createPaperActions({escape,showModal,closeModal,toast,setReadingStatus:(ids,status)=>readingStatusController.set(ids,status),locate:native?.openPaperFolder? id=>native.openPaperFolder(id):null,parameters:id=>{selectPaper(id);performanceEditor.open(id);},hide:id=>{state.hiddenIds.add(id);render();},canEdit:ensureStorage,getPapers:papers,getCollections:collections,getVisible:visiblePapers,getSelection:()=>state.compareIds,selectPaper,hasPDF:p=>Boolean(p.file||p.pdfPath),isReaderOpen:()=>reader.isOpen(),read:id=>reader.open(id),edit:ids=>{if(ids.length===1){selectPaper(ids[0]);editModal();}else bulkEditor.open(null,ids);},notes:id=>notes.open('paper',id),remove:deleteModal,selectComparison:ids=>comparison.selectIds(ids),assign:bulkEdit,reload:async()=>{await reloadLibrary();render();},star:async(ids,favorite)=>{await putPapers(papers().filter(p=>ids.includes(p.id)).map(p=>({...p,favorite})));},createEmpty:async name=>{if(collections().some(c=>c.name===name))throw new Error(tr('已有同名分组，请直接选择该分组。'));await setSetting('collections',[...collections(),{id:uid('folder'),name,color:PALETTE[0]}]);}});
 groupActions=createGroupActions({escape,showModal,closeModal,toast,getGroups:collections,openFolder:native?.openGroupFolder?id=>native.openGroupFolder(id):null,save:groups=>setSetting('collections',groups),reload:async()=>{await reloadLibrary();render();}});
 performanceEditor=createPerformanceEditor({escape,showModal,toast,getPapers:papers,close:closeModal,save:async(id,materials)=>{const p=state.papers.find(p=>p.id===id);if(!p)throw new Error(tr('找不到文献'));await putPaper(normalizePaperMaterials({...p,materials}));await reloadLibrary();render();}});
@@ -668,6 +675,8 @@ async function init() {
     await setSetting('mode','own');
     comparison.loadPreferences(await getSetting('chartPreferences') || {});comparison.loadSelectionPreferences(await getSetting('comparisonState'));
     state.ready = true;
+    workspaceChrome.restore(state.desktopInfo?.path||'browser');
+    await workspaceModules.loadPreferences(await getSetting('workspaceModules'));
   } catch (error) {
     state.storageError = true;
     const banner = document.createElement('div'); banner.className = 'storage-error'; banner.textContent = msg`文献库无法读取，原数据已保留：${error.message}`; $('main').prepend(banner);
@@ -675,7 +684,15 @@ async function init() {
   render();
   $('.import-main').disabled = !state.ready || state.storageError;
 }
-researchCanvas=createResearchCanvas({flushBeforeExit:()=>comparison.flushSelection(),escape,toast,getPapers:papers,isReady:()=>state.ready&&!state.storageError,
+workspaceModules=createWorkspaceModules({native,libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
+ builtins:{graph:{render(){}},list:{render:()=>renderList(visiblePapers())},materials:{render:()=>materialList.render()},notes:{render:()=>{const filtered=visiblePapers(),count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=msg`${count} 条笔记 · ${filtered.length} 篇文献`;}}},
+
+});
+workspaceChrome=createWorkspaceChrome({$,getState:()=>state,getViews:()=>workspaceModules.views(),getPapers:papers,toast,canOpen:()=>state.ready&&!state.storageError&&!document.querySelector('dialog[open]')&&!reader?.isOpen()&&!researchCanvas?.isOpen(),runAction:id=>actions[id]?.(),
+ clearSearch:()=>{clearTimeout(searchTimer);state.query='';state.listLimit=100;$('#search').value='';render();},
+ selectPaper:id=>{resetFilters(false);state.nav='library';state.view='list';state.selected=id;state.detailOpen=true;render();selectPaper(id,true);}
+});
+researchCanvas=createResearchCanvas({flushBeforeExit:async()=>{await comparison.flushSelection();await workspaceModules.flush();},escape,toast,getPapers:papers,isReady:()=>state.ready&&!state.storageError,
  load:async()=>{if(native){if(typeof native.canvasGet!=='function')throw Error(tr('请重新启动 Materia，以启用研究画布的本地存储接口。'));return native.canvasGet();}return{libraryKey:'browser',state:await getSetting('researchCanvases')};},
  persist:async payload=>{if(native)return native.canvasSave(payload);await setSetting('researchCanvases',payload.state);},saveText,
  openPaper:id=>{if(!papers().some(p=>p.id===id)){toast(tr('关联文献已不在当前文献库。'));return;}state.nav='all';resetFilters(false);state.selected=id;render();selectPaper(id,true);},openTag:tag=>notes.open('tag',tag)
@@ -683,7 +700,7 @@ researchCanvas=createResearchCanvas({flushBeforeExit:()=>comparison.flushSelecti
 agentController = createAgentController({ getPapers: papers, getNotes: () => state.notes, getSelectedIds: () => state.compareIds.size ? [...state.compareIds] : (state.selected ? [state.selected] : []), getSetting, setSetting, isReady: () => state.ready && !state.storageError, openPaper: id => { if (!state.papers.some(p => p.id === id)) { toast(tr('这篇文献已不在当前文献库。')); return; } state.nav='all'; resetFilters(false); state.detailOpen=true; state.selected=id; render(); selectPaper(id,true); } });
 onLocaleChange(async()=>{
   if(!state.ready)return;
-  render();agentController.refreshLanguage();
+  workspaceModules.refreshNavigation();render();agentController.refreshLanguage();
   if(modalContext==='settings'){
     await settingsModal();document.querySelector('#interface-language')?.focus();
   }

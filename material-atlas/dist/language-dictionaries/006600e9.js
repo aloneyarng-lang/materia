@@ -1,0 +1,1 @@
+export default {"fédération internationale de natation amateur cup":[["jmdict","フィナカップ；フィナ・カップ [フィナカップ・フィナ・カップ] — Fédération Internationale de Natation Amateur cup","","en","ja"]],"fédération internationale de football association":[["jmdict","国際サッカー連盟 [こくさいサッカーれんめい] — Fédération Internationale de Football Association","","en","ja"]]};

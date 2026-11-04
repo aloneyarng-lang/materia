@@ -1,0 +1,1 @@
+export default {"lz":[["ecdict","abbr. 登陆区（Landing Zone）",""]],"lzar's reagent":[["ecdict","[医] 伊扎氏试剂(等量亚油酸和蓖麻油酸)",""]],"lzd":[["ecdict"," [计]= Launch Zone Display,发射区显示（器）",""]],"lzh":[["ecdict","n. LHARC或LHA等的压缩文件",""]],"lzy \"h\" antenna":[["ecdict","[电] 工形天线",""]]};

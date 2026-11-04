@@ -1,0 +1,1 @@
+export default {"tボーンステーキ":[["jmdict","[noun (common) (futsuumeishi)] T-bone steak","ティーボーンステーキ","ja","en"]],"tボーン・ステーキ":[["jmdict","[noun (common) (futsuumeishi)] T-bone steak","ティーボーンステーキ","ja","en"]]};

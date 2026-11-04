@@ -1,0 +1,1 @@
+export default {"gx":[["jmdict","[noun (common) (futsuumeishi)] green transformation","ジー・エックス・ジーエックス","ja","en"]],"gxnu":[["jmdict","広西師範大学 [こうせいしはんだいがく] — GXNU","","en","ja"]],"gxu":[["jmdict","広西大学 [こうせいだいがく] — GXU","","en","ja"]]};

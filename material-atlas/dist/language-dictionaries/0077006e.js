@@ -1,0 +1,1 @@
+export default {"wna":[["jmdict","世界原子力協会 [せかいげんしりょくきょうかい] — WNA","","en","ja"]],"wnu":[["jmdict","世界原子力大学 [せかいげんしりょくだいがく] — WNU","","en","ja"]],"wn2 test":[["ding","omega square test; Wn² test; Cramér-von Mises test","","de","en"],["ding","Omega-Quadrat-Test {m}; omega²-Test; Wn²-Test; Cramér-von-Mises-Test","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"nnp":[["jmdict","国民純生産 [こくみんじゅんせいさん] — NNP","","en","ja"]],"nnw":[["jmdict","国民純福祉 [こくみんじゅんふくし] — NNW","","en","ja"]],"nnfa":[["jmdict","全米栄養食品協会 [ぜんべいえいようしょくひんきょうかい] — NNFA","","en","ja"]],"nnordwestatlantik":[["ding","Northwest Atlantic (Ocean)","","de","en"]]};

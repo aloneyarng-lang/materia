@@ -1,0 +1,1 @@
+export default {"8進数":[["jmdict","[noun (common) (futsuumeishi)] octal; base 8","はちしんすう","ja","en"]],"8進法":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] octal numeral system; octal notation","はっしんほう","ja","en"]]};

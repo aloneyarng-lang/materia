@@ -1,0 +1,1 @@
+export default {"xp":[["ecdict","abbr. 加快费已付（Express Paid）；运用优先权（Exercise Priority）",""]],"xpg":[["ecdict","abbr. converted merchant ship 改装商船，改装舰船（美国海军舰船符号）; X/Open portability guide X/Open 可移植性指南",""]],"xpl":[["ecdict","[计] XPL语言",""]],"xpo":[["ecdict","abbr. Cristo (Spanish=Christ) （西班牙语）救世主",""]],"xps":[["ecdict","[化] X射线光电子能谱; X射线光电子能谱学",""]]};

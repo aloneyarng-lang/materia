@@ -1,0 +1,1 @@
+export default {"hkust":[["jmdict","香港科技大学 [ほんこんかぎだいがく] — HKUST","","en","ja"]],"hke":[["jmdict","香港証券取引所 [ホンコンしょうけんとりひきじょ] — HKE","","en","ja"]],"hka test":[["ding","Hudson-Kreitman-Aguade-Test","","en","de"]]};

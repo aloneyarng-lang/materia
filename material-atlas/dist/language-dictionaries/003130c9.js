@@ -1,0 +1,1 @@
+export default {"1ドリンク制":[["jmdict","[noun (common) (futsuumeishi)] one-drink minimum (at a restaurant, karaoke-bar, etc.)","ワンドリンクせい","ja","en"]],"1ドリンク":[["jmdict","[noun (common) (futsuumeishi)] one drink","ワンドリンク","ja","en"]]};

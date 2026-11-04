@@ -1,0 +1,1 @@
+export default {"qgp":[["ecdict","abbr. quark gluon plasma 夸克胶子电浆态","k'ju:dʒ'i:p'i:"]]};

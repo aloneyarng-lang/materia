@@ -1,0 +1,1 @@
+export default {"négrette (wine grape variety)":[["jmdict","ネグレット [ネグレット] — Négrette (wine grape variety)","","en","ja"]],"négrette":[["jmdict","ネグレット [ネグレット] — Négrette (wine grape variety)","","en","ja"]],"négligé":[["ding","negligee; chemise","","de","en"]],"négligés":[["ding","negligees; chemises","","de","en"]],"née":[["ding","geborene /geb./","","en","de"]]};

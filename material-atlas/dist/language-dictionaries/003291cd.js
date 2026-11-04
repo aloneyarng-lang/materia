@@ -1,0 +1,1 @@
+export default {"2重":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] double; two-fold; two layers; duplex\n[prefix] diplo-; dipl-\n[noun (common) (futsuumeishi)] double-edged eyelid; double eyelid; creased eyelid","にじゅう・ふたえ","ja","en"]],"2重衝突":[["jmdict","[noun (common) (futsuumeishi)] double collision","にじゅうしょうとつ","ja","en"]]};

@@ -22,15 +22,12 @@
 /* A continuous track keeps the current spread crisp, with quiet neighboring previews. */
 .reader-v2 #reader-flow{width:108px;font-size:.75rem}
 .reader-v2 #reader-scroll[data-flow] .reader-page-margin{padding:0;width:max-content;min-width:100%;min-height:100%}
-#reader-scroll[data-flow]{overflow-anchor:none;scrollbar-width:thin;scroll-snap-type:y proximity}
-#reader-scroll[data-flow=horizontal]{scroll-snap-type:x proximity}
-.reader-continuous-track{display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 32px;box-sizing:border-box}
+#reader-scroll[data-flow]{overflow-anchor:none;scrollbar-width:thin;scroll-snap-type:none;scrollbar-gutter:stable}
+.reader-continuous-track{display:flex;flex-direction:column;align-items:center;gap:32px;padding:32px;box-sizing:border-box}
 [data-flow=horizontal] .reader-continuous-track{flex-direction:row;align-items:center;width:max-content;min-height:100%;padding:56px 32px}
 .reader-page-slot{display:flex;flex:none;align-items:center;justify-content:center;position:relative;scroll-snap-align:center;scroll-snap-stop:normal}
-.reader-page-slot>.reader-spread{flex:none;min-width:0;width:max-content;margin:0;opacity:.38;transform:scale(.88);transition:transform 500ms cubic-bezier(.22,1,.36,1),opacity 300ms cubic-bezier(.22,1,.36,1)}
-.reader-page-slot.is-active>.reader-spread{opacity:1;transform:scale(1)}
+.reader-page-slot>.reader-spread{flex:none;min-width:0;width:max-content;margin:0;opacity:1;transform:none}
 .reader-page-slot .reader-page{margin:0;flex:none}
-.reader-page-slot:not(.is-active) .reader-mark-layer{pointer-events:none}
 .reader-slot-loading{font-size:.75rem;color:var(--muted)}
 [data-flow] .reader-page.is-current-page{outline-color:transparent}
 @media(prefers-reduced-motion:reduce){.reader-page-slot>.reader-spread{transition:none}}

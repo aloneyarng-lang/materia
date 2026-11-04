@@ -1,0 +1,1 @@
+export default {"uo":[["ecdict","abbr. 尚未发出的定货单（undelivered orders）；网络创世纪（Ultima Online）",""]],"uoeno":[["ecdict","“你根本不知道”的非标准缩写",""]],"uomo":[["ecdict","n. 男人；人（意大利语）",""]],"uop":[["ecdict","n. 美国环球石油产品公司",""]],"uos":[["ecdict","(uo 的复数) abbr. 尚未发出的定货单（undelivered orders）；网络创世纪（Ultima Online）",""]]};

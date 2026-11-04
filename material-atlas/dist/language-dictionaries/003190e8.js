@@ -1,0 +1,1 @@
+export default {"1部":[["jmdict","[noun (common) (futsuumeishi); adverb (fukushi)] one part; one portion; one section\n[noun (common) (futsuumeishi)] one copy (of a book); (one) complete set (of books)","いちぶ","ja","en"]]};

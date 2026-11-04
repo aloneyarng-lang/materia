@@ -1,0 +1,1 @@
+export default {"hv cable":[["ding","Hochspannungskabel {n}; Starkstromkabel {n}","","en","de"]],"hvac system":[["ding","RLT-Anlage {f}","","en","de"]],"hv schraube":[["ding","high tensile prestressed bolt; high-tension bolt","","de","en"]]};

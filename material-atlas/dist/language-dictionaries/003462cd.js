@@ -1,0 +1,1 @@
+export default {"4拍子":[["jmdict","[noun (common) (futsuumeishi)] quadruple time; four-four time; common time\n[noun (common) (futsuumeishi)] the four instruments in the accompanying orchestra in noh, etc. (flute, floor drum, small hand drum, large hand drum)","よんびょうし・しびょうし","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"oq":[["ecdict","abbr. oil quench 油淬火的; overmation quotient 过量信息份额",""]],"oqpst":[["ecdict","[化] 克泻痢宁",""]],"oquassa":[["ecdict","n. [鱼]蓝背红点鲑(产于美国缅因州西部奥夸萨湖)","әu'kwæsә"]],"oquawka":[["ecdict"," [地名] [美国] 奥阔卡",""]]};

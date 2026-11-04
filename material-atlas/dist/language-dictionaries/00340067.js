@@ -1,0 +1,1 @@
+export default {"4gl":[["jmdict","フォージーエル [フォージーエル] — 4GL","","en","ja"],["jmdict","第４世代言語；第四世代言語 [だいよんせだいげんご] — 4GL","","en","ja"]],"4g":[["jmdict","[noun (common) (futsuumeishi)] 4G; fourth generation (of wireless cellular technology)","フォージー","ja","en"],["jmdict","４Ｇ [フォージー] — 4G","","en","ja"]]};

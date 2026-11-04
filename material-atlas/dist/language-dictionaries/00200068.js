@@ -1,0 +1,1 @@
+export default {" head":[["jmdict","垂れ；垂 [たれ・タレ] — -head","","en","ja"]]," holic":[["jmdict","ホリック [ホリック] — -holic","","en","ja"]]," hemia":[["jmdict","血症 [けっしょう] — -hemia","","en","ja"]]," haemia":[["jmdict","血症 [けっしょう] — -haemia","","en","ja"]]};

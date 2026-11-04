@@ -1,0 +1,1 @@
+export default {"95":[["ecdict"," （网络聊天数字用语）救我。",""],["wordnet","s. being five more than ninety",""]],"95th":[["ecdict","[网络] 第95号",""],["wordnet","s. the ordinal number of ninety-five in counting order",""]]};

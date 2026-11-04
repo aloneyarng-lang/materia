@@ -1,0 +1,1 @@
+export default {"gō":[["jmdict","合 [ごう] — gō","","en","ja"]],"gōdō gaisha":[["jmdict","合同会社 [ごうどうがいしゃ] — gōdō gaisha","","en","ja"]],"gōda ikka (yakuza syndicate)":[["jmdict","合田一家 [ごうだいっか] — Gōda-ikka (yakuza syndicate)","","en","ja"]],"gōda ikka":[["jmdict","合田一家 [ごうだいっか] — Gōda-ikka (yakuza syndicate)","","en","ja"]]};

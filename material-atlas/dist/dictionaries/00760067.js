@@ -1,0 +1,1 @@
+export default {"vg":[["ecdict","abbr. 音频段（Voice Grade）；电压增益（Voltage Gain）；很好（Very Good）；代理监督（Vicar General）",""]],"vga":[["ecdict","abbr. [计]视频图形阵列（Video Graphics Array）；可变增益放大器（Variable-Gain Amplifier）",""]],"vgreaux column":[["ecdict","[机] 维格勒柱",""]]};

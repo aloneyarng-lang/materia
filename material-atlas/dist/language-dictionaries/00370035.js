@@ -1,0 +1,1 @@
+export default {"753":[["jmdict","[noun (common) (futsuumeishi)] shichi-go-san; 7-5-3 day; festival day for children aged 7, 5 and 3 held on or around November 15\n[noun (common) (futsuumeishi)] lucky numbers 7, 5 and 3","しちごさん","ja","en"]],"750cc motorcycle":[["jmdict","七半 [ななはん・ナナハン] — 750cc motorcycle","","en","ja"]],"75 % quartil":[["ding","upper quartile","","de","en"]]};

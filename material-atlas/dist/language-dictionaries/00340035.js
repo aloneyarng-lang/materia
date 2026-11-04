@@ -1,0 +1,1 @@
+export default {"45th wedding anniversary":[["jmdict","サファイア婚式；サファイヤ婚式 [サファイアこんしき・サファイヤこんしき] — 45th wedding anniversary","","en","ja"]],"45 grad zu den schlechten":[["ding","half-and-half","","de","en"]]};

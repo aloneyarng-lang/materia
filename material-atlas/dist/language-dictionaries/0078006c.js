@@ -1,0 +1,1 @@
+export default {"xl":[["jmdict","ＬＬ [エル・エル・エルエル] — XL","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] extra-large (clothing size); XL","エックス・エル・エックスエル","ja","en"],["jmdict","ＸＬ [エックス・エル・エックスエル] — XL","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"4x4 sliding puzzle":[["jmdict","１５パズル；十五パズル [じゅうごパズル] — 4x4 sliding puzzle","","en","ja"]],"4x4 drive":[["ding","Allradantrieb {m}; Allrad [ugs.] [auto]","","en","de"]],"4x4":[["ding","Allradauto {n}; Allradfahrzeug {n} (Fahrzeug mit Vierradantrieb) [auto]","","en","de"]]};

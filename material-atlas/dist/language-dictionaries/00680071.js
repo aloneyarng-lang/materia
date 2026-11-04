@@ -1,0 +1,1 @@
+export default {"hq./":[["ding","Hauptquartier {n}","","en","de"]],"hq forward echelon":[["ding","vordere Führungsstaffel","","en","de"]],"hq rear echelon":[["ding","rückwärtige Führungsstaffel","","en","de"]]};

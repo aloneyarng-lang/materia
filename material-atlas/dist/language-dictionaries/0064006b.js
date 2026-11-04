@@ -1,0 +1,1 @@
+export default {"dk":[["jmdict","[noun (common) (futsuumeishi)] eat-in-kitchen; combination kitchen-dining room\n[noun (common) (futsuumeishi)] dropkick (rugby)","ディー・ケー・ディーケー・ディーケイ","ja","en"]],"dkt":[["jmdict","大建中湯 [だいけんちゅうとう] — DKT","","en","ja"]],"dkt tasche":[["ding","aperture handle carrier bag; aperture handle handle bag","","de","en"]]};

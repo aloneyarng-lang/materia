@@ -1,0 +1,1 @@
+export default {"'hood":[["ecdict","n. 罩；风帽；（布质）面罩；学位连领帽（表示学位种类）\nv. 覆盖；用头巾包；使(马,鹰等)戴头罩；给…加罩\n[网络] 胡德；兜帽；引擎盖","hʊd"],["wordnet","n. (slang) a neighborhood",""]]};

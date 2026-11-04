@@ -1,0 +1,1 @@
+export default {"wmd":[["jmdict","大量破壊兵器 [たいりょうはかいへいき] — WMD","","en","ja"]],"wmo":[["jmdict","世界気象機関 [せかいきしょうきかん] — WMO","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] World Meteorological Organization; WMO","ダブリュー・エム・オー・ダブリューエムオー","ja","en"],["jmdict","ＷＭＯ [ダブリュー・エム・オー・ダブリューエムオー] — WMO","","en","ja"]],"wma":[["jmdict","世界医師会 [せかいいしかい] — WMA","","en","ja"]]};

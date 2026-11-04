@@ -1,0 +1,1 @@
+export default {"69":[["jmdict","シックスナイン；シックス・ナイン [シックスナイン・シックス・ナイン] — 69","","en","ja"],["jmdict","シックスティーナイン；シックスティー・ナイン [シックスティーナイン・シックスティー・ナイン] — 69","","en","ja"]],"69er stellung":[["ding","69 position","","de","en"]],"69 position":[["ding","69er-Stellung {f}","","en","de"]]};

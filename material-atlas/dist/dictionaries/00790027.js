@@ -1,0 +1,1 @@
+export default {"y'all":[["ecdict","n. 相当于“You all“, 美国南部使用, 意思是“大家”","jɔ:l"]]};

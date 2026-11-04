@@ -1,0 +1,1 @@
+export default {"(quite) capable of doing":[["jmdict","仕兼ねない；し兼ねない [しかねない] — (quite) capable of doing","","en","ja"],["jmdict","遣り兼ねない；遣りかねない；やり兼ねない [やりかねない] — (quite) capable of doing","","en","ja"]],"(quality of) signal reception":[["jmdict","受信状態 [じゅしんじょうたい] — (quality of) signal reception","","en","ja"]]};

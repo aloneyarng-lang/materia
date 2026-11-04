@@ -1,0 +1,1 @@
+export default {"rāhula (son of siddhartha gautama)":[["jmdict","羅ご羅；羅睺羅 [らごら・ラーフラ・ラゴーラ] — Rāhula (son of Siddhartha Gautama)","","en","ja"]],"rāhula":[["jmdict","羅ご羅；羅睺羅 [らごら・ラーフラ・ラゴーラ] — Rāhula (son of Siddhartha Gautama)","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"y染色体アダム":[["jmdict","[noun (common) (futsuumeishi)] Y-chromosomal Adam","ワイせんしょくたいアダム","ja","en"]],"y染色体":[["jmdict","[noun (common) (futsuumeishi)] Y chromosome","ワイせんしょくたい","ja","en"]],"y染色体ハプログループ":[["jmdict","[noun (common) (futsuumeishi)] Y-chromosome haplogroup","ワイせんしょくたいハプログループ","ja","en"]]};

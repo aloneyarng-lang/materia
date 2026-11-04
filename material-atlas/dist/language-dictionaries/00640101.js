@@ -1,0 +1,1 @@
+export default {"dāl (eighth letter of the arabic alphabet)":[["jmdict","ダール [ダール] — dāl (eighth letter of the Arabic alphabet)","","en","ja"]],"dāl":[["jmdict","ダール [ダール] — dāl (eighth letter of the Arabic alphabet)","","en","ja"]]};

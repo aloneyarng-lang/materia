@@ -9,6 +9,7 @@ import {READER_LAYOUTS,visibleReaderPages,turnReaderPage,fitReaderScale,readerRa
 import {annotationName,gestureAnnotation,transformAnnotation,annotationHTML,translationAnnotation} from './reader-annotations.js';
 import {pdfPageText} from './study-model.js';
 import {createReaderStudy,readerStudyHTML} from './reader-study.js';
+import {isTextMark,selectionFragments,textMarkAnchor} from './reader-text-marks.js';
 
 export function createPDFReader(config){
   const host=document.querySelector('#pdf-reader'),esc=config.escape,$=selector=>host.querySelector(selector);
@@ -19,11 +20,12 @@ export function createPDFReader(config){
   let editVersion=0,draftSavedVersion=-1,draftTimer,positionTimer,resizeTimer,draftQueue=Promise.resolve(),renderKey='',wheelSum=0,wheelAt=0,turnLockedUntil=0;
   let pan=null,transformDrag=null,inlineOpen=false,suppressAnnotationClick=false,relocating=false;
   let lastAnnotationTap={id:'',time:0},suppressPageClick=0,suppressContextMenu=0;
+  let selectionTimer,selectingText=false,textMarkHistory=[];
   const notes=()=>config.getNotes()[`paper:${paper?.id}`]||[];
   const visible=()=>doc?visibleReaderPages(page,doc.numPages,layout):[page];
   const empty=()=>({id:`note-${crypto.randomUUID()}`,body:'',attachments:[],anchor:null,createdAt:Date.now()});
   const frameFor=number=>$(`[data-reader-page="${number}"]`);
-  const study=createReaderStudy(host,{escape:esc,toast:config.toast,saveText:config.saveText,openSource:config.openStudySource,addAnnotation:addTranslationAnnotation,translate:(...args)=>config.translate(...args),serviceStatus:()=>config.translationStatus(),configure:config.configureTranslation,context:()=>({paper,page,total:doc?.numPages||0,loaded:Boolean(doc)}),showTranslation:async()=>{await ensureSidebar();updateTab('translation');},pageText:async number=>{const current=doc,ticket=session;if(!current)throw new Error(tr('PDF 尚未加载。'));const pdf=await current.getPage(number),content=await pdf.getTextContent();if(ticket!==session||current!==doc)throw new Error(tr('文献已切换。'));return pdfPageText(content);}});
+  const study=createReaderStudy(host,{escape:esc,toast:config.toast,saveText:config.saveText,openSource:config.openStudySource,addAnnotation:addTranslationAnnotation,markSelection:addTextMark,translate:(...args)=>config.translate(...args),serviceStatus:()=>config.translationStatus(),configure:config.configureTranslation,context:()=>({paper,page,total:doc?.numPages||0,loaded:Boolean(doc)}),showTranslation:async()=>{await ensureSidebar();updateTab('translation');},pageText:async number=>{const current=doc,ticket=session;if(!current)throw new Error(tr('PDF 尚未加载。'));const pdf=await current.getPage(number),content=await pdf.getTextContent();if(ticket!==session||current!==doc)throw new Error(tr('文献已切换。'));return pdfPageText(content);}});
   function status(text){if($('#reader-status'))$('#reader-status').textContent=text;}
   function editorStatus(text,kind=''){if($('#reader-dirty')){$('#reader-dirty').textContent=text;$('#reader-dirty').dataset.state=kind;}}
   function currentPosition(){return{page,zoom,layout,flow,sidebarOpen,sidebarWidth,wheelTurn};}
@@ -33,7 +35,7 @@ export function createPDFReader(config){
     return immediate?run():(positionTimer=setTimeout(run,350),Promise.resolve());
   }
   function cancelRender(){continuous?.dispose();continuous=null;continuousKey='';renderVersion++;renderTasks.forEach(task=>task.cancel());textLayers.forEach(layer=>layer.cancel());renderTasks=[];textLayers=[];}
-  function dispose(){study.dispose();session++;cancelRender();clearTimeout(resizeTimer);clearTimeout(positionTimer);clearTimeout(draftTimer);loading?.destroy().catch(()=>{});doc?.destroy().catch(()=>{});doc=null;loading=null;renderKey='';lastQuote=null;pan=null;transformDrag=null;inlineOpen=false;host.classList.remove('reader-panning');}
+  function dispose(){clearTimeout(selectionTimer);selectingText=false;textMarkHistory=[];host.classList.remove('reader-focus');study.dispose();session++;cancelRender();clearTimeout(resizeTimer);clearTimeout(positionTimer);clearTimeout(draftTimer);loading?.destroy().catch(()=>{});doc?.destroy().catch(()=>{});doc=null;loading=null;renderKey='';lastQuote=null;pan=null;transformDrag=null;inlineOpen=false;host.classList.remove('reader-panning');}
   function persistDraftRows(rows){
     const snapshot=cleanReaderDrafts(rows);draftRows=snapshot;const task=draftQueue.catch(()=>{}).then(()=>config.saveDrafts(snapshot));draftQueue=task;return task;
   }
@@ -72,8 +74,8 @@ export function createPDFReader(config){
   function updateEditorMeta(){
     $('#reader-note-length').textContent=msg`${draft.body.length.toLocaleString()} / 40,000 字`;
     $('#reader-editor-context').textContent=draft.anchor?msg`${annotationName(draft.anchor)} · 第 ${draft.anchor.page} 页`:tr('整篇文献笔记');
-    $('#reader-detach').hidden=!draft.anchor;$('#reader-relocate').hidden=!draft.anchor;
-    $('#reader-caption-field').hidden=!draft.anchor;$('#reader-body-label').textContent=draft.anchor?tr('详细批注 · 文字和图片'):tr('文献笔记正文');
+    $('#reader-detach').hidden=!draft.anchor;$('#reader-relocate').hidden=!draft.anchor||isTextMark(draft.anchor);
+    $('#reader-caption-field').hidden=!draft.anchor||isTextMark(draft.anchor);$('#reader-body-label').textContent=draft.anchor?tr('详细批注 · 文字和图片'):tr('文献笔记正文');
   }
   function renderEditor(){
     $('#reader-note-body').value=draft.body;$('#reader-draft-images').innerHTML=noteImagesHTML(draft.attachments||[],esc,true);
@@ -99,6 +101,8 @@ export function createPDFReader(config){
     const f=frame.getBoundingClientRect(),s=scroll.getBoundingClientRect(),r=anchor.rect,d=$('.reader-document').getBoundingClientRect();
     if(f.top+(r.y+r.height)*f.height<s.top||f.top+r.y*f.height>s.bottom||f.left+(r.x+r.width)*f.width<s.left||f.left+r.x*f.width>s.right){tools.hidden=true;editor.hidden=true;return;}
     $('#reader-annotation-kind').textContent=annotationName(anchor);$('#reader-annotation-save').hidden=!dirty;
+    tools.querySelector('[data-annotation-action="caption"]').hidden=isTextMark(anchor);
+    tools.querySelectorAll('[data-annotation-color]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.annotationColor===anchor.color)));
     $('#reader-annotation-detail').textContent=draft.body||draft.attachments?.length?tr('查看 / 编辑批注'):tr('添加详细批注');
     tools.hidden=inlineOpen;editor.hidden=!inlineOpen;const panel=inlineOpen?editor:tools;
     const caption=[...frame.querySelectorAll('.reader-arrow-caption,.reader-mark')].find(mark=>mark.dataset.readerMark===draft.id);
@@ -108,6 +112,7 @@ export function createPDFReader(config){
     panel.style.top=Math.max(39,Math.min(d.height-panel.offsetHeight-68,y-panel.offsetHeight-12<39?below:y-panel.offsetHeight-12))+'px';
   }
   function openInlineEditor(){
+    if(isTextMark(draft.anchor)){showAnnotationDetails();return;}
     if(!draft.anchor)return;inlineOpen=true;$('#reader-inline-label').value=draft.anchor.label||'';$('#reader-inline-font').value=draft.anchor.fontSize||14;$('#reader-inline-color').value=draft.anchor.color||color;$('#reader-inline-length').textContent=`${(draft.anchor.label||'').length} / 500`;
     positionAnnotationTools();$('#reader-inline-label').focus({preventScroll:true});
   }
@@ -216,7 +221,7 @@ export function createPDFReader(config){
   async function navigate(number,{end=false}={}){if(!doc)return;page=Math.min(doc.numPages,Math.max(1,Math.floor(Number(number)||1)));lastQuote=null;study.dismiss();updateQuoteButton();await renderPages({end});}
   async function turn(direction,{end=false}={}){if(!doc)return;const next=turnReaderPage(page,doc.numPages,layout,direction);if(visible().includes(next))return;await navigate(next,{end});}
   async function screenStep(direction){
-    if(flow!=='paged')return turn(direction);
+    if(flow!=='paged'){const scroll=$('#reader-scroll');scroll.scrollBy({[flow==='horizontal'?'left':'top']:direction*(flow==='horizontal'?scroll.clientWidth:scroll.clientHeight)*.86,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return;}
     const scroll=$('#reader-scroll'),bottom=scroll.scrollHeight-scroll.clientHeight;
     if(direction>0&&scroll.scrollTop<bottom-4)scroll.scrollBy({top:scroll.clientHeight*.86,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
     else if(direction<0&&scroll.scrollTop>4)scroll.scrollBy({top:-scroll.clientHeight*.86,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
@@ -234,6 +239,28 @@ export function createPDFReader(config){
     if(focus)$('#reader-note-body').focus({preventScroll:true});return true;
   }
   async function newNote(){const ticket=session;if(!await prepareSwitch()||ticket!==session)return;draft=empty();dirty=false;selected='';baseUpdatedAt=0;editVersion++;draftSavedVersion=-1;mode='read';await ensureSidebar();updateTab('edit');renderEditor();editorStatus(tr('新笔记 · 编辑后自动保存本地草稿'));renderList();updateMode();$('#reader-note-body').focus({preventScroll:true});}
+  async function addTextMark(value){
+    const ticket=session;
+    if(busy||!doc||value.paperId!==paper.id||value.fingerprint!==(paper.fingerprint||''))throw Error(tr('请先选择同一页中的文字。'));
+    const anchor=textMarkAnchor(value);
+    if(!await prepareSwitch()||ticket!==session)return false;
+    const note={...empty(),body:value.text.slice(0,30000),anchor,updatedAt:Date.now()},paperId=paper.id;
+    busy=true;
+    try{await config.saveNote(paperId,note);}finally{busy=false;}
+    if(ticket!==session)return false;
+    textMarkHistory.push(structuredClone(note));textMarkHistory=textMarkHistory.slice(-30);
+    await chooseNote(note.id,{reveal:false,locate:false,focus:false});
+    getSelection()?.removeAllRanges();$('#reader-scroll').focus({preventScroll:true});
+    status(tr('文字标记已保存 · Ctrl+Z 撤销本次标记'));return true;
+  }
+  async function undoTextMark(){
+    const note=textMarkHistory.at(-1),current=note&&notes().find(row=>row.id===note.id);
+    if(!note||busy)return;
+    if(!current){textMarkHistory.pop();return;}
+    if(!sameReaderNote(note,current)||draft.id===note.id&&dirty){config.toast(tr('此标记已有后续修改，请通过批注工具删除。'));return;}
+    busy=true;
+    try{await config.deleteNote(paper.id,note.id);textMarkHistory.pop();if(draft.id===note.id)await discardDraft(note.id);paintMarks();renderList();status(tr('已撤销文字标记'));}finally{busy=false;}
+  }
   async function addTranslationAnnotation(value){
     const ticket=session;
     if(!host.open||!doc||value.paperId!==paper.id||value.fingerprint!==(paper.fingerprint||'')||value.page>doc.numPages)throw new Error(tr('选文对应的文献已切换，请重新划词翻译。'));
@@ -278,8 +305,8 @@ export function createPDFReader(config){
   function buildUI(){
     host.className='pdf-reader reader-v2';host.innerHTML=html`
       <header class="reader-header"><div><span>PDF READER · 阅读与研究记录</span><h2 title="${esc(paper.title)}">${esc(paper.title)}</h2></div><button id="reader-sidebar-toggle" data-reader-action="sidebar" class="outline-button" aria-expanded="true">收起笔记</button><button data-reader-action="close" class="icon-button" aria-label="关闭阅读器" title="关闭阅读器">${icon('close')}</button></header>
-      <div class="reader-toolbar"><div class="reader-mode" role="group" aria-label="阅读与标注工具">${[['read','cursor',tr('选字'),tr('V · 阅读与选择文字')],['mark','area',tr('区域'),tr('R · 区域标记')],['text','text',tr('文字'),tr('T · 添加页内文字')],['arrow','arrow-diagonal',tr('箭头'),tr('A · 绘制箭头')]].map(([id,name,label,title])=>`<button data-reader-mode="${id}" aria-pressed="${id==='read'}" title="${title}" aria-label="${title}">${icon(name)}<span class="tool-label">${label}</span></button>`).join('')}<select id="reader-mark-color" aria-label="标记颜色" hidden>${Object.keys(MARK_COLORS).map((key,i)=>`<option value="${key}">${[tr('暖黄'),tr('青绿'),tr('海蓝'),tr('玫瑰')][i]}</option>`).join('')}</select></div><div class="reader-view-options"><select id="reader-flow" aria-label="连续阅读方向"><option value="vertical">向下连续</option><option value="horizontal">向右连续</option><option value="paged">逐组翻页</option></select><select id="reader-layout" aria-label="页面排列方式">${Object.entries(READER_LAYOUTS).map(([id,name])=>`<option value="${id}">${tr(name)}</option>`).join('')}</select><button data-reader-action="zoom-out" aria-label="缩小页面" title="缩小页面">${icon('minus')}</button>${actionMenu('reader-view-menu',tr('缩放与打开方式'),tr('<button type="button" data-reader-action="fit">适合页面宽度</button><button type="button" data-reader-action="fit-page">显示完整页面</button><hr><button type="button" data-reader-action="external">',false)+icon('external')+tr('在系统阅读器打开</button>',false),{labelHTML:tr('<span id="reader-zoom">适宽</span>',false)+icon('chevron-down')})}<button data-reader-action="zoom-in" aria-label="放大页面" title="放大页面">${icon('plus')}</button></div></div>
-      <div class="reader-workspace"><section class="reader-document"><div class="reader-status-row"><span id="reader-status" role="status">正在加载本地 PDF…</span><span id="reader-visible-pages"></span></div><div id="reader-password" hidden></div><div id="reader-scroll" tabindex="0" aria-label="PDF 页面阅读区域"><div class="reader-page-margin"><div id="reader-stage" aria-busy="true"></div></div></div><div id="reader-render-buffer" aria-hidden="true"></div><div id="reader-annotation-tools" class="reader-annotation-tools" hidden><span id="reader-annotation-kind"></span><button data-annotation-action="caption">编辑文字</button><button id="reader-annotation-detail" data-annotation-action="detail">添加详细批注</button><button id="reader-annotation-save" data-annotation-action="save" hidden>保存</button><button data-annotation-action="delete" title="删除此标注及其文字、图片批注">删除</button></div><section id="reader-inline-editor" class="reader-inline-editor" aria-label="编辑文献上的标注文字" hidden><header><strong>写在文献上的文字</strong><button data-annotation-action="close-inline" aria-label="收起标注文字编辑" title="收起标注文字编辑">${icon('close')}</button></header><textarea id="reader-inline-label" maxlength="500" rows="3" placeholder="简短结论、疑问或提示…" aria-label="页内标注文字"></textarea><div class="reader-inline-options"><label>字号 <input id="reader-inline-font" type="number" min="10" max="32" value="14" aria-label="页内文字字号"></label><select id="reader-inline-color" aria-label="页内标注颜色">${Object.keys(MARK_COLORS).map((key,i)=>`<option value="${key}">${[tr('暖黄'),tr('青绿'),tr('海蓝'),tr('玫瑰')][i]}</option>`).join('')}</select><small id="reader-inline-length">0 / 500</small></div><footer><button data-annotation-action="detail">继续写详细批注</button><button class="primary" data-annotation-action="save-inline">保存标注</button></footer><p>文字框可拖动、缩放；箭头可拖动端点。Ctrl+Enter 保存。</p></section><nav class="reader-bottom-nav" aria-label="阅读进度与翻页"><button id="reader-prev" data-reader-action="prev" aria-label="上一页或上一组" title="上一组 · ←">${icon('chevron-left')}</button><div class="reader-pagination"><label for="reader-page-number">页码</label><input id="reader-page-number" type="number" min="1" value="1" aria-label="跳转到页码"><span id="reader-page-total">/ …</span></div><input id="reader-page-progress" type="range" min="1" max="1" value="1" aria-label="拖动跳转到页码"><button id="reader-next" data-reader-action="next" aria-label="下一页或下一组" title="下一组 · →">${icon('chevron-right')}</button><details class="reader-turn-options"><summary title="翻页设置" aria-label="翻页设置">${icon('settings')}</summary><label><input id="reader-wheel-turn" type="checkbox">滚轮到边界后翻页</label><small>左右键翻一页 / 一组<br>空格、PageDown 阅读下一屏<br>Shift+空格、PageUp 返回上一屏</small></details></nav><div class="reader-progress-track"><i id="reader-reading-progress"></i></div></section>
+      <div class="reader-toolbar"><div class="reader-mode" role="group" aria-label="阅读与标注工具">${[['read','cursor',tr('选字'),tr('V · 阅读与选择文字')],['mark','area',tr('区域'),tr('R · 区域标记')],['text','text',tr('文字'),tr('T · 添加页内文字')],['arrow','arrow-diagonal',tr('箭头'),tr('A · 绘制箭头')]].map(([id,name,label,title])=>`<button data-reader-mode="${id}" aria-pressed="${id==='read'}" title="${title}" aria-label="${title}">${icon(name)}<span class="tool-label">${label}</span></button>`).join('')}<button data-reader-text-mark="highlight" title="选择文字后按 H 高亮">${icon('edit')}<span class="tool-label">高亮</span></button><button data-reader-text-mark="underline" title="选择文字后按 U 添加下划线"><span class="reader-underline-icon" aria-hidden="true">U</span><span class="tool-label">下划线</span></button><select id="reader-mark-color" aria-label="标记颜色" hidden>${Object.keys(MARK_COLORS).map((key,i)=>`<option value="${key}">${[tr('暖黄'),tr('青绿'),tr('海蓝'),tr('玫瑰')][i]}</option>`).join('')}</select></div><div class="reader-view-options"><button data-reader-action="focus" title="专注阅读 · F" aria-label="专注阅读">${icon('expand')}</button><select id="reader-flow" aria-label="连续阅读方向"><option value="vertical">向下连续</option><option value="horizontal">向右连续</option><option value="paged">逐组翻页</option></select><select id="reader-layout" aria-label="页面排列方式">${Object.entries(READER_LAYOUTS).map(([id,name])=>`<option value="${id}">${tr(name)}</option>`).join('')}</select><button data-reader-action="zoom-out" aria-label="缩小页面" title="缩小页面">${icon('minus')}</button>${actionMenu('reader-view-menu',tr('缩放与打开方式'),tr('<button type="button" data-reader-action="undo-text-mark">撤销文字标记 · Ctrl+Z</button><hr><button type="button" data-reader-action="fit">适合页面宽度</button><button type="button" data-reader-action="fit-page">显示完整页面</button><hr><button type="button" data-reader-action="external">',false)+icon('external')+tr('在系统阅读器打开</button>',false),{labelHTML:tr('<span id="reader-zoom">适宽</span>',false)+icon('chevron-down')})}<button data-reader-action="zoom-in" aria-label="放大页面" title="放大页面">${icon('plus')}</button></div></div>
+      <div class="reader-workspace"><section class="reader-document"><button class="reader-focus-exit" data-reader-action="focus">退出专注 · F</button><div class="reader-status-row"><span id="reader-status" role="status">正在加载本地 PDF…</span><span id="reader-visible-pages"></span></div><div id="reader-password" hidden></div><div id="reader-scroll" tabindex="0" aria-label="PDF 页面阅读区域"><div class="reader-page-margin"><div id="reader-stage" aria-busy="true"></div></div></div><div id="reader-render-buffer" aria-hidden="true"></div><div id="reader-annotation-tools" class="reader-annotation-tools" hidden><span id="reader-annotation-kind"></span><div class="reader-color-swatches" role="group" aria-label="标记颜色">${Object.entries(MARK_COLORS).map(([key,value],i)=>`<button data-annotation-color="${key}" style="--swatch:${value}" aria-label="${[tr('暖黄'),tr('青绿'),tr('海蓝'),tr('玫瑰')][i]}" aria-pressed="false"></button>`).join('')}</div><button data-annotation-action="caption">编辑文字</button><button id="reader-annotation-detail" data-annotation-action="detail">添加详细批注</button><button id="reader-annotation-save" data-annotation-action="save" hidden>保存</button><button data-annotation-action="delete" title="删除此标注及其文字、图片批注">删除</button></div><section id="reader-inline-editor" class="reader-inline-editor" aria-label="编辑文献上的标注文字" hidden><header><strong>写在文献上的文字</strong><button data-annotation-action="close-inline" aria-label="收起标注文字编辑" title="收起标注文字编辑">${icon('close')}</button></header><textarea id="reader-inline-label" maxlength="500" rows="3" placeholder="简短结论、疑问或提示…" aria-label="页内标注文字"></textarea><div class="reader-inline-options"><label>字号 <input id="reader-inline-font" type="number" min="10" max="32" value="14" aria-label="页内文字字号"></label><select id="reader-inline-color" aria-label="页内标注颜色">${Object.keys(MARK_COLORS).map((key,i)=>`<option value="${key}">${[tr('暖黄'),tr('青绿'),tr('海蓝'),tr('玫瑰')][i]}</option>`).join('')}</select><small id="reader-inline-length">0 / 500</small></div><footer><button data-annotation-action="detail">继续写详细批注</button><button class="primary" data-annotation-action="save-inline">保存标注</button></footer><p>文字框可拖动、缩放；箭头可拖动端点。Ctrl+Enter 保存。</p></section><nav class="reader-bottom-nav" aria-label="阅读进度与翻页"><button id="reader-prev" data-reader-action="prev" aria-label="上一页或上一组" title="上一组 · ←">${icon('chevron-left')}</button><div class="reader-pagination"><label for="reader-page-number">页码</label><input id="reader-page-number" type="number" min="1" value="1" aria-label="跳转到页码"><span id="reader-page-total">/ …</span></div><input id="reader-page-progress" type="range" min="1" max="1" value="1" aria-label="拖动跳转到页码"><button id="reader-next" data-reader-action="next" aria-label="下一页或下一组" title="下一组 · →">${icon('chevron-right')}</button><details class="reader-turn-options"><summary title="翻页设置" aria-label="翻页设置">${icon('settings')}</summary><label><input id="reader-wheel-turn" type="checkbox">滚轮到边界后翻页</label><small>左右键翻一页 / 一组<br>空格、PageDown 阅读下一屏<br>Shift+空格、PageUp 返回上一屏</small></details></nav><div class="reader-progress-track"><i id="reader-reading-progress"></i></div></section>
       <div class="reader-sidebar-resizer" role="separator" tabindex="0" aria-label="调整阅读侧栏宽度，左右方向键微调" aria-orientation="vertical"></div><aside class="reader-sidebar" aria-label="批注与文献笔记"><div class="reader-sidebar-heading"><strong>阅读工作台</strong><button data-reader-action="new-note" title="新建整篇文献笔记">${icon('plus')}新笔记</button></div><div class="reader-note-tabs" role="tablist"><button data-reader-tab="list" id="reader-tab-list" role="tab">笔记列表 <span id="reader-list-tab-count">0</span></button><button data-reader-tab="edit" id="reader-tab-edit" role="tab">编辑批注</button><button data-reader-tab="translation" id="reader-tab-translation" role="tab">译文</button><button data-reader-tab="vocabulary" id="reader-tab-vocabulary" role="tab">生词</button></div>${readerStudyHTML()}
       <section id="reader-editor-panel"><form id="reader-composer"><div class="reader-editor-heading"><strong id="reader-editor-context"></strong><span id="reader-note-length"></span></div><div class="reader-editor-format"><button type="button" id="reader-quote" data-reader-action="quote" disabled>摘录选文</button><button type="button" data-reader-action="add-images" title="添加图片，也可直接粘贴">${icon('image')}图片</button>${actionMenu('reader-note-menu',tr('笔记操作'),tr('<button type="button" id="reader-save-next" data-reader-action="save-next">保存并新建笔记</button><hr><button type="button" id="reader-relocate" data-reader-action="relocate" hidden>为当前批注重新框选</button><button type="button" id="reader-detach" data-reader-action="detach" hidden>改为整篇文献笔记</button><hr><button type="button" class="danger" data-reader-action="discard">丢弃当前草稿</button>'),{iconOnly:true,className:'icon-button'})}</div><label id="reader-caption-field" class="reader-caption-field" hidden><span>文献上的标注文字</span><textarea id="reader-caption-text" rows="2" maxlength="500" placeholder="简短标注显示在文献页面上" aria-label="页内文字内容"></textarea></label><label id="reader-body-label" class="reader-body-label" for="reader-note-body">文献笔记正文</label><textarea id="reader-note-body" maxlength="40000" placeholder="记录你的理解、对比与问题…\n可粘贴图片，使用 [[文献标题]] 或 [[#标签]] 建立链接。" aria-label="批注文字"></textarea><div id="reader-draft-images"></div><div class="reader-editor-footer"><span id="reader-dirty" role="status"></span><div><button type="submit" class="primary" id="reader-save-note" title="Ctrl / Command + S">保存笔记</button></div><small>停止输入后自动保存本地草稿，正式保存后才计入文献笔记和完整备份。</small></div></form></section>
       <input id="reader-image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" multiple hidden><section id="reader-list-panel"><div id="reader-pending-drafts"></div><div class="reader-note-filters"><strong id="reader-note-count"></strong><select id="reader-note-filter" aria-label="笔记范围"><option value="all">全部笔记</option><option value="page">当前视野标记</option><option value="paper">整篇笔记</option></select></div><input id="reader-note-query" type="search" placeholder="搜索文字或图片名称…" aria-label="搜索这篇文献的批注"><div id="reader-note-list"></div></section><div class="reader-draft-summary" id="reader-draft-count"></div></aside></div>`;
@@ -287,7 +314,7 @@ export function createPDFReader(config){
   }
   async function open(id,noteId=''){
     const opening=session;if(host.open&&!await prepareSwitch()||opening!==session)return;const next=config.getPaper(id);if(!next)return;
-    if(doc)await savePosition(true);dispose();const ticket=session;paper=next;page=1;zoom='page';layout='single';flow='vertical';sidebarOpen=true;sidebarWidth=338;wheelTurn=false;mode='read';draft=empty();dirty=false;selected='';filter='all';query='';tab='list';baseUpdatedAt=0;editVersion++;draftSavedVersion=-1;config.beforeOpen();buildUI();if(!host.open)host.showModal();
+    if(doc)await savePosition(true);dispose();const ticket=session;paper=next;page=1;zoom='fit';layout='single';flow='vertical';sidebarOpen=true;sidebarWidth=338;wheelTurn=false;mode='read';draft=empty();dirty=false;selected='';filter='all';query='';tab='list';baseUpdatedAt=0;editVersion++;draftSavedVersion=-1;config.beforeOpen();buildUI();if(!host.open)host.showModal();
     try{
       const [position,storedDrafts]=await Promise.all([config.getPosition(),config.getDrafts()]);if(ticket!==session)return;
       preferences=cleanReaderState(position);draftRows=cleanReaderDrafts(storedDrafts||[]);const previous=preferences[paper.id];if(previous){page=previous.page;zoom=previous.flow?previous.zoom:'page';layout=previous.layout||'single';flow=previous.flow||'vertical';sidebarOpen=previous.sidebarOpen??true;sidebarWidth=previous.sidebarWidth||338;wheelTurn=previous.wheelTurn||false;}
@@ -320,7 +347,7 @@ export function createPDFReader(config){
     if(id==='reader-inline-font'&&draft.anchor){const size=Math.max(10,Math.min(32,Number(event.target.value)||14));event.target.value=size;if(draft.anchor.fontSize!==size){draft.anchor.fontSize=size;changed();paintMarks();}}
     if(id==='reader-page-number'||id==='reader-page-progress')await navigate(event.target.value);
     if(id==='reader-wheel-turn'){wheelTurn=event.target.checked;savePosition();}
-    if(id==='reader-flow'){flow=event.target.value;zoom='page';await renderPages();savePosition();}
+    if(id==='reader-flow'){flow=event.target.value;await renderPages();savePosition();}
     if(id==='reader-layout'){
       layout=event.target.value;if(layout!=='single'){sidebarOpen=false;zoom=flow!=='paged'||layout==='book'?'page':'fit';}updateSidebar();await renderPages();savePosition();
     }
@@ -329,6 +356,8 @@ export function createPDFReader(config){
   host.addEventListener('click',async event=>{
     event.stopPropagation();const button=event.target.closest('button,a,[data-reader-mark]');if(!button){if(mode==='read'&&event.target.closest('#reader-scroll')&&performance.now()>suppressPageClick){selected='';inlineOpen=false;paintMarks();}return;}
     try{
+      if(button.dataset.annotationColor&&draft.anchor){color=button.dataset.annotationColor;draft.anchor.color=color;changed();paintMarks();if(isTextMark(draft.anchor))await saveNote();return;}
+      if(button.dataset.readerTextMark){await study.markSelection(button.dataset.readerTextMark);return;}
       if(button.dataset.annotationAction){
         const action=button.dataset.annotationAction;
         if(action==='caption')openInlineEditor();
@@ -357,7 +386,9 @@ export function createPDFReader(config){
         if(button.dataset.readerMode==='read'){mode='read';relocating=false;updateMode();}else await activateTool(button.dataset.readerMode);return;
       }
       const action=button.dataset.readerAction;
+      if(action==='undo-text-mark')await undoTextMark();
       if(action==='close')await close();if(action==='external')await config.openExternal(paper);
+      if(action==='focus'){const anchor=viewportAnchor();host.classList.toggle('reader-focus');await renderPages({anchor});}
       if(action==='sidebar'){const anchor=viewportAnchor();sidebarOpen=!sidebarOpen;updateSidebar();if(doc&&typeof zoom==='string')await renderPages({anchor});savePosition();}
       if(action==='new-note')await newNote();
       if(action==='discard')await discardDraft();
@@ -379,8 +410,8 @@ export function createPDFReader(config){
     const separator=event.target.closest('.reader-sidebar-resizer');if(separator){event.preventDefault();resizeDrag={pointer:event.pointerId,start:event.clientX,width:sidebarWidth};separator.setPointerCapture(event.pointerId);return;}
     const frame=event.target.closest('#reader-stage .reader-page');if(!doc||host.dataset.rendering||!frame)return;
     const annotation=event.target.closest('[data-reader-mark]');
-    if(mode==='read'&&annotation&&annotation.dataset.readerMark===draft.id&&draft.anchor&&!busy){event.preventDefault();transformDrag={pointer:event.pointerId,frame,start:point(event,frame),anchor:structuredClone(draft.anchor),handle:annotation.dataset.annotationHandle||annotation.dataset.annotationDrag||'move',moved:false,wasDirty:dirty};frame.setPointerCapture(event.pointerId);return;}
-    if(mode==='read')return;event.preventDefault();drag={start:point(event,frame),pointer:event.pointerId,frame,page:Number(frame.dataset.readerPage),tool:mode};frame.setPointerCapture(event.pointerId);
+    if(mode==='read'&&annotation&&annotation.dataset.readerMark===draft.id&&draft.anchor&&!isTextMark(draft.anchor)&&!busy){event.preventDefault();transformDrag={pointer:event.pointerId,frame,start:point(event,frame),anchor:structuredClone(draft.anchor),handle:annotation.dataset.annotationHandle||annotation.dataset.annotationDrag||'move',moved:false,wasDirty:dirty};frame.setPointerCapture(event.pointerId);return;}
+    if(mode==='read'){selectingText=!annotation;return;}event.preventDefault();drag={start:point(event,frame),pointer:event.pointerId,frame,page:Number(frame.dataset.readerPage),tool:mode};frame.setPointerCapture(event.pointerId);
   });
   host.addEventListener('pointermove',event=>{
     if(pan&&event.pointerId===pan.pointer){const scroll=$('#reader-scroll');scroll.scrollLeft=pan.left+pan.x-event.clientX;scroll.scrollTop=pan.top+pan.y-event.clientY;positionAnnotationTools();return;}
@@ -389,6 +420,7 @@ export function createPDFReader(config){
     if(!drag||drag.pointer!==event.pointerId)return;const anchor=gestureAnnotation(drag.tool,drag.page,drag.start,point(event,drag.frame),color,paper.fingerprint||'');drag.frame.querySelector('.reader-mark-layer').innerHTML=notes().filter(note=>note.anchor?.page===drag.page&&anchorMatchesPaper(note.anchor,paper)&&note.id!==draft.id).map(note=>markerHTML(note.anchor,note.id)).join('')+markerHTML(anchor,draft.id,true);
   });
   host.addEventListener('pointerup',async event=>{
+    if(selectingText){selectingText=false;clearTimeout(selectionTimer);selectionTimer=setTimeout(captureSelection,100);}
     if(pan&&event.pointerId===pan.pointer){pan=null;suppressContextMenu=performance.now()+400;host.classList.remove('reader-panning');return;}
     if(resizeDrag&&event.pointerId===resizeDrag.pointer){resizeDrag=null;if(doc&&typeof zoom==='string')await renderPages({preserve:true});savePosition();return;}
     if(transformDrag&&event.pointerId===transformDrag.pointer){const moved=transformDrag.moved;transformDrag=null;suppressPageClick=performance.now()+220;if(moved){suppressAnnotationClick=performance.now()+180;lastAnnotationTap={id:'',time:0};changed();renderEditor();paintMarks();}else if(lastAnnotationTap.id===draft.id&&performance.now()-lastAnnotationTap.time<380){lastAnnotationTap={id:'',time:0};openInlineEditor();}else lastAnnotationTap={id:draft.id,time:performance.now()};return;}
@@ -398,7 +430,7 @@ export function createPDFReader(config){
     page=gesture.page;selected=draft.id;suppressPageClick=performance.now()+220;changed();mode='read';renderEditor();updateMode();paintMarks();
     if(gesture.tool==='mark'){await ensureSidebar();updateTab('edit');renderEditor();paintMarks();$('#reader-note-body').focus({preventScroll:true});}else openInlineEditor();
   });
-  host.addEventListener('pointercancel',()=>{if(transformDrag){draft.anchor=transformDrag.anchor;dirty=transformDrag.wasDirty;}drag=null;resizeDrag=null;pan=null;transformDrag=null;host.classList.remove('reader-panning');paintMarks();});
+  host.addEventListener('pointercancel',()=>{selectingText=false;clearTimeout(selectionTimer);if(transformDrag){draft.anchor=transformDrag.anchor;dirty=transformDrag.wasDirty;}drag=null;resizeDrag=null;pan=null;transformDrag=null;host.classList.remove('reader-panning');paintMarks();});
   host.addEventListener('contextmenu',event=>{if(pan||performance.now()<suppressContextMenu||event.target.closest('#reader-scroll'))event.preventDefault();});
   host.addEventListener('dblclick',event=>{const mark=event.target.closest('[data-reader-mark]');if(mark&&mode==='read'){event.preventDefault();selectAnnotation(mark.dataset.readerMark,true);}});
   host.addEventListener('scroll',event=>{if(event.target.id==='reader-scroll')positionAnnotationTools();},true);
@@ -409,18 +441,26 @@ export function createPDFReader(config){
   function densityChanged(){if(densityValue===(window.devicePixelRatio||1))return;watchDensity();if(host.open&&doc){clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>renderPages({preserve:true}).catch(error=>status(error.message)),100);}}
   window.addEventListener('resize',densityChanged);window.addEventListener('focus',densityChanged);document.addEventListener('visibilitychange',densityChanged);
   watchDensity();
-  document.addEventListener('selectionchange',()=>{
-    if(!host.open)return;const selection=getSelection(),node=selection?.anchorNode,element=node?.nodeType===Node.ELEMENT_NODE?node:node?.parentElement,frame=element?.closest('#reader-stage .reader-page');
-    if(frame&&!selection.isCollapsed&&element.closest('.textLayer')){
+  function captureSelection(){
+    if(!host.open||selectingText)return;
+    const selection=getSelection(),node=selection?.anchorNode,element=node?.nodeType===Node.ELEMENT_NODE?node:node?.parentElement,frame=element?.closest('#reader-stage .reader-page');
+    if(frame&&!selection.isCollapsed&&element.closest('.textLayer')&&selection.rangeCount){
       lastQuote={page:Number(frame.dataset.readerPage),text:selection.toString().trim().slice(0,30000)};updateQuoteButton();
       const endNode=selection.focusNode,endElement=endNode?.nodeType===Node.ELEMENT_NODE?endNode:endNode?.parentElement;
-      if(mode==='read'&&config.translationStatus&&endElement?.closest('#reader-stage .reader-page')===frame){const range=selection.getRangeAt(0),rect=range.getBoundingClientRect(),bounds=frame.getBoundingClientRect(),x=Math.max(0,Math.min(.999,(rect.left-bounds.left)/bounds.width)),y=Math.max(0,Math.min(.999,(rect.top-bounds.top)/bounds.height));study.selectionChanged({page:lastQuote.page,text:selection.toString().trim(),quote:element.textContent.slice(0,1200),selectionRect:{x,y,width:Math.max(.001,Math.min(1-x,rect.width/bounds.width)),height:Math.max(.001,Math.min(1-y,rect.height/bounds.height))},pageAspect:bounds.height/bounds.width,rect:{left:rect.left,bottom:rect.bottom}});}
+      if(mode==='read'&&endElement?.closest('#reader-stage .reader-page')===frame){
+        const range=selection.getRangeAt(0),rect=range.getBoundingClientRect(),bounds=frame.getBoundingClientRect();
+        const rects=selectionFragments([...range.getClientRects()],bounds);if(!rects.length)return;
+        const anchor=textMarkAnchor({page:lastQuote.page,rects});
+        study.selectionChanged({page:lastQuote.page,text:lastQuote.text,quote:element.textContent.slice(0,1200),rects,selectionRect:anchor.rect,pageAspect:bounds.height/bounds.width,rect:{left:rect.left,top:rect.top,bottom:rect.bottom}});
+      }else study.selectionChanged(null);
     }else if(!element?.closest('#reader-selection-translation')&&!document.activeElement?.closest('#reader-selection-translation'))study.selectionChanged(null);
-  });
+  }
+  document.addEventListener('selectionchange',()=>{clearTimeout(selectionTimer);if(!selectingText)selectionTimer=setTimeout(captureSelection,120);});
+  host.addEventListener('pointerdown',event=>{if(event.target.closest('[data-reader-text-mark],.selection-mark-tools'))event.preventDefault();});
   host.addEventListener('wheel',event=>{
     const scroll=event.target.closest('#reader-scroll');if(!scroll||!doc)return;
     if(pan)return;
-    if(event.ctrlKey){event.preventDefault();clearTimeout(resizeTimer);const anchor=viewportAnchor();zoom=Math.max(.4,Math.min(3,actualScale*(event.deltaY<0?1.1:1/1.1)));resizeTimer=setTimeout(()=>renderPages({anchor}),70);return;}
+    if(event.ctrlKey){event.preventDefault();clearTimeout(resizeTimer);const anchor=viewportAnchor();zoom=Math.max(.4,Math.min(3,(typeof zoom==='number'?zoom:actualScale)*(event.deltaY<0?1.1:1/1.1)));resizeTimer=setTimeout(()=>renderPages({anchor}),70);return;}
     if(flow!=='paged'){if(flow==='horizontal'&&Math.abs(event.deltaY)>Math.abs(event.deltaX)&&!event.shiftKey){event.preventDefault();scroll.scrollLeft+=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?scroll.clientWidth:1);}return;}
     if(!wheelTurn||mode!=='read'||host.dataset.rendering||!getSelection().isCollapsed||performance.now()<turnLockedUntil||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
     const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?scroll.clientHeight:1),direction=Math.sign(delta),atEdge=direction>0?scroll.scrollTop+scroll.clientHeight>=scroll.scrollHeight-4:scroll.scrollTop<=4;
@@ -430,7 +470,10 @@ export function createPDFReader(config){
     if((event.ctrlKey||event.metaKey)&&event.key==='Enter'&&event.target.id==='reader-inline-label'){event.preventDefault();saveNote().then(()=>{if(!dirty){inlineOpen=false;positionAnnotationTools();}});return;}
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'){event.preventDefault();saveNote();return;}
     if(event.target.closest('.reader-sidebar-resizer')&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();sidebarWidth=Math.max(270,Math.min(520,sidebarWidth+(event.key==='ArrowLeft'?16:-16)));updateSidebar();if(doc&&typeof zoom==='string')renderPages({preserve:true});savePosition();return;}
-    if(event.target.matches('input,textarea,select')||event.ctrlKey||event.altKey||event.metaKey)return;
+    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'&&!event.shiftKey&&!event.target.closest('input,textarea,[contenteditable=true]')){event.preventDefault();undoTextMark().catch(error=>config.toast(error.message,true));return;}
+    if(event.target.closest('input,textarea,select,[contenteditable=true]')||event.ctrlKey||event.altKey||event.metaKey)return;
+    if(event.key.toLowerCase()==='f'){event.preventDefault();host.querySelector('[data-reader-action=focus]').click();return;}
+    if(['h','u'].includes(event.key.toLowerCase())){event.preventDefault();study.markSelection(event.key.toLowerCase()==='h'?'highlight':'underline').catch(error=>config.toast(error.message,true));return;}
     const tool={t:'text',a:'arrow',r:'mark',v:'read'}[event.key.toLowerCase()];if(tool){event.preventDefault();if(tool==='read'){mode='read';updateMode();}else activateTool(tool);return;}
     if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();turn(event.key==='ArrowRight'?1:-1);}
     if(['PageDown','PageUp'].includes(event.key)||event.key===' '&&!event.target.closest('button,summary')){event.preventDefault();screenStep(event.key==='PageUp'||event.shiftKey?-1:1);}

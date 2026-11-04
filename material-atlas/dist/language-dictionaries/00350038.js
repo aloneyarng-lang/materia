@@ -1,0 +1,1 @@
+export default {"58th year of the sexagenary cycle (in onmyōdō)":[["jmdict","革命 [かくめい] — 58th year of the sexagenary cycle (in Onmyōdō)","","en","ja"]],"58th year of the sexagenary cycle":[["jmdict","革命 [かくめい] — 58th year of the sexagenary cycle (in Onmyōdō)","","en","ja"]]};

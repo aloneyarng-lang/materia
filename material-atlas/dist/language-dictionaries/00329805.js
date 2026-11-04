@@ -1,0 +1,1 @@
+export default {"2項式":[["jmdict","[noun (common) (futsuumeishi)] binomial","にこうしき","ja","en"]],"2項道路":[["jmdict","[noun (common) (futsuumeishi)] road that is narrower than 4 meters but still counts as a valid connecting road for determining if construction is allowed on a plot adjacent to the road","にこうどうろ","ja","en"]]};

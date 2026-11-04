@@ -1,0 +1,1 @@
+export default {"64th note":[["jmdict","六十四分音符 [ろくじゅうしぶおんぷ] — 64th note","","en","ja"]],"64卦":[["jmdict","[noun (common) (futsuumeishi)] the 64 hexagrams of the I Ching","ろくじゅうしけ・ろくじゅうしか・ろくじゅうよんけ・ろくじゅうよんか","ja","en"]],"64":[["jmdict","[noun (common) (futsuumeishi)] Nintendo 64 (col)","ロクヨン","ja","en"]],"64 stehplätze":[["ding","standing room for 64","","de","en"]]};

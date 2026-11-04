@@ -1,0 +1,1 @@
+export default {"f2p player":[["jmdict","無課金 [むかきん] — F2P player","","en","ja"]],"f2層":[["jmdict","[noun (common) (futsuumeishi)] 35-to-49 female demographic (target audience)","エフツーそう","ja","en"]],"f2p":[["jmdict","基本プレイ無料 [きほんプレイむりょう] — F2P","","en","ja"]],"f2f sex":[["ding","Live-Sex (im Gegensatz zu Cybersex)","","en","de"]]};

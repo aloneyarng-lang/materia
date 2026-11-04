@@ -1,0 +1,1 @@
+export default {"\"it\"":[["jmdict","イット [イット] — \"it\"","","en","ja"]],"\"it was all a dream\" ending":[["jmdict","夢オチ；夢落ち [ゆめオチ・ゆめおち] — \"it was all a dream\"-ending","","en","ja"]],"\"in between\" city":[["ding","Zwischenstadt {f}","","en","de"]]};

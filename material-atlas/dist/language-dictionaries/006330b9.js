@@ -1,0 +1,1 @@
+export default {"cストローク":[["jmdict","[noun (common) (futsuumeishi)] C-stroke (in canoeing)","シーストローク・シー・ストローク","ja","en"]],"cスイッチ":[["jmdict","[noun (common) (futsuumeishi)] two-way switch (UK); three-way switch (US)","シースイッチ","ja","en"]]};

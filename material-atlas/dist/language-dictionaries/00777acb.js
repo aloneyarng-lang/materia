@@ -1,0 +1,1 @@
+export default {"w立直":[["jmdict","[noun (common) (futsuumeishi)] declaring that one is one tile away from winning on one's first discard and before any tiles have been called or kongs declared\n[noun (common) (futsuumeishi)] being one step away from victory, with two paths to achieve it","ダブルリーチ","ja","en"]]};

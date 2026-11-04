@@ -1,0 +1,1 @@
+export default {"a+e unit":[["ding","Notaufnahmestelle {f}; Notfallaufnahme {f} [ugs.]; Notaufnahme {f} [ugs.]; Notfallstation {f}; Rettungsstelle {f} (im Krankenhaus) [med.]","","en","de"]],"a+e units":[["ding","Notaufnahmestellen {pl}; Notfallaufnahmen {pl}; Notaufnahmen {pl}; Notfallstationen {pl}; Rettungsstellen {pl}","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"911事件":[["jmdict","[noun (common) (futsuumeishi)] September 11 attacks; 9/11","きゅういちいちじけん","ja","en"]],"911":[["ding","Notrufnummer in Amerika","","en","de"]],"911 anrufen":[["ding","to 911 [Am.]","","de","en"]]};

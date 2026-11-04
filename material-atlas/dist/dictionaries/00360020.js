@@ -1,0 +1,1 @@
+export default {"6 membered":[["ecdict","[网络] 6元",""],["wordnet","s. of a chemical compound having a ring with six members; \"having three carbon and three nitrogen atoms in a six-membered ring\"",""]],"6 june 1944":[["wordnet","n. date of the Allied landing in France, World War II",""]]};

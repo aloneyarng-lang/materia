@@ -1,0 +1,1 @@
+export default {"1歩":[["jmdict","[noun (common) (futsuumeishi); adverb (fukushi)] (a) step; one step\n[noun (common) (futsuumeishi); adverb (fukushi)] level; stage; step\n[noun (common) (futsuumeishi); adverb (fukushi)] small degree; small amount","いっぽ","ja","en"]],"1歩1歩":[["jmdict","[noun (common) (futsuumeishi)] step by step; by degrees","いっぽいっぽ","ja","en"]]};

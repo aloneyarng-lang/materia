@@ -1,0 +1,1 @@
+export default {"45":[["ecdict"," forty-five; [电影]魔鬼交锋.45",""],["wordnet","s. being five more than forty",""]],"45th":[["ecdict","[网络] 第45号",""],["wordnet","s. the ordinal number of forty-five in counting order",""]]};

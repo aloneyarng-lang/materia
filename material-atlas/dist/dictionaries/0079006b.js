@@ -1,0 +1,1 @@
+export default {"ykk":[["ecdict","abbr. Tajiri Kikai Kogyo Co; Ltd. <日本>田尻机械工业公司（代号）; Yamada Chemical Co.; Ltd. <日本>山田化学公司",""]]};

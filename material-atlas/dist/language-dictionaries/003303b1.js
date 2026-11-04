@@ -1,0 +1,1 @@
+export default {"3α androstenol":[["ding","5α-androst-16-en-3α-ol; 3α,5α-androstenol; 3α-androstenol; androstenol (pheromone)","","de","en"],["ding","Alpha-Androstenol {n}; 3α-Androstenol {n}; Androstenol (Pheromon) {n} [biochem.]","","en","de"]],"3α,5α androstenol":[["ding","Alpha-Androstenol {n}; 3α-Androstenol {n}; Androstenol (Pheromon) {n} [biochem.]","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"1mm":[["jmdict","[noun (common) (futsuumeishi)] (not even) an inch; (not even) a little bit; one millimeter","いちミリ","ja","en"]],"1m in prize money and as much again in sponsorship":[["ding","1 Mio. Preisgeld und noch einmal so viel an Sponsorengeld","","en","de"]]};

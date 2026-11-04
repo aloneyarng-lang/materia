@@ -1,129 +1,93 @@
-export const OFFLINE_DICTIONARY_LANGUAGES=Object.freeze({'zh-CN':'简体中文',en:'英语',ja:'日语',de:'德语'});
-
-const rows=[
-  ['alloy','合金','合金','Legierung'],
-  ['material','材料','材料','Material'],
-  ['property','性能；性质','特性；性質','Eigenschaft'],
-  ['performance','性能','性能','Leistung'],
-  ['strength','强度','強度','Festigkeit'],
-  ['tensile strength','抗拉强度','引張強さ','Zugfestigkeit'],
-  ['yield strength','屈服强度','降伏強さ','Streckgrenze'],
-  ['compressive strength','抗压强度','圧縮強さ','Druckfestigkeit'],
-  ['hardness','硬度','硬さ','Härte'],
-  ['toughness','韧性','靭性','Zähigkeit'],
-  ['ductility','延展性；延性','延性','Duktilität'],
-  ['brittleness','脆性','脆性','Sprödigkeit'],
-  ['elasticity','弹性','弾性','Elastizität'],
-  ['plasticity','塑性','塑性','Plastizität'],
-  ['fatigue','疲劳','疲労','Ermüdung'],
-  ['fracture','断裂；破坏','破壊','Bruch'],
-  ['crack','裂纹','亀裂','Riss'],
-  ['corrosion','腐蚀','腐食','Korrosion'],
-  ['conductivity','电导率；导热率','伝導率','Leitfähigkeit'],
-  ['thermal conductivity','热导率','熱伝導率','Wärmeleitfähigkeit'],
-  ['electrical conductivity','电导率','電気伝導率','elektrische Leitfähigkeit'],
-  ['resistivity','电阻率','抵抗率','spezifischer Widerstand'],
-  ['density','密度','密度','Dichte'],
-  ['porosity','孔隙率','気孔率','Porosität'],
-  ['viscosity','黏度','粘度','Viskosität'],
-  ['stress','应力','応力','Spannung'],
-  ['strain','应变','ひずみ','Dehnung'],
-  ['modulus','模量','弾性率','Modul'],
-  ["Young's modulus",'杨氏模量','ヤング率','Elastizitätsmodul'],
-  ['shear modulus','剪切模量','せん断弾性率','Schubmodul'],
-  ['bulk modulus','体积模量','体積弾性率','Kompressionsmodul'],
-  ['grain','晶粒','結晶粒','Korn'],
-  ['grain boundary','晶界','粒界','Korngrenze'],
-  ['crystal','晶体','結晶','Kristall'],
-  ['lattice','晶格','格子','Gitter'],
-  ['phase','相','相','Phase'],
-  ['microstructure','微观结构','微細組織','Mikrostruktur'],
-  ['nanostructure','纳米结构','ナノ構造','Nanostruktur'],
-  ['composite','复合材料','複合材料','Verbundwerkstoff'],
-  ['polymer','聚合物；高分子','高分子','Polymer'],
-  ['ceramic','陶瓷','セラミックス','Keramik'],
-  ['metal','金属','金属','Metall'],
-  ['semiconductor','半导体','半導体','Halbleiter'],
-  ['electrode','电极','電極','Elektrode'],
-  ['electrolyte','电解质','電解質','Elektrolyt'],
-  ['battery','电池','電池','Batterie'],
-  ['catalyst','催化剂','触媒','Katalysator'],
-  ['adsorption','吸附','吸着','Adsorption'],
-  ['diffusion','扩散','拡散','Diffusion'],
-  ['oxidation','氧化','酸化','Oxidation'],
-  ['reduction','还原','還元','Reduktion'],
-  ['annealing','退火','焼鈍','Glühen'],
-  ['sintering','烧结','焼結','Sintern'],
-  ['quenching','淬火','焼入れ','Abschrecken'],
-  ['coating','涂层','コーティング','Beschichtung'],
-  ['substrate','基底；衬底','基板','Substrat'],
-  ['interface','界面','界面','Grenzfläche'],
-  ['surface','表面','表面','Oberfläche'],
-  ['morphology','形貌；形态','形態','Morphologie'],
-  ['composition','组成；成分','組成','Zusammensetzung'],
-  ['structure','结构','構造','Struktur'],
-  ['stability','稳定性','安定性','Stabilität'],
-  ['degradation','降解；劣化','劣化','Degradation'],
-  ['efficiency','效率','効率','Wirkungsgrad'],
-  ['capacity','容量','容量','Kapazität'],
-  ['voltage','电压','電圧','Spannung'],
-  ['current','电流','電流','Strom'],
-  ['resistance','电阻；阻力','抵抗','Widerstand'],
-  ['sample','样品','試料','Probe'],
-  ['specimen','试样；试件','試験片','Prüfkörper'],
-  ['measurement','测量','測定','Messung'],
-  ['uncertainty','不确定度','不確かさ','Messunsicherheit'],
-  ['error','误差；错误','誤差','Fehler'],
-  ['method','方法','方法','Methode'],
-  ['result','结果','結果','Ergebnis'],
-  ['discussion','讨论','考察','Diskussion'],
-  ['conclusion','结论','結論','Schlussfolgerung'],
-  ['evidence','证据','証拠','Evidenz'],
-  ['hypothesis','假设','仮説','Hypothese'],
-  ['mechanism','机制；机理','機構','Mechanismus'],
-  ['experiment','实验','実験','Experiment'],
-  ['temperature','温度','温度','Temperatur'],
-  ['pressure','压力','圧力','Druck'],
-  ['concentration','浓度','濃度','Konzentration'],
-  ['solution','溶液','溶液','Lösung'],
-  ['solvent','溶剂','溶媒','Lösungsmittel'],
-  ['solute','溶质','溶質','gelöster Stoff'],
-];
-
-const ids=['en','zh-CN','ja','de'];
-const entries=Object.freeze(rows.map((values,index)=>Object.freeze({id:'term-'+String(index+1).padStart(3,'0'),terms:Object.freeze(Object.fromEntries(ids.map((id,i)=>[id,Object.freeze(String(values[i]).split('；').map(value=>value.trim()).filter(Boolean))])))})));
-const normalize=value=>String(value??'').normalize('NFKC').trim().toLocaleLowerCase().replace(/[‐‑‒–—−-]/g,' ').replace(/^[\s.,;:!?()[\]{}「」『』【】“”"'‘’]+|[\s.,;:!?()[\]{}「」『』【】“”"'‘’]+$/g,'').replace(/\s+/g,' ');
-const index=new Map();
-for(const entry of entries)for(const [language,terms]of Object.entries(entry.terms))for(const term of terms){const key=normalize(term);if(key&&!index.has(key))index.set(key,{entry,language,matched:term});}
-function variants(value){
-  const result=[value];
-  if(/^[a-z][a-z -]{2,}$/i.test(value)){
-    if(value.endsWith('ies'))result.push(value.slice(0,-3)+'y');
-    if(value.endsWith('ing'))result.push(value.slice(0,-3),value.slice(0,-3)+'e');
-    if(value.endsWith('ed'))result.push(value.slice(0,-2),value.slice(0,-1));
-    if(value.endsWith('es'))result.push(value.slice(0,-2),value.slice(0,-1));
-    if(value.endsWith('s'))result.push(value.slice(0,-1));
+import manifest from './dictionaries/manifest.js';
+import languageManifest from './language-dictionaries/manifest.js';
+import {lookupOfflineDictionary as lookupTerm,searchOfflineDictionary as searchTerms,OFFLINE_DICTIONARY_LANGUAGES} from './offline-terminology.js';
+export {OFFLINE_DICTIONARY_LANGUAGES};
+export const DICTIONARY_SOURCES={ecdict:'ECDICT 开放英汉词典',wordnet:'Princeton WordNet 3.0',jmdict:'JMdict · EDRDG',ding:'Ding 德英词典 · Frank Richter',terminology:'材料术语补充表'};
+const normalize=value=>String(value??'').normalize('NFKC').trim().toLowerCase().replace(/[‐‑‒–—−-]/g,' ').replace(/^[\s.,;:!?()[\]{}“”"'‘’]+|[\s.,;:!?()[\]{}“”"'‘’]+$/g,'').replace(/\s+/g,' ');
+const bucket=word=>Array.from(word.slice(0,2)).map(c=>c.charCodeAt(0).toString(16).padStart(4,'0')).join('');
+const cache=new Map(),known=new Set(manifest.shards);
+const languageCache=new Map(),languageKnown=new Set(languageManifest.shards);
+const languageBucket=q=>q.charCodeAt(0)>127?'u'+(q.codePointAt(0)%128):bucket(q);
+async function loadLanguage(key){
+  if(!languageKnown.has(key))return {};
+  if(!languageCache.has(key))languageCache.set(key,import(`./language-dictionaries/${key}.js`).then(m=>m.default).catch(error=>{languageCache.delete(key);throw error;}));
+  return languageCache.get(key);
+}
+async function recordsFor(word){return [...((await load(bucket(word)))[word]||[]),...((await loadLanguage(languageBucket(word)))[word]||[])];}
+async function load(key){
+  if(!known.has(key))return {};
+  if(!cache.has(key))cache.set(key,import(`./dictionaries/${key}.js`).then(m=>m.default).catch(error=>{cache.delete(key);throw error;}));
+  return cache.get(key);
+}
+function candidates(q){
+  const words=[q];
+  if(q.endsWith('ies'))words.push(q.slice(0,-3)+'y');
+  if(q.endsWith('ing')){const stem=q.slice(0,-3);words.push(stem,stem+'e');if(/([a-z])\1$/.test(stem))words.push(stem.slice(0,-1));}
+  if(q.endsWith('ed'))words.push(q.slice(0,-2),q.slice(0,-1));
+  if(q.endsWith('es'))words.push(q.slice(0,-2));
+  if(q.endsWith('s'))words.push(q.slice(0,-1));
+  return [...new Set(words)];
+}
+function result(word,records,targetLanguage){
+  const selected=records.filter(r=>r[4]?r[4]===targetLanguage:targetLanguage==='zh-CN'?r[0]==='ecdict':targetLanguage==='en'?r[0]==='wordnet':false);
+  if(!selected.length)return null;
+  return {found:true,id:word,term:word,sourceLanguage:selected[0][3]||'en',targetLanguage,translation:[...new Set(selected.map(r=>r[1]))].join('\n'),phonetic:selected.find(r=>r[2])?.[2]||'',sources:[...new Set(selected.map(r=>DICTIONARY_SOURCES[r[0]]))],terms:{en:[word]}};
+}
+async function pivotChinese(word){
+  const bilingual=(await recordsFor(word)).filter(r=>r[4]==='en'&&['ja','de'].includes(r[3]));
+  const translated=[],sources=new Set();
+  for(const record of bilingual){
+    const glosses=record[1].split(/[;\n]/).map(s=>normalize(s.replace(/\[[^\]]*\]|\([^)]*\)|\{[^}]*\}|<[^>]*>/g,''))).filter(Boolean);
+    for(const gloss of glosses.slice(0,30)){
+      const rows=(await load(bucket(gloss)))[gloss]||[];
+      for(const row of rows.filter(r=>r[0]==='ecdict')){
+        translated.push(gloss+' → '+row[1]);sources.add(DICTIONARY_SOURCES[record[0]]);sources.add(DICTIONARY_SOURCES.ecdict);
+      }
+    }
   }
-  return [...new Set(result)];
+  if(!translated.length)return null;
+  return {found:true,id:word,term:word,sourceLanguage:bilingual[0][3],targetLanguage:'zh-CN',indirect:true,
+    translation:'【经英语转译，可能遗漏义项】\n'+[...new Set(translated)].join('\n'),sources:[...sources],phonetic:bilingual.find(r=>r[2])?.[2]||'',terms:{en:[word]}};
 }
-export function lookupOfflineDictionary(text,targetLanguage='zh-CN'){
-  if(!Object.hasOwn(OFFLINE_DICTIONARY_LANGUAGES,targetLanguage))return{found:false,unsupported:true,targetLanguage};
-  const query=normalize(text);if(!query||query.length>160)return{found:false,targetLanguage};
-  let match;for(const value of variants(query)){match=index.get(value);if(match)break;}
-  if(!match)return{found:false,targetLanguage,query};
-  const translated=match.entry.terms[targetLanguage],translation=translated.join('；');
-  return{found:true,id:match.entry.id,query,term:match.matched,sourceLanguage:match.language,targetLanguage,translation,terms:match.entry.terms};
-}
-export function searchOfflineDictionary(query='',targetLanguage='zh-CN',limit=60){
-  if(!Object.hasOwn(OFFLINE_DICTIONARY_LANGUAGES,targetLanguage))return[];
-  const needle=normalize(query),bounded=Math.max(1,Math.min(100,Number(limit)||60)),result=[];
-  for(const entry of entries){
-    const searchable=Object.values(entry.terms).flat().map(normalize);
-    if(needle&&!searchable.some(term=>term.includes(needle)))continue;
-    const source=needle?Object.entries(entry.terms).flatMap(([language,terms])=>terms.map(term=>({language,term,score:normalize(term)===needle?0:normalize(term).startsWith(needle)?1:2}))).filter(row=>normalize(row.term).includes(needle)).sort((a,b)=>a.score-b.score||a.term.length-b.term.length)[0]:{language:'en',term:entry.terms.en[0]};
-    result.push({found:true,id:entry.id,term:source.term,sourceLanguage:source.language,targetLanguage,translation:entry.terms[targetLanguage].join('；'),terms:entry.terms});
-    if(result.length>=bounded)break;
+export async function lookupOfflineDictionary(text,targetLanguage='zh-CN'){
+  if(!Object.hasOwn(OFFLINE_DICTIONARY_LANGUAGES,targetLanguage))return {found:false,unsupported:true,targetLanguage};
+  const q=normalize(text);if(!q||q.length>160)return {found:false,targetLanguage};
+  for(const word of candidates(q)){
+    const records=await recordsFor(word);
+    if(targetLanguage==='zh-CN'&&records.some(r=>r[4]==='en'&&['ja','de'].includes(r[3]))&&!records.some(r=>r[0]==='wordnet')){
+      const supplement=lookupTerm(text,targetLanguage);
+      if(supplement.found)return {...supplement,sources:[DICTIONARY_SOURCES.terminology]};
+      const pivot=await pivotChinese(word);if(pivot)return {...pivot,query:q};
+    }
+    const found=records&&result(word,records,targetLanguage);if(found)return {...found,query:q};
   }
-  return result;
+  const term=lookupTerm(text,targetLanguage);
+  if(term.found)return {...term,sources:[DICTIONARY_SOURCES.terminology]};
+  if(targetLanguage==='zh-CN')for(const word of candidates(q)){const pivot=await pivotChinese(word);if(pivot)return {...pivot,query:q};}
+  return term;
 }
-export const offlineDictionarySize=()=>entries.length;
+export async function searchOfflineDictionary(text='',targetLanguage='zh-CN',limit=60){
+  if(!Object.hasOwn(OFFLINE_DICTIONARY_LANGUAGES,targetLanguage))return [];
+  const q=normalize(text),bounded=Math.max(1,Math.min(100,Number(limit)||60));
+  if(!q)return [];
+  const exact=await lookupOfflineDictionary(q,targetLanguage),rows=exact.found?[exact]:[];
+  const keys=q.length>=2?[bucket(q)]:manifest.shards.filter(k=>k.startsWith(bucket(q)));
+  const languageKeys=q.charCodeAt(0)>127||q.length>=2?[languageBucket(q)]:languageManifest.shards.filter(k=>k.startsWith(bucket(q)));
+  // Merge both indexes so a prefix result retains every available dictionary source.
+  const words=new Map();
+  for(const key of keys){for(const [word,records] of Object.entries(await load(key))){
+    if(word.startsWith(q))words.set(word,records);
+  }}
+  for(const key of languageKeys){for(const [word,records] of Object.entries(await loadLanguage(key))){
+    if(word.startsWith(q))words.set(word,[...(words.get(word)||[]),...records]);
+  }}
+  for(const [word,records] of words){
+    if(!word.startsWith(q)||rows.some(r=>r.term===word))continue;
+    const row=result(word,records,targetLanguage);if(row)rows.push(row);
+    if(rows.length>=bounded)return rows.slice(0,bounded);
+  }
+  for(const row of searchTerms(q,targetLanguage,bounded))if(!rows.some(r=>r.term===row.term))rows.push({...row,sources:[DICTIONARY_SOURCES.terminology]});
+  return rows.slice(0,bounded);
+}
+export const offlineDictionarySize=()=>manifest.headwords;
+export const offlineDictionaryInfo=()=>({...manifest.counts,...languageManifest.counts});

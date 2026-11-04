@@ -1,0 +1,1 @@
+export default {"w/c":[["ecdict","abbr. 已校正（with corrections）",""]],"w/m":[["ecdict"," [计]= Words per Minute,每分钟字，字/分",""]],"w/m list":[["ecdict","[经] 重量或体积单(表)",""]],"w/m per ton":[["ecdict","[经] 运费每吨按重量或容积计",""]],"w/o":[["ecdict"," [计]= Write or Out,写或输出",""]],"w/v":[["ecdict","[医] 重/容",""]],"w/w":[["ecdict"," [医][=weight in weight]重量重量比",""]]};

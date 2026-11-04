@@ -1,0 +1,1 @@
+export default {"1/3 bond":[["ding","Drittelverband {m} [constr.]","","en","de"]],"1/6 geviert":[["ding","1/6 em","","de","en"]],"1/6 em":[["ding","1/6-Geviert {n}","","en","de"]],"1/8 geviert":[["ding","1/8 em","","de","en"]],"1/8 em":[["ding","1/8-Geviert","","en","de"]],"1/1000 promille":[["ding","parts per million (ppm)","","de","en"]]};

@@ -1,0 +1,1 @@
+export default {"2番":[["jmdict","[noun (common) (futsuumeishi)] second; number two; runner-up","にばん","ja","en"]],"2番線":[["jmdict","[noun (common) (futsuumeishi)] platform no. 2; track 2","にばんせん","ja","en"]],"2番目":[["jmdict","[noun (common) (futsuumeishi)] second (in a series)","にばんめ","ja","en"]]};

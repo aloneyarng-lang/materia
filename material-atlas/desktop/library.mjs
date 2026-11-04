@@ -231,6 +231,6 @@ export class LocalLibrary {
   }
   async info() {
     let bytes = 0; for (const paper of this.data.papers) { try { bytes += (await stat(await this.pdfPath(paper.id))).size; } catch {} }
-    return { path: this.root, papers: this.data.papers.length, bytes, readingStatusVersion:1,folderSyncVersion:1,importActivityVersion:1,studyVersion: 1, materialsVersion: 1, readerNotesVersion: 1, readerAnnotationsVersion: 1, readerDraftsVersion: 1, themeSchemaVersion: 2, graphThemeVersion: GRAPH_APPEARANCE_VERSION, researchCanvasVersion: 1, materialSelectionVersion: 1, materialGroupsVersion: 1 };
+    return { path: this.root, papers: this.data.papers.length, bytes, readingStatusVersion:1,folderSyncVersion:1,importActivityVersion:1,studyVersion: 1, materialsVersion: 1, readerNotesVersion: 1, readerAnnotationsVersion: 2, readerDraftsVersion: 1, themeSchemaVersion: 2, graphThemeVersion: GRAPH_APPEARANCE_VERSION, researchCanvasVersion: 1, materialSelectionVersion: 1, materialGroupsVersion: 1 };
   }
 }

@@ -1,0 +1,1 @@
+export default {"vシネマ":[["jmdict","[noun (common) (futsuumeishi)] direct-to-video movie","ブイシネマ","ja","en"]],"vシネ":[["jmdict","[noun (common) (futsuumeishi)] direct-to-video movie","ブイシネ","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"vjデー":[["jmdict","[noun (common) (futsuumeishi)] V-J Day (August 15 or September 2)","ブイジェーデー","ja","en"]],"vj day":[["ding","Tag des Sieges der Alliierten über Japan im Zweiten Weltkrieg","","en","de"]]};

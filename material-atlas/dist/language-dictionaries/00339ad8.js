@@ -1,0 +1,1 @@
+export default {"3高":[["jmdict","[noun (common) (futsuumeishi)] being highly educated, having a high salary and being tall; three highs\n[noun (common) (futsuumeishi)] high-valued yen, high stock prices and high land prices (usu. in reference to Japan's \"bubble era\")","さんこう","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"1":[["ecdict","num. one",""],["wordnet","s. used of a single unit or thing; not two or more; \"`ane' is Scottish\"",""],["wordnet","n. the smallest whole number or a numeral representing this number; \"he has the one but will need a two and three to go with it\"; \"they had lunch at one\"",""]]};

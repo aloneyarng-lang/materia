@@ -1,0 +1,1 @@
+export default {"5つ":[["jmdict","[numeric] five\n[noun (common) (futsuumeishi)] five years of age\n[noun (common) (futsuumeishi)] eight o'clock (old time system)","いつつ","ja","en"]],"5つ星":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] five stars (rating)","いつつぼし","ja","en"]]};

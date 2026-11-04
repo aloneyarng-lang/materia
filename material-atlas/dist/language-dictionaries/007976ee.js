@@ -1,0 +1,1 @@
+export default {"y目":[["jmdict","[noun (common) (futsuumeishi)] sidelong glance\n[noun (common) (futsuumeishi)] short grain (paper)\n[noun (common) (futsuumeishi)] kanji \"net\" radical at top","よこめ","ja","en"]]};

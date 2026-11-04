@@ -1,0 +1,1 @@
+export default {"znacht":[["ding","supper; evening meal","","de","en"]],"znünipause":[["ding","break for a snack; break for a bite to eat","","de","en"]],"znüni":[["ding","morning snack; mid-morning snack; elevenses [Br.] [dated]","","de","en"]],"zniachtl":[["ding","runt (weak person)","","de","en"]]};

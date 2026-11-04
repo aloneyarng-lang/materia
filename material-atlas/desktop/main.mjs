@@ -1,7 +1,9 @@
 ﻿import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage } from 'electron';
+import {createStartup} from './startup.mjs';
 import {DesktopModuleServices} from './module-services.mjs';
 import {DESKTOP_MODULES} from './modules/index.mjs';
+import {MachineLearningEngine} from './ml-engine.mjs';
 import { mkdir, readFile, writeFile, copyFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +19,8 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(appRoot, '.local', 'desktop-profile'));
 app.setPath('userData', profile);
-let mainWindow, library, agentHistory, canvasStore, moduleServices;
+let mainWindow, library, agentHistory, canvasStore, moduleServices, startup;
+const mlEngine=new MachineLearningEngine({onProgress:progress=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('ml:progress',progress);}});
 let preferenceQueue=Promise.resolve();
 function observeLibrary(store){store.onFolderChange=result=>{if(store===library&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('library:changed',{path:store.root,...result});};return store;}
 let canvasCloseReady=false,canvasAllowClose=false;
@@ -34,11 +37,12 @@ app.on('window-all-closed', () => app.quit());
 let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
-  event.preventDefault();quitPending=true;agentRun?.controller.abort();cancelTranslations();
+  event.preventDefault();quitPending=true;agentRun?.controller.abort();cancelTranslations();mlEngine.cancelAll();
   Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,moduleServices?.flush(),preferenceQueue]).then(()=>app.quit());
 });
 
 async function start() {
+  startup = await createStartup(appRoot);
   await mkdir(profile, { recursive: true });
   const agentSettings = new AgentSettings(profile, safeStorage);
   await agentSettings.load().catch(() => {});
@@ -63,8 +67,13 @@ async function start() {
   canvasStore=new CanvasFile(library.root);
   moduleServices=new DesktopModuleServices(DESKTOP_MODULES,library.root);
   await savePreferences({libraryPath:library.root});
-  mainWindow = new BrowserWindow({ show: process.env.MATERIA_HEADLESS !== '1', width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
-  mainWindow.webContents.on('render-process-gone',()=>{canvasCloseReady=false;});
+  mainWindow = new BrowserWindow({ show: false, width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
+  const revealMain=()=>{if(!mainWindow.isDestroyed()&&process.env.MATERIA_HEADLESS!=='1'){mainWindow.show();mainWindow.focus();}};
+  // Reveal initialization errors too, rather than trapping the user behind a loader.
+  const startupTimeout=setTimeout(()=>startup.finish(revealMain),15000);
+  mainWindow.once('closed',()=>{clearTimeout(startupTimeout);startup.close();});
+  mainWindow.webContents.once('did-fail-load',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);});
+  mainWindow.webContents.on('render-process-gone',()=>{canvasCloseReady=false;mlEngine.cancelAll();});
   Menu.setApplicationMenu(null);
   mainWindow.on('close',event=>{if(canvasCloseReady&&!canvasAllowClose){event.preventDefault();mainWindow.webContents.send('canvas:prepare-close');}});
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -75,7 +84,17 @@ async function start() {
     return fn(...args);
   });
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
+  handle('startup:ready',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);return true;});
   moduleServices.register(handle);
+  handle('ml:status',()=>mlEngine.run('status'));
+  handle('ml:run',async({id,action,libraryKey,...payload})=>{
+    if(libraryKey!==library.root)throw Error('文献库已切换，请重新打开模型页面。');
+    if(!['train','predict'].includes(action))throw Error('不支持的机器学习操作。');
+    const result=await mlEngine.run(action,payload,id);
+    if(libraryKey!==library.root)throw Error('文献库已切换，训练结果未写入其他文献库。');
+    return result;
+  });
+  handle('ml:cancel',id=>mlEngine.cancel(id));
   handle('canvas:save',payload=>{if(!payload||payload.libraryKey!==canvasStore.root)throw Error('文献库已切换，画布未写入其他文献库。');return canvasStore.save(payload.state);});
   handle('canvas:request-close',()=>{mainWindow.close();return true;});
   handle('canvas:ready',()=>{canvasCloseReady=true;return true;});
@@ -174,7 +193,7 @@ async function start() {
     await agentHistory.queue;
     const next = await new LocalLibrary(chosen.filePaths[0]).init();
     await savePreferences({libraryPath:next.root});
-    await canvasStore.queue;await moduleServices.changeLibrary(next.root);library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
+    await canvasStore.queue;mlEngine.cancelAll();await moduleServices.changeLibrary(next.root);library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
   });
   handle('library:save-backup', async json => {
     if (typeof json !== 'string' || json.length > 1024 * 1024 * 1024) throw new Error('备份内容过大。');
@@ -183,7 +202,7 @@ async function start() {
     await writeFile(chosen.filePath, json, 'utf8'); return { canceled: false, path: chosen.filePath };
   });
   handle('library:save-text', async ({ filename, content, type }) => {
-    if (!['json', 'csv', 'md', 'svg', 'css'].includes(type) || typeof content !== 'string' || content.length > 30 * 1024 * 1024) throw new Error('导出格式不正确。');
+    if (!['json', 'csv', 'md', 'svg', 'css'].includes(type) || typeof content !== 'string' || Buffer.byteLength(content,'utf8') > (type==='json'?512:30) * 1024 * 1024) throw new Error('导出格式不正确或文件超过大小限制。');
     const chosen = await dialog.showSaveDialog(mainWindow, { title: t('保存导出文件'), defaultPath: path.basename(filename), filters: [{ name: type.toUpperCase(), extensions: [type] }] });
     if (!chosen.canceled) await writeFile(chosen.filePath, content, 'utf8');
     return { canceled: chosen.canceled };

@@ -1,0 +1,1 @@
+export default {"44":[["ecdict"," forty-four",""],["wordnet","s. being four more than forty",""]],"44th":[["ecdict","[网络] 第44号",""],["wordnet","s. the ordinal number of forty-four in counting order",""]],"440 yards":[["wordnet","n. a unit of length equal to a quarter of 1 mile",""]]};

@@ -1,0 +1,1 @@
+export default {"4/6判":[["jmdict","[noun (common) (futsuumeishi)] shirokuban (paper size of 127x188mm); duodecimo","しろくばん","ja","en"]],"4/4 takt":[["ding","four-four time; 4/4 time; four-four metre/meter; 4/4 metre/meter","","de","en"]],"4/4 time":[["ding","Viervierteltakt; 4/4-Takt","","en","de"]],"4/4 metre/meter":[["ding","Viervierteltakt; 4/4-Takt","","en","de"]]};

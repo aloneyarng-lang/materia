@@ -1,0 +1,1 @@
+export default {"sgml":[["jmdict","[noun (common) (futsuumeishi)] Standard Generalized Markup Language; SGML","エス・ジー・エム・エル・エスジーエムエル","ja","en"],["jmdict","ＳＧＭＬ [エス・ジー・エム・エル・エスジーエムエル] — SGML","","en","ja"]],"sgp":[["jmdict","塩分濃度差発電 [えんぶんのうどさはつでん] — SGP","","en","ja"]],"sgi":[["jmdict","シリコングラフィックス；シリコン・グラフィックス [シリコングラフィックス・シリコン・グラフィックス] — SGI","","en","ja"]]};

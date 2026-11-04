@@ -1,0 +1,1 @@
+export default {"9":[["ecdict"," nine",""],["wordnet","s. denoting a quantity consisting of one more than eight and one less than ten",""],["wordnet","n. the cardinal number that is the sum of eight and one",""]]};

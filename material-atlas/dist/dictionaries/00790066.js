@@ -1,0 +1,1 @@
+export default {"yf":[["ecdict","abbr. 黄热病（Yellow Fever）",""]],"yfs":[["ecdict","(yf 的第三人称 -s形式) abbr. 黄热病（Yellow Fever）",""]],"yft":[["ecdict","abbr. torpedo transportation lighter 鱼雷运输驳（美国海军舰船符号）",""]]};

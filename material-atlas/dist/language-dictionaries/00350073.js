@@ -1,0 +1,1 @@
+export default {"5s":[["jmdict","[noun (common) (futsuumeishi)] 5S (workplace organization system); Sort, Set in order, Shine, Standardize, and Sustain","ごエス","ja","en"],["jmdict","５Ｓ [ごエス] — 5S (workplace organization system)","","en","ja"]],"5s (workplace organization system)":[["jmdict","５Ｓ [ごエス] — 5S (workplace organization system)","","en","ja"]]};

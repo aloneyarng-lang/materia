@@ -1,0 +1,1 @@
+export default {"wb":[["jmdict","新株予約権付社債 [しんかぶよやくけんつきしゃさい] — WB","","en","ja"]],"wbem":[["jmdict","ウェブベース企業管理 [ウェブベースきぎょうかんり] — WBEM","","en","ja"]],"wbgt index":[["jmdict","暑さ指数 [あつさしすう] — WBGT index","","en","ja"]],"wbgt":[["jmdict","湿球黒球温度 [しっきゅうこっきゅうおんど] — WBGT","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"c.o.d.":[["ding","zahlbar bei Lieferung","","en","de"]],"c. from below":[["ding","linksstetig {adj} [math.]","","en","de"]],"c. from above":[["ding","rechtsstetig {adj} [math.]","","en","de"]]};

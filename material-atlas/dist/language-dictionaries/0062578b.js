@@ -1,0 +1,1 @@
+export default {"b型肝炎":[["jmdict","[noun (common) (futsuumeishi)] hepatitis B","ビーがたかんえん","ja","en"]],"b型":[["jmdict","[noun (common) (futsuumeishi)] type B (blood, influenza, hepatitis, etc.)","ビーがた","ja","en"]]};

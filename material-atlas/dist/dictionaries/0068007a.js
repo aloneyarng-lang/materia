@@ -1,0 +1,1 @@
+export default {"hz":[["ecdict","[计] 赫兹",""],["wordnet","n. the unit of frequency; one hertz has a periodic interval of one second",""]],"hzv":[["ecdict"," [医][=herpes zoster virus]带状疱疹病毒","'etʃz'i:v'i:"]]};

@@ -1,0 +1,1 @@
+export default {" matic":[["jmdict","マチック [マチック] — -matic","","en","ja"]]," made":[["jmdict","製 [せい] — -made","","en","ja"]]," maker (e.g. ice maker)":[["jmdict","作り器；作り機 [つくりき] — -maker (e.g. ice-maker)","","en","ja"]]," maker":[["jmdict","作り器；作り機 [つくりき] — -maker (e.g. ice-maker)","","en","ja"]]};

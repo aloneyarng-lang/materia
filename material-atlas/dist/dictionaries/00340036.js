@@ -1,0 +1,1 @@
+export default {"46":[["ecdict"," forty-six",""],["wordnet","s. being six more than forty",""]],"46th":[["ecdict","[网络] 第46号",""],["wordnet","s. the ordinal number of forty-six in counting order",""]]};

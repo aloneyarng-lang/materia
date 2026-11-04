@@ -1,0 +1,1 @@
+export default {"5色":[["jmdict","[noun (common) (futsuumeishi)] five colors (esp. red, blue, yellow, white and black); five colours\n[nouns which may take the genitive case particle 'no'] many kinds; varied\n[noun (common) (futsuumeishi)] melon; gourd","ごしき・ごしょく","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"'tween":[["ecdict","prep. [诗歌用语] = between [亦作 tweeny]","twi:n"],["wordnet","r. in between; \"two houses with a tree between\"",""]],"'tween decks":[["ecdict","[网络] 甲板间；二层舱；双层甲板",""],["wordnet","r. in the space between decks, on a ship",""]]};

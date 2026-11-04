@@ -1,0 +1,1 @@
+export default {"ql":[["ecdict","abbr. 查询语言（query language）",""]],"qld":[["ecdict","abbr. 昆士兰州（Queensland, 澳大利亚的第二大州）",""]],"qlg":[["ecdict","abbr. quick-look guide 快查指南",""]],"qllc":[["ecdict","限定逻辑链路控制",""]],"qlq":[["ecdict","abbr. quality of life questionnaire 生活质量问卷调查表",""]],"qls":[["ecdict","快速法律系统",""]],"qlt":[["ecdict","abbr. quilt 棉被","k'ju:'elt'i:"]]};

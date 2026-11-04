@@ -1,0 +1,1 @@
+export default {"0":[["ecdict"," zero","ˈziːroʊ"],["wordnet","s. indicating the absence of any or all units under consideration; \"a zero score\"",""],["wordnet","n. a mathematical element that when added to another number yields the same number",""]]};

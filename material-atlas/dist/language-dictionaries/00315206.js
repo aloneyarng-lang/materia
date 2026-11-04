@@ -1,0 +1,1 @@
+export default {"1分":[["jmdict","[noun (common) (futsuumeishi)] one tenth; one hundredth; one percent; one tenth of a sun; one quarter ryō (an old coin)","いちぶ","ja","en"],["jmdict","[noun (common) (futsuumeishi)] one minute","いっぷん","ja","en"]]};

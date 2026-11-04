@@ -1,0 +1,1 @@
+export default {"bx":[["ecdict","abbr. 军营杂货店（Base Exchange）；[医]活组织检查（biopsy）",""]],"bx cable bx":[["ecdict","[电] 电缆",""]],"bx factor":[["ecdict","[医] Bx因子, 对氨基苯甲酸",""]],"bx c":[["ecdict"," [医]双胸复合体",""]],"bxa":[["ecdict"," [计]（美国）商务部出口管理局",""]]};

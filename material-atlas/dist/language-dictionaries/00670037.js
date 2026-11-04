@@ -1,0 +1,1 @@
+export default {"g7":[["jmdict","主要国首脳会議 [しゅようこくしゅのうかいぎ] — G7","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] Group of Seven; G7","ジー・セブン・ジーセブン","ja","en"],["jmdict","Ｇ７ [ジー・セブン・ジーセブン] — G7","","en","ja"]]};

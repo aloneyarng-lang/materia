@@ -1,0 +1,1 @@
+export default {"xf":[["ecdict","abbr. 特优（形容白兰地酒的规格）（Extra Fine）",""]],"xfd":[["ecdict","表示大笑的字母组合（类似XD）",""]],"xfer":[["ecdict","[计] 传输, 传递, 转移",""]],"xfire":[["ecdict","可显示好友正在玩什么游戏的即时通讯软件Xfire",""]],"xfl":[["ecdict","abbr. Extreme Football League 超级足球联赛（代号）; X-ray fluorescence X射线荧光",""]],"xfr":[["ecdict"," [计]= Transfer,转移，传送，转换",""]]};

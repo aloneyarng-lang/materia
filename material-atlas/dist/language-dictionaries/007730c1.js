@@ -1,0 +1,1 @@
+export default {"wチェック":[["jmdict","[noun (common) (futsuumeishi); noun or participle which takes the aux. verb suru; transitive verb; intransitive verb] double check","ダブルチェック・ダブル・チェック","ja","en"]]};

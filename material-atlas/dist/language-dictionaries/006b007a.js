@@ -1,0 +1,1 @@
+export default {"kz überlebende":[["ding","concentration camp survivors","","de","en"]],"kz buchenwald":[["ding","Buchenwald concentration camp","","de","en"]],"kz auschwitz":[["ding","Auschwitz concentration camp","","de","en"]],"kz dachau":[["ding","Dachau concentration camp","","de","en"]]};

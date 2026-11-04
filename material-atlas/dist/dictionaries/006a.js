@@ -1,0 +1,1 @@
+export default {"j":[["ecdict","n. 字母j","dʒei"],["wordnet","n. the 10th letter of the Roman alphabet",""],["wordnet","n. the 10th letter of the Roman alphabet",""],["wordnet","n. a unit of electrical energy equal to the work done when a current of one ampere passes through a resistance of one ohm for one second",""]]};

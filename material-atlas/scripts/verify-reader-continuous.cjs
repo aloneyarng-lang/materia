@@ -15,14 +15,14 @@ async function at(number){await page.waitForFunction(n=>Number(document.querySel
  const exe=process.env.MATERIA_RELEASE_EXE||path.join(root,'node_modules/electron/dist/electron.exe');
  child=spawn(exe,[...(process.env.MATERIA_RELEASE_EXE?[]:[root]),'--remote-debugging-port=0','--remote-debugging-address=127.0.0.1','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows','--disable-gpu'],{env,windowsHide:true,stdio:'ignore'});
  let port;for(let i=0;i<150;i++){try{port=Number((await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]);if(port)break;}catch{}if(child.exitCode!==null)throw Error('App exited '+child.exitCode);await new Promise(r=>setTimeout(r,100));}assert.ok(port);
- browser=await chromium.connectOverCDP('http://127.0.0.1:'+port);const context=browser.contexts()[0];page=context.pages()[0]||await context.waitForEvent('page');page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1440,height:960});page.setDefaultTimeout(15000);
+ browser=await chromium.connectOverCDP('http://127.0.0.1:'+port);const context=browser.contexts()[0];for(let i=0;i<150;i++){page=context.pages().find(p=>p.url().includes('/dist/index.html'));if(page)break;await new Promise(r=>setTimeout(r,100));}assert.ok(page,'Main application window');page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1440,height:960});page.setDefaultTimeout(15000);
  await page.waitForFunction(()=>document.querySelector('.import-main')?.disabled===false);await page.locator('#detail-panel [data-action="open-pdf"]').click();await ready();
- await check('vertical continuous reading shows a clear page and a dimmed smaller adjacent preview',async()=>{
+ await check('vertical continuous reading shows equally crisp pages without changing their size',async()=>{
   assert.equal(await page.locator('#reader-flow').inputValue(),'vertical');assert.equal(await page.locator('.reader-page-slot').count(),24);
   const styles=await page.locator('.reader-page-slot>.reader-spread').evaluateAll(els=>els.map(el=>({active:el.parentElement.classList.contains('is-active'),opacity:getComputedStyle(el).opacity,transform:getComputedStyle(el).transform})));
-  assert.ok(styles.some(s=>s.active&&Number(s.opacity)===1));assert.ok(styles.some(s=>!s.active&&Number(s.opacity)<.6&&s.transform!=='none'));
+  assert.ok(styles.some(s=>s.active&&Number(s.opacity)===1));assert.ok(styles.every(s=>Number(s.opacity)===1&&s.transform==='none'));
   await page.locator('#reader-page-number').fill('3');await page.locator('#reader-page-number').press('Enter');await at(3);await page.screenshot({path:path.join(out,'vertical.png'),timeout:15000});
-  await page.locator('#reader-scroll').hover();await page.mouse.wheel(0,650);await page.waitForFunction(()=>Number(document.querySelector('#reader-page-number').value)>3);
+  await page.locator('#reader-scroll').hover();await page.mouse.wheel(0,1500);await page.waitForFunction(()=>Number(document.querySelector('#reader-page-number').value)>3);
  });
  await check('long-distance jumps retain bounded canvases, selectable text and mixed-page annotation alignment',async()=>{
   await page.locator('#reader-page-number').fill('9');await page.locator('#reader-page-number').press('Enter');await at(9);

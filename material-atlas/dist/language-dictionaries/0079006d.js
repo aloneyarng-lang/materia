@@ -1,0 +1,1 @@
+export default {"ymir (giant in norse mythology)":[["jmdict","ユミル [ユミル] — Ymir (giant in Norse mythology)","","en","ja"]],"ymir":[["jmdict","ユミル [ユミル] — Ymir (giant in Norse mythology)","","en","ja"]]};

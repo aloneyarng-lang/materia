@@ -11,8 +11,8 @@ export function createContinuousReader({scroll,stage,doc,module,layout,flow,zoom
   const horizontal=flow==='horizontal',groups=readerPageGroups(doc.numPages,layout),records=new Map();
   let disposed=false,raf=0,current=0,jumping=false,queue=Promise.resolve();
   const track=document.createElement('div');track.className='reader-continuous-track';
-  const width=Math.max(160,horizontal?scroll.clientWidth*.78:scroll.clientWidth-64),height=Math.max(160,horizontal?scroll.clientHeight-112:scroll.clientHeight*.76);
-  track.style.padding=horizontal?`56px ${(scroll.clientWidth-width)/2}px`:`${(scroll.clientHeight-height)/2}px 32px`;
+  const width=Math.max(160,scroll.clientWidth-64),height=Math.max(160,scroll.clientHeight-64);
+  track.style.padding='32px';
   if(!horizontal)track.style.width=width+64+'px';
   const slots=groups.map((pages,index)=>{
     const slot=document.createElement('section');slot.className='reader-page-slot';slot.dataset.group=index;
@@ -31,7 +31,7 @@ export function createContinuousReader({scroll,stage,doc,module,layout,flow,zoom
   }
   function align(index,behavior='instant'){
     const slot=slots[index],r=slot.getBoundingClientRect(),s=scroll.getBoundingClientRect();
-    const offset=horizontal?r.x+r.width/2-s.x-s.width/2:r.y+r.height/2-s.y-s.height/2;
+    const offset=horizontal?r.x+r.width/2-s.x-s.width/2:r.height>s.height-64?r.y-s.y-32:r.y+r.height/2-s.y-s.height/2;
     scroll.scrollTo(horizontal?{left:scroll.scrollLeft+offset,behavior}:{top:scroll.scrollTop+offset,behavior});
   }
   async function load(index){

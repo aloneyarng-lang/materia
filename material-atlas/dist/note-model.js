@@ -2,12 +2,17 @@ export const MARK_COLORS={yellow:'#d5a83d',teal:'#348c84',blue:'#507db8',rose:'#
 export function normalizeAnchor(value){
   if(value==null)return null;
   const {page}=value,kind=value.kind;
-  if(kind!==undefined&&!['region','text','arrow'].includes(kind))throw new Error('标注类型不正确。');
+  if(kind!==undefined&&!['region','text','arrow','highlight','underline'].includes(kind))throw new Error('标注类型不正确。');
   const point=p=>p&&['x','y'].every(key=>typeof p[key]==='number'&&Number.isFinite(p[key])&&p[key]>=0&&p[key]<=1);
   if(kind==='arrow'&&(!point(value.start)||!point(value.end)||Math.hypot(value.start.x-value.end.x,value.start.y-value.end.y)<.002))throw new Error('箭头需要两个有效且不同的端点。');
   const rect=kind==='arrow'?rectFromPoints(value.start,value.end):value.rect;
   if(!Number.isInteger(page)||page<1||page>100000||!rect||!['x','y','width','height'].every(key=>typeof rect[key]==='number'&&Number.isFinite(rect[key]))||rect.x<0||rect.y<0||rect.width<=0||rect.height<=0||rect.x+rect.width>1.000001||rect.y+rect.height>1.000001)throw new Error('PDF 标记位置不正确，请重新框选。');
   const extra={};if(kind!==undefined)extra.kind=kind;
+  if(kind==='highlight'||kind==='underline'){
+    if(!Array.isArray(value.rects)||!value.rects.length||value.rects.length>2000)throw new Error('文字标记位置不正确，请重新选择文字。');
+    extra.rects=value.rects.map(part=>normalizeAnchor({page,rect:part}).rect);
+    if(extra.rects.some(part=>part.x<rect.x-.000002||part.y<rect.y-.000002||part.x+part.width>rect.x+rect.width+.000002||part.y+part.height>rect.y+rect.height+.000002))throw new Error('文字标记超出选文范围。');
+  }
   if(value.label!==undefined){if(typeof value.label!=='string'||value.label.length>500)throw new Error('页内标注文字最多 500 字。');extra.label=value.label;}
   if(value.fontSize!==undefined){if(!Number.isFinite(value.fontSize)||value.fontSize<10||value.fontSize>32)throw new Error('标注字号需要在 10–32 之间。');extra.fontSize=value.fontSize;}
   if(kind==='arrow')for(const key of ['start','end'])extra[key]={x:Math.round(value[key].x*1e6)/1e6,y:Math.round(value[key].y*1e6)/1e6};

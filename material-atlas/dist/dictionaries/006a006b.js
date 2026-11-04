@@ -1,0 +1,1 @@
+export default {"jk":[["ecdict","n. 工作, 作业；杰克（等于jack）",""]],"jks":[["ecdict","abbr. Julius Kayser (stock-exchange symbol) 朱利叶斯·凯塞（股票交易代码）",""]]};

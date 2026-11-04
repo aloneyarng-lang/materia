@@ -1,0 +1,1 @@
+export default {"fx":[["jmdict","[noun (common) (futsuumeishi)] foreign exchange","エフ・エックス・エフエックス","ja","en"]],"fx reserves":[["ding","Fremdwährungsreserven {pl}; Währungsreserven {pl}; Devisenreserven {pl} [fin.]","","en","de"]],"fx risk":[["ding","Wechselkursunsicherheit {f}; Wechselkursrisiko {n} [fin.]","","en","de"]]};

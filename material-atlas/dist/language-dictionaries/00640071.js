@@ -1,0 +1,1 @@
+export default {"dqn":[["jmdict","[noun (common) (futsuumeishi)] dumb-ass; person lacking common sense or basic knowledge\n[noun (common) (futsuumeishi)] delinquent; violent person; rough-looking person","ドキュン・ドキュソ","ja","en"]],"dqnネーム":[["jmdict","[noun (common) (futsuumeishi)] ridiculous baby name; unconventional baby name","ドキュンネーム","ja","en"]]};

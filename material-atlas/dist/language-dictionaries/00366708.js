@@ -1,0 +1,1 @@
+export default {"6月":[["jmdict","[noun (common) (futsuumeishi)] June\n[noun (common) (futsuumeishi)] sixth month of the lunar calendar","ろくがつ","ja","en"]],"6月病":[["jmdict","[noun (common) (futsuumeishi)] blues experienced by workplace recruits shortly after beginning work","ろくがつびょう","ja","en"]]};

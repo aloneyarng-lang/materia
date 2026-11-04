@@ -1,0 +1,1 @@
+export default {"fgm":[["jmdict","[noun (common) (futsuumeishi)] female genital mutilation; FGM; female circumcision; female genital cutting","エフ・ジー・エム・エフジーエム","ja","en"],["jmdict","ＦＧＭ [エフ・ジー・エム・エフジーエム] — FGM","","en","ja"]],"fgcs":[["jmdict","第五世代コンピュータ；第５世代コンピュータ；第五世代コンピューター；第５世代コンピューター [だいごせだいコンピュータ] — FGCS","","en","ja"]]};

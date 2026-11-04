@@ -1,0 +1,1 @@
+export default {"c#":[["jmdict","[noun (common) (futsuumeishi)] C# (programming language)","シーシャープ","ja","en"],["jmdict","Ｃ＃ [シーシャープ] — C# (programming language)","","en","ja"]],"c# (programming language)":[["jmdict","Ｃ＃ [シーシャープ] — C# (programming language)","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"rz":[["ecdict","[计] 归零制",""]],"rza":[["ecdict","abbr. Religious Zionists of America 美国的宗教复国运动者",""]],"rzhev":[["ecdict"," [地名] [俄罗斯] 勒热夫",""]],"rzr":[["ecdict","abbr. Ramsar; Iran 伊朗; 拉姆萨尔机场（代码）; return-to-zero record 归零制记录",""]]};

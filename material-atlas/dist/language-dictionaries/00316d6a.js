@@ -1,0 +1,1 @@
+export default {"1浪":[["jmdict","[noun (common) (futsuumeishi); noun or participle which takes the aux. verb suru; intransitive verb] failing college entrance exams and retaking them a year later","いちろう","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"mz":[["ecdict","abbr. 平均粒度（Mean Grain Size）；地中海区域（Mediterranean Zone）；中带（Middle Zone）；莫桑比克（Mozambique）",""]],"mza":[["ecdict","abbr. monozygotic twins reared apart 单卵双胎分开抚养",""]],"mzee":[["ecdict","<东非英语>n.老人","әmzei"]],"mzungu":[["ecdict","n. <东非英语>白人","әm'zjŋ^u:"]]};

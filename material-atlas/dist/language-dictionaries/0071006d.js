@@ -1,0 +1,1 @@
+export default {"qm anhang zur projektübergabe":[["ding","QM attachment for project hand-over","","de","en"]],"qm attachment for project hand over":[["ding","QM-Anhang {m} zur Projektübergabe","","en","de"]],"qm plan":[["ding","quality management plan","","de","en"]],"qm system":[["ding","quality management system","","de","en"]]};

@@ -1,0 +1,1 @@
+export default {"1着":[["jmdict","[noun (common) (futsuumeishi)] first place (in a race); first to arrive\n[noun (common) (futsuumeishi)] one suit (of clothes); one item (of clothing)\n[noun (common) (futsuumeishi)] one move","いっちゃく","ja","en"]]};

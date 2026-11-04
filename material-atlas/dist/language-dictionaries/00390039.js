@@ -1,0 +1,1 @@
+export default {"99th birthday":[["jmdict","白寿 [はくじゅ] — 99th birthday","","en","ja"]],"99 cent store":[["ding","Billigladen {m}; Ramschladen {m}; 1-Euro-Shop {n} [pej.]","","en","de"]],"99 cent stores":[["ding","Billigläden {pl}; Ramschläden {pl}; 1-Euro-Shops {pl}","","en","de"]]};

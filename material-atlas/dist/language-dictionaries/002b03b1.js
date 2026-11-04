@@ -1,0 +1,1 @@
+export default {"+α":[["jmdict","[expressions (phrases, clauses, etc.); noun (common) (futsuumeishi)] something extra; something on top; and then some; icing on the cake","プラスアルファ・プラス・アルファ","ja","en"]]};

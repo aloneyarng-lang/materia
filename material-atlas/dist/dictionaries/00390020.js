@@ -1,0 +1,1 @@
+export default {"9 membered":[["ecdict","[网络] 9元",""],["wordnet","s. of a chemical compound having a ring with nine members",""]],"9 11":[["wordnet","n. the day in 2001 when Arab suicide bombers hijacked United States airliners and used them as bombs",""]]};

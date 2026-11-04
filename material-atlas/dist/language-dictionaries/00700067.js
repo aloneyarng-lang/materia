@@ -1,0 +1,1 @@
+export default {"pg":[["jmdict","ペナルティーゴール；ペナルティー・ゴール [ペナルティーゴール・ペナルティー・ゴール] — PG","","en","ja"]],"pg verschraubung":[["ding","PG gland","","de","en"]],"pg gland":[["ding","PG-Verschraubung {f} [techn.]","","en","de"]]};

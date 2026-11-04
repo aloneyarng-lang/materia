@@ -1,0 +1,1 @@
+export default {"3分":[["jmdict","[noun (common) (futsuumeishi)] three minutes","さんぷん","ja","en"]],"3分の1":[["jmdict","[expressions (phrases, clauses, etc.); noun (common) (futsuumeishi)] one third; a third part","さんぶんのいち","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"s/n ratio /snr/":[["ding","Verhältnis {n} Nutzsignal-Störsignal n; Nutzstörabstand {m}; Signalstörverhältnis {n}; Störverhältnis {n}; Störabstand {m}; Geräuschspannungsabstand {m}; Geräuschabstand {m}; Signal-Rausch-Verhältnis {n}; Signalrauschabstand {m}; Rauschabstand {m}; Rauschabstandsmaß {n} [electr.]","","en","de"]]};

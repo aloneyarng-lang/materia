@@ -1,0 +1,1 @@
+export default {"4% der einwohner kommen aus der türkei.":[["ding","4% of the inhabitants come from Turkey.","","de","en"]],"4% of the inhabitants come from turkey.":[["ding","4% der Einwohner kommen aus der Türkei.","","en","de"]]};

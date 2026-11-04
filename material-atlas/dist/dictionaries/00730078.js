@@ -1,0 +1,1 @@
+export default {"sx":[["ecdict","abbr. 山西（中国省名）",""]],"sxct":[["ecdict","abbr. spiral X-ray computed tomography 螺旋X线计算机体层摄影术",""]],"sxe":[["ecdict","abbr. 唐山南堡米奇网络北方精品服务器",""]],"sxemilocal":[["ecdict","半局部的","'semi'lәukәl"]],"sxga":[["ecdict","abbr. super extended (video) graphics array 高级扩展视频图形阵列",""]],"sxt":[["ecdict"," [医][=sulfamethoxazole]磺胺甲基异？唑，新明磺","'es'ekst'i:"]]};

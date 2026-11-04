@@ -1,0 +1,1 @@
+export default {"32nd note":[["jmdict","三十二分音符 [さんじゅうにぶおんぷ] — 32nd note","","en","ja"]],"32年テーゼ":[["jmdict","[noun (common) (futsuumeishi)] 1932 Theses (Comintern policy documents urging overthrow of Japan's imperial and metayage systems)","さんじゅうにねんテーゼ","ja","en"]],"32nd anniversary of death":[["jmdict","三十三回忌 [さんじゅうさんかいき] — 32nd anniversary of death","","en","ja"]]};

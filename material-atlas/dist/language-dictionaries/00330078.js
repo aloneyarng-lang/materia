@@ -1,0 +1,1 @@
+export default {"3x3":[["jmdict","[noun (common) (futsuumeishi)] 3x3 basketball","スリーエックススリー・スリー・エックス・スリー","ja","en"]],"3x3 basketball":[["jmdict","３ｘ３ [スリーエックススリー・スリー・エックス・スリー] — 3x3 basketball","","en","ja"]]};

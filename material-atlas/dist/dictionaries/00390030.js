@@ -1,0 +1,1 @@
+export default {"90":[["ecdict"," ninety",""],["wordnet","s. being ten more than eighty",""],["wordnet","n. the cardinal number that is the product of ten and nine",""]],"90th":[["wordnet","s. the ordinal number of ninety in counting order",""]]};

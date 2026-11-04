@@ -1,0 +1,1 @@
+export default {"fáfnir":[["ding","Fafnir; Fáfnir; Fafner (dragon and a dwarf's son in Norse mythology)","","de","en"],["ding","Fafnir; Fáfnir; Fafner (Drache und Sohn eines Zwergs der altnordischen Mythology)","","en","de"]]};

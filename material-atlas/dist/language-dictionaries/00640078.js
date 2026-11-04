@@ -1,0 +1,1 @@
+export default {"dxc":[["jmdict","データ交換制御装置 [データこうかんせいぎょそうち] — DXC","","en","ja"]],"dx":[["jmdict","[noun (common) (futsuumeishi)] deluxe\n[noun (common) (futsuumeishi)] digital transformation","ディー・エックス・ディーエックス","ja","en"]],"dxコード":[["jmdict","[noun (common) (futsuumeishi)] DX code","ディーエックスコード","ja","en"]],"dx code":[["jmdict","ＤＸコード [ディーエックスコード] — DX code","","en","ja"]]};

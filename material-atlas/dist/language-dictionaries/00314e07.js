@@ -1,0 +1,1 @@
+export default {"1万":[["jmdict","[numeric] 10,000; ten thousand; 10^4","いちまん","ja","en"]],"1万円":[["jmdict","[noun (common) (futsuumeishi)] 10,000 yen","いちまんえん","ja","en"]],"1万円札":[["jmdict","[noun (common) (futsuumeishi)] 10,000 yen bill","いちまんえんさつ","ja","en"]],"1万円券":[["jmdict","[noun (common) (futsuumeishi)] 10,000 yen bill","いちまんえんけん","ja","en"]]};

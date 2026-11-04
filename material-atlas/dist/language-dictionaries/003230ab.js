@@ -1,0 +1,1 @@
+export default {"2カ所":[["jmdict","[noun (common) (futsuumeishi)] two places; two spots; two locations; two parts; two passages","にかしょ","ja","en"]],"2カ国語":[["jmdict","[nouns which may take the genitive case particle 'no'] bilingual; in two languages","にかこくご","ja","en"]],"2カ年":[["jmdict","[noun or verb acting prenominally] biennial","にかねん","ja","en"]]};

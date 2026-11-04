@@ -1,0 +1,1 @@
+export default {"2回":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] twice","にかい","ja","en"]],"2回生":[["jmdict","[noun (common) (futsuumeishi)] second year (college) student; sophomore","にかいせい","ja","en"]]};

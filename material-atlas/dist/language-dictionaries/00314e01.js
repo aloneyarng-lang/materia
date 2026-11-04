@@ -1,0 +1,1 @@
+export default {"1丁目1番地":[["jmdict","[expressions (phrases, clauses, etc.); noun (common) (futsuumeishi)] first and foremost; most important thing to do first; top priority; plot 1, block 1","いっちょうめいちばんち","ja","en"]]};

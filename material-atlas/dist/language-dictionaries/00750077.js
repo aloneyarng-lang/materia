@@ -1,0 +1,1 @@
+export default {"uwb":[["jmdict","超広帯域 [ちょうこうたいいき] — UWB","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] ultra-wideband; UWB","ユー・ダブリュー・ビー・ユーダブリュービー","ja","en"],["jmdict","ＵＷＢ [ユー・ダブリュー・ビー・ユーダブリュービー] — UWB","","en","ja"]],"uwarowit":[["ding","uvarovite; uwarowite","","de","en"]],"uwarowite":[["ding","Uwarowit {m} [min.]","","en","de"]]};

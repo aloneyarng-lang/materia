@@ -1,0 +1,1 @@
+export default {"tqc":[["jmdict","総合的品質管理 [そうごうてきひんしつかんり] — TQC","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] total quality control; TQC","ティー・キュー・シー・ティーキューシー","ja","en"],["jmdict","ＴＱＣ [ティー・キュー・シー・ティーキューシー] — TQC","","en","ja"]]};

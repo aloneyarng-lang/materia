@@ -1,0 +1,1 @@
+export default {"4649":[["jmdict","[expressions (phrases, clauses, etc.); adverb (fukushi)] best regards; pleased to meet you; please remember me; please treat me favorably (favourably); please take care of","よろしく","ja","en"]]};

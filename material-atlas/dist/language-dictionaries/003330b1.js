@@ -1,0 +1,1 @@
+export default {"3ケ年":[["jmdict","[noun or verb acting prenominally] triennial","さんかねん","ja","en"]],"3ケツ":[["jmdict","[noun (common) (futsuumeishi)] riding triple (on a bicycle, motorcycle, etc.)","さんけつ・サンケツ","ja","en"]]};

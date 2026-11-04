@@ -1,0 +1,1 @@
+export default {"uyghur":[["jmdict","維吾爾 [ウイグル・ウィグル] — Uyghur","","en","ja"]],"uygur":[["jmdict","維吾爾 [ウイグル・ウィグル] — Uygur","","en","ja"],["jmdict","ウイグル語 [ウイグルご] — Uygur","","en","ja"],["jmdict","回鶻；回紇 [かいこつ] — Uygur","","en","ja"]],"uyghurs":[["ding","Uiguren {pl} (auch: Uyghuren oder Uighuren, turksprachige Ethnie) [geogr.]","","en","de"]]};

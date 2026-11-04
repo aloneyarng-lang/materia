@@ -1,0 +1,1 @@
+export default {"tq":[["ecdict","abbr. 洽谈通（网上沟通软件）；关断时间；全人智商（Triune Intelligence）",""]],"tqc":[["ecdict","[化] 全面质量管理",""]],"tqe":[["ecdict","abbr. technical quality evaluation 技术质量评价","t'kə"]],"tqm":[["ecdict","abbr. 全面质量管理total quality management",""]]};

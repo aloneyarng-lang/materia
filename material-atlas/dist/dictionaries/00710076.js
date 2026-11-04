@@ -1,0 +1,1 @@
+export default {"qv":[["ecdict","abbr. quivering 颤抖; quod vide (Latin=which see) （拉丁语）参见…; quality verification 质量确认; quantum vis (Latin=as much as you wish) （拉丁语）随意量","k'ju:v'i:"]],"qvalue":[["ecdict","核反应能量值",""]],"qvga":[["ecdict","abbr. 显示屏；分辨率；绿色版",""]],"qvod":[["ecdict","abbr. 准视频点播（Quasi Video On Demand）",""]]};

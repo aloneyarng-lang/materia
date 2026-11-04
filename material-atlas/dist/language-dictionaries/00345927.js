@@ -1,0 +1,1 @@
+export default {"4大":[["jmdict","[noun (common) (futsuumeishi)] university or college offering four-year programs\n[prefix] the big four ...; the four major ...","よんだい","ja","en"]],"4大大会":[["jmdict","[noun (common) (futsuumeishi)] the four most important tournaments in a particular sport; grand slam tournaments; majors","よんだいたいかい","ja","en"]]};

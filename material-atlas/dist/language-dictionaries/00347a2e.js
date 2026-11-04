@@ -1,0 +1,1 @@
+export default {"4種":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] four kinds; four sorts\n[noun (common) (futsuumeishi)] fourth-class mail","よんしゅ・ししゅ","ja","en"]]};

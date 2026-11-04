@@ -1,0 +1,1 @@
+export default {"1am":[["jmdict","２５ [にじゅうご] — 1am","","en","ja"],["jmdict","２５時 [にじゅうごじ] — 1am","","en","ja"]],"1a lage":[["ding","prime location; hundred percent location","","de","en"]],"1a ...":[["ding","crackerjack [Am.] [coll.]","","de","en"]]};

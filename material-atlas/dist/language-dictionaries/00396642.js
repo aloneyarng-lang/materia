@@ -1,0 +1,1 @@
+export default {"9時5時":[["jmdict","[noun (common) (futsuumeishi)] nine-to-five (working hours); nine to five","くじごじ","ja","en"]],"9時":[["jmdict","[noun (common) (futsuumeishi)] nine o'clock","くじ","ja","en"]]};

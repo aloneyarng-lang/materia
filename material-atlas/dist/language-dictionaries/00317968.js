@@ -1,0 +1,1 @@
+export default {"1票":[["jmdict","[noun (common) (futsuumeishi)] one vote; one ballot","いっぴょう","ja","en"]],"1票の格差":[["jmdict","[noun (common) (futsuumeishi)] disparity between values of votes in different constituencies; measure of malapportionment of electorates","いっぴょうのかくさ","ja","en"]]};

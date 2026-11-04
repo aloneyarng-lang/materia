@@ -1,0 +1,1 @@
+export default {"41":[["ecdict"," forty-one",""],["wordnet","s. being one more than forty",""]],"411":[["ecdict","four hundred and eleven",""]],"41st":[["wordnet","s. the ordinal number of forty-one in counting order",""]]};

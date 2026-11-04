@@ -1,0 +1,1 @@
+export default {"5月":[["jmdict","[noun (common) (futsuumeishi)] May\n[noun (common) (futsuumeishi)] fifth month of the lunar calendar","ごがつ","ja","en"]],"5月病":[["jmdict","[noun (common) (futsuumeishi)] blues experienced by college freshmen or workplace recruits shortly after beginning school or work; the May blues","ごがつびょう","ja","en"]]};

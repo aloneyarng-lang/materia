@@ -1,0 +1,1 @@
+export default {"b6判":[["jmdict","[noun (common) (futsuumeishi)] B6 paper size (128 mm x 182 mm)","ビーろくばん","ja","en"]],"b6 paper size (128 mm x 182 mm)":[["jmdict","Ｂ６判；Ｂ六判 [ビーろくばん] — B6 paper size (128 mm x 182 mm)","","en","ja"]],"b6 paper size":[["jmdict","Ｂ６判；Ｂ六判 [ビーろくばん] — B6 paper size (128 mm x 182 mm)","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"bgm":[["jmdict","[noun (common) (futsuumeishi)] background music; BGM","ビー・ジー・エム・ビージーエム","ja","en"],["jmdict","ＢＧＭ [ビー・ジー・エム・ビージーエム] — BGM","","en","ja"]],"bg":[["jmdict","[noun (common) (futsuumeishi)] female office worker","ビー・ジー・ビージー","ja","en"]],"bgs":[["jmdict","英国地質調査所 [えいこくちしつちょうさしょ] — BGS","","en","ja"]]};

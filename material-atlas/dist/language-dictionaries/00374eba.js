@@ -1,0 +1,1 @@
+export default {"7人制ラグビー":[["jmdict","[noun (common) (futsuumeishi)] rugby sevens; seven-a-side rugby","しちにんせいラグビー","ja","en"]],"7人":[["jmdict","[noun (common) (futsuumeishi)] seven people","しちにん・ななにん","ja","en"]]};

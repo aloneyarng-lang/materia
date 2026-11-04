@@ -3,6 +3,8 @@ node_modules/
 *.tgz
 *.tar.gz
 .local/
+__pycache__/
+ml/runtime/
 test-results/
 release/
 

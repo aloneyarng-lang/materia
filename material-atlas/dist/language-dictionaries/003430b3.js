@@ -1,0 +1,1 @@
+export default {"4コマ漫画":[["jmdict","[noun (common) (futsuumeishi)] four-panel comic strip; yonkoma","よんこままんが","ja","en"]],"4コマ":[["jmdict","[noun (common) (futsuumeishi)] four-panel comic strip; yonkoma","よんこま","ja","en"]]};

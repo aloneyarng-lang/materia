@@ -1,0 +1,1 @@
+export default {"3'5' anhydrothymidin":[["ding","3'5'-anhydro thymidine","","de","en"]],"3'5' anhydro thymidine":[["ding","3'5'-Anhydrothymidin {n} [chem.]","","en","de"]],"3' chlorpropiophenon":[["ding","3'-Chloropropiophenone","","de","en"]],"3' chloropropiophenone":[["ding","3'-Chlorpropiophenon {n} [chem.]","","en","de"]]};

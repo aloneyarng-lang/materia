@@ -1,0 +1,52 @@
+/* Stable paper geometry and comfortable controls, using the active theme. */
+.pdf-reader.reader-v2[open]{display:flex;flex-direction:column}
+.reader-v2 .reader-header{height:60px;flex:0 0 auto;padding:10px 18px}
+.reader-v2 .reader-header h2{font-size:1rem;line-height:1.5}
+.reader-v2 .reader-toolbar{flex:0 0 auto;min-height:54px;height:auto;padding:8px 14px;row-gap:8px}
+.reader-v2 .reader-workspace{flex:1;min-height:0;height:auto}
+.reader-v2 .reader-document{background:color-mix(in srgb,var(--surface) 93%,var(--ink))}
+.reader-v2 .reader-toolbar button,.reader-v2 .reader-toolbar select{font-size:.75rem;min-height:34px}
+.reader-v2 .reader-mode button[data-reader-mode=read]{font-size:.75rem}
+.reader-v2 .reader-mode button[data-reader-mode=read]:after{display:none}
+.reader-v2 .reader-mode{flex-wrap:wrap}
+.reader-v2 .reader-view-options{flex-wrap:wrap}
+.reader-v2 .reader-page{box-shadow:0 1px 3px #00000020,0 8px 28px #00000012;outline:none}
+.reader-v2 .reader-status-row{min-height:28px;background:transparent;border-bottom:0}
+.reader-v2 #reader-status{font-size:.6875rem;line-height:1.5}
+.reader-v2 .reader-note-tabs button,.reader-v2 .reader-note-location{font-size:.75rem}
+.reader-v2 .reader-note-excerpt,.reader-v2 #reader-note-body{font-size:.8125rem;line-height:1.85}
+.reader-v2 .reader-note-card{padding:13px}
+.reader-v2 .reader-bottom-nav{bottom:12px;border-radius:var(--button-radius);padding:6px 10px;box-shadow:0 4px 18px var(--shadow)}
+.reader-v2 .reader-bottom-nav>button{width:34px;height:34px}
+.reader-v2 :is(button,input,select,textarea):focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.reader-underline-icon{font:600 16px/16px Georgia,serif;text-decoration:underline;text-underline-offset:3px}
+.reader-focus-exit{display:none}
+.reader-v2.reader-focus .reader-workspace{grid-template-columns:minmax(0,1fr)}
+.reader-v2.reader-focus :is(.reader-header,.reader-toolbar,.reader-sidebar,.reader-sidebar-resizer,.reader-status-row){display:none}
+.reader-v2.reader-focus .reader-focus-exit{display:block;position:absolute;right:20px;top:12px;z-index:6;padding:8px 12px;border:1px solid var(--line);border-radius:var(--button-radius);color:var(--ink);background:var(--surface);box-shadow:0 2px 10px var(--shadow);font-size:.75rem}
+
+/* Highlights sit above the raster without intercepting text selection. */
+.reader-text-fragment{position:absolute;pointer-events:none;border-radius:1px}
+.reader-highlight{background:color-mix(in srgb,var(--mark-color) 32%,transparent);mix-blend-mode:multiply}
+.reader-underline{border-bottom:2px solid var(--mark-color)}
+.reader-text-fragment.selected{outline:1px solid color-mix(in srgb,var(--mark-color) 55%,transparent);outline-offset:1px}
+.reader-text-mark-pin{position:absolute;pointer-events:auto;transform:translate(5px,-4px);width:22px;height:22px;padding:0;border:1px solid var(--mark-color);border-radius:6px;background:#fff;color:var(--mark-color);font:14px/20px sans-serif;cursor:pointer;opacity:.65;z-index:2}
+.reader-text-mark-pin:hover,.reader-text-mark-pin.selected,.reader-text-mark-pin:focus-visible{opacity:1;box-shadow:0 1px 5px #0002}
+.reader-page.is-marking .reader-text-mark-pin{pointer-events:none}
+.reader-color-swatches{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.reader-v2 .reader-color-swatches button{width:28px;height:28px;min-width:28px;min-height:28px;border:2px solid transparent;border-radius:50%;padding:4px;background:var(--swatch);background-clip:content-box;box-shadow:none}
+.reader-v2 .reader-color-swatches button[aria-pressed=true]{border-color:var(--swatch)}
+.reader-v2 .reader-color-swatches button:hover{border-color:var(--swatch);background:var(--swatch);background-clip:content-box}
+.reader-v2 .reader-annotation-tools{flex-wrap:wrap;padding:6px 8px;border-radius:var(--button-radius);gap:4px}
+.reader-v2 .reader-annotation-tools>button{min-height:32px;font-size:.75rem}
+.reader-v2 .selection-translation{width:380px;padding:12px;border-color:var(--line);box-shadow:0 8px 30px #0002}
+.reader-v2 .selection-translation header strong{font-weight:500;max-height:44px;line-height:1.6}
+.selection-mark-tools{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.selection-mark-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.selection-mark-actions button{min-height:32px;padding:6px 9px;font-size:.75rem;border-radius:var(--button-radius);background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.selection-mark-actions kbd{font:10px var(--sans);opacity:.6;margin-left:3px}
+.selection-compact>.selection-target-language,.selection-compact>.selection-text-count,.selection-compact>.study-translation,.selection-compact>footer{display:none}
+.selection-compact>.selection-mark-tools{padding-bottom:0;margin-bottom:0;border-bottom:0}
+.selection-translation button[disabled]{opacity:.45;cursor:default}
+@media(max-width:900px){.reader-v2 .reader-header{height:54px}.reader-v2 .reader-mode button{padding:6px}.reader-v2 .reader-toolbar{padding:7px 10px}.reader-v2 .reader-mode .tool-label{display:none}}
+@media(max-width:600px){.reader-v2:not(.reader-sidebar-collapsed):not(.reader-focus) .reader-workspace{grid-template-columns:minmax(140px,1fr) 5px minmax(200px,44%)}.reader-v2 .reader-header h2{font-size:.875rem}.reader-v2 #reader-page-progress{display:none}}

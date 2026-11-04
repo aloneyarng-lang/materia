@@ -1,0 +1,1 @@
+export default {"7月":[["jmdict","[noun (common) (futsuumeishi)] July\n[noun (common) (futsuumeishi)] seventh month of the lunar calendar","しちがつ・なながつ","ja","en"]],"7月王政":[["jmdict","[noun (common) (futsuumeishi)] (French) July Monarchy","しちがつおうせい","ja","en"]]};

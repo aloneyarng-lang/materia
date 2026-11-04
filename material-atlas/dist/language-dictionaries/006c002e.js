@@ -1,0 +1,1 @@
+export default {"l.a.":[["jmdict","ロス [ロス] — L.A.","","en","ja"]],"l.c. cable":[["ding","Bleimantelkabel {n}; Bleimantelleiter {m}; Bleimantelleitung {f} [electr.]","","en","de"]],"l.c. cables":[["ding","Bleimantelkabel {pl}; Bleimantelleiter {pl}; Bleimantelleitungen {pl}","","en","de"]],"l.h. side view":[["ding","linke Seitenansicht","","en","de"]]};

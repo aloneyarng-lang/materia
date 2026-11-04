@@ -1,0 +1,1 @@
+export default {"08/15 sex":[["ding","vanilla sex [coll.]","","de","en"]],"08/15 ":[["ding","bog-standard [Br.]; common or garden [Br.]; garden-variety [Am.] (prepositive)","","de","en"]],"08/15":[["ding","run-of-the-mill; run-of-the-mine [Am.]","","de","en"]]};

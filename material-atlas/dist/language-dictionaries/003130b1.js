@@ -1,0 +1,1 @@
+export default {"1ケ月":[["jmdict","[noun (common) (futsuumeishi)] one month","いっかげつ","ja","en"]],"1ケ所":[["jmdict","[noun (common) (futsuumeishi)] one place; (all in) the same place; one spot; one location; one part; one passage","いっかしょ","ja","en"]]};

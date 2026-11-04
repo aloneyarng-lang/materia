@@ -1,0 +1,1 @@
+export default {"2倍":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] double; twice (as much); twofold","にばい","ja","en"]],"2倍体":[["jmdict","[noun (common) (futsuumeishi)] diploid","にばいたい","ja","en"]]};

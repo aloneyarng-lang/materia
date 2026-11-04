@@ -1,0 +1,1 @@
+export default {"4wd":[["ecdict","abbr. 四轮驱动（4 wheel drive）",""],["wordnet","n. a transmission that provides power directly to all four wheels of a motor vehicle",""],["wordnet","n. a motor vehicle with a four-wheel drive transmission system",""]]};

@@ -1,0 +1,1 @@
+export default {"kpop":[["jmdict","[noun (common) (futsuumeishi)] K-pop; Korean pop","ケーポップ・ケイポップ","ja","en"]],"kp":[["jmdict","[interjection (kandoushi)] cheers","ケー・ピー・ケーピー・ケイピー","ja","en"]],"kpi":[["jmdict","重要業績評価指標 [じゅうようぎょうせきひょうかしひょう] — KPI","","en","ja"]],"kpc":[["jmdict","キロパーセク [キロパーセク] — kpc","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"sémillon (wine grape variety)":[["jmdict","セミヨン [セミヨン] — Sémillon (wine grape variety)","","en","ja"]],"sémillon":[["jmdict","セミヨン [セミヨン] — Sémillon (wine grape variety)","","en","ja"]],"séparée":[["ding","booth","","de","en"]]};

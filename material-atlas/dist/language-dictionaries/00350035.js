@@ -1,0 +1,1 @@
+export default {"55年体制":[["jmdict","[noun (common) (futsuumeishi)] 1955 System; Japanese political alignment with the LDP in government and the JSP in opposition, which lasted until 1993","ごじゅうごねんたいせい","ja","en"]],"55th wedding anniversary":[["jmdict","エメラルド婚式 [エメラルドこんしき] — 55th wedding anniversary","","en","ja"]]};

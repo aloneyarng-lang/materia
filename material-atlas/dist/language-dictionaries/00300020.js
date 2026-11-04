@@ -1,0 +1,1 @@
+export default {"0 years old":[["jmdict","０歳；０才；〇歳；零歳；ゼロ歳；ゼロ才；零才 [ゼロさい・れいさい] — 0 years old","","en","ja"]],"0 0 score":[["jmdict","ノースコア；ノー・スコア [ノースコア・ノー・スコア] — 0-0 score","","en","ja"]],"0 leitung":[["ding","Goubau line; G-string [coll.]","","de","en"]]};

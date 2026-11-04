@@ -1,0 +1,1 @@
+export default {"3日":[["jmdict","[noun (common) (futsuumeishi)] 3rd day of the month\n[noun (common) (futsuumeishi)] three days","みっか","ja","en"]],"3日酔い":[["jmdict","[noun (common) (futsuumeishi)] hangover that still lingers two days after drinking; still being hungover after two days","みっかよい","ja","en"]]};

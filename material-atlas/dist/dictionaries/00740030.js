@@ -1,0 +1,1 @@
+export default {"t0l system":[["ecdict","[计] 带产生式表的林氏无关系统",""]]};

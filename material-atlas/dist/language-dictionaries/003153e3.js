@@ -1,0 +1,1 @@
+export default {"1口":[["jmdict","[noun (common) (futsuumeishi)] mouthful; morsel; bite\n[noun (common) (futsuumeishi)] gulp; sip; draft; draught\n[noun (common) (futsuumeishi)] one word; in short\n[noun (common) (futsuumeishi)] one share; one stock; one contribution","ひとくち","ja","en"]]};

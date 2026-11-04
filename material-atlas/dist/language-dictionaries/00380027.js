@@ -1,0 +1,1 @@
+export default {"8' lage":[["ding","unison pitch; native pitch; 8-foot-pitch; 8'-pitch (organ)","","de","en"]],"8' pitch":[["ding","Normallage {f}; Äquallage {f}; 8-Fuß-Lage {f}; 8'-Lage {f} (Orgel) [mus.]","","en","de"]]};

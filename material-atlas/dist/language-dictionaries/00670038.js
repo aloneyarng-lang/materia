@@ -1,0 +1,1 @@
+export default {"g8 hokkaido toyako summit":[["jmdict","洞爺湖サミット [とうやこサミット] — G8 Hokkaido Toyako Summit","","en","ja"]],"g8":[["ding","G8 (short for \"the Group of Eight\", the member states or the heads of government who attend the summit meeting)","","de","en"],["ding","G8 (Kurzform für \"die Gruppe der Acht\") {f} [pol.]","","en","de"]]};

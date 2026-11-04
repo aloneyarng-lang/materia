@@ -1,0 +1,1 @@
+export default {"8ナンバー":[["jmdict","[noun (common) (futsuumeishi)] licence plate beginning with 8 used by police, ambulance, etc. vehicles\n[noun (common) (futsuumeishi)] special-use vehicle (e.g. police car, ambulance, sprinkler truck)","はちナンバー","ja","en"]]};

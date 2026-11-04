@@ -1,5 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  startupReady: () => ipcRenderer.invoke('startup:ready'),
+  mlStatus: () => ipcRenderer.invoke('ml:status'),
+  mlRun: payload => ipcRenderer.invoke('ml:run',payload),
+  mlCancel: id => ipcRenderer.invoke('ml:cancel',id),
+  onMLProgress: callback => {const listener=(_event,value)=>callback(value);ipcRenderer.on('ml:progress',listener);return()=>ipcRenderer.removeListener('ml:progress',listener);},
   moduleLoad: id => ipcRenderer.invoke('modules:load',id),
   moduleSave: (id,payload) => ipcRenderer.invoke('modules:save',{id,payload}),
   predictionGet: () => ipcRenderer.invoke('modules:load','prediction'),

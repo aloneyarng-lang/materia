@@ -1,0 +1,1 @@
+export default {"c14 altersbestimmung":[["ding","radiocarbon dating; radiocarbon (dating) method; carbon (14) dating; carbon analysis","","de","en"]],"c10 13 chloralkane":[["ding","c10-13 chloroalkanes","","de","en"]],"c10 13 chloroalkanes":[["ding","C10-13 Chloralkane {pl} [chem.]","","en","de"]]};

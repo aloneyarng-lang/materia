@@ -1,0 +1,1 @@
+export default {"p3c":[["jmdict","[noun (common) (futsuumeishi)] Lockheed P-3 Orion (anti-submarine and maritime surveillance aircraft); P3C","ピーさんシー","ja","en"],["jmdict","Ｐ３Ｃ [ピーさんシー] — P3C","","en","ja"]],"p3":[["jmdict","ピースリー [ピースリー] — P3","","en","ja"]]};

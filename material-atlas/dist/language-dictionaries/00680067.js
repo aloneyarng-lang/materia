@@ -1,0 +1,1 @@
+export default {"hg":[["jmdict","妊娠悪阻 [にんしんおそ] — HG","","en","ja"]],"hga":[["jmdict","地理科学学会 [ちりかがくがっかい] — HGA","","en","ja"]],"hgv traffic":[["ding","Schwerlastverkehr {m}; Schwerverkehr {m} [transp.]","","en","de"]]};

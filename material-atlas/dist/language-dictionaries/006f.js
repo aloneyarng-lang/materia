@@ -1,0 +1,1 @@
+export default {"o":[["jmdict","や [や] — o","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] O; o","オー","ja","en"],["jmdict","Ｏ；ｏ [オー] — O","","en","ja"],["jmdict","Ｏ；ｏ [オー] — o","","en","ja"],["ding","oh; uh","","de","en"]]};

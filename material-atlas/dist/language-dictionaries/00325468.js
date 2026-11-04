@@ -1,0 +1,1 @@
+export default {"2周目":[["jmdict","[noun (common) (futsuumeishi)] second time around; second lap\n[noun (common) (futsuumeishi)] second time at life (oft. jokingly of precocious children); reincarnation","にしゅうめ","ja","en"]]};

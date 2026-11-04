@@ -1,0 +1,1 @@
+export default {"4低男子":[["jmdict","[noun (common) (futsuumeishi)] ideal husband who is not overbearing, is not dependent on his wife, has a stable job and does not spend a lot of money","よんていだんし","ja","en"]]};

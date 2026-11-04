@@ -1,0 +1,1 @@
+export default {" y":[["ecdict"," 充满…的；有…特性的",""]],"y":[["ecdict","[计] 原型\n[医] 钇(39号元素)","wai"],["wordnet","n. the 25th letter of the Roman alphabet",""],["wordnet","n. the 25th letter of the Roman alphabet",""],["wordnet","n. a silvery metallic element that is common in rare-earth minerals; used in magnesium and aluminum alloys",""]],"y ":[["ecdict","[字首]表过去分词之义","i"]]};

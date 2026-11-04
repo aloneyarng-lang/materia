@@ -1,0 +1,1 @@
+export default {"fwhm":[["jmdict","スペクトル幅 [スペクトルはば] — FWHM","","en","ja"],["jmdict","半値全幅 [はんちぜんはば] — FWHM","","en","ja"]],"fwoosh":[["jmdict","ぶわっ；ブワッ [ぶわっ・ブワッ] — fwoosh","","en","ja"]],"fw":[["jmdict","[noun (common) (futsuumeishi)] forward (position); attacker\n[noun (common) (futsuumeishi)] fairway wood (club)","エフ・ダブリュー・エフダブリュー","ja","en"]]};

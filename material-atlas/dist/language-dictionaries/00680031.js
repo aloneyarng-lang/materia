@@ -1,0 +1,1 @@
+export default {"h1 a8 diagonal (in othello)":[["jmdict","ブラックライン；ブラック・ライン [ブラックライン・ブラック・ライン] — h1-a8 diagonal (in Othello)","","en","ja"]],"h1 a8 diagonal":[["jmdict","ブラックライン；ブラック・ライン [ブラックライン・ブラック・ライン] — h1-a8 diagonal (in Othello)","","en","ja"]],"h1n1 flu":[["ding","Schweineinfluenza {f}; Schweinegrippe {f}; Schweinsgrippe {f} [Süddt.] [med.]","","en","de"]]};

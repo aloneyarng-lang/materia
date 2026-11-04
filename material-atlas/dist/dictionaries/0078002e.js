@@ -1,0 +1,1 @@
+export default {"x.":[["ecdict","[医] 十分之一效度(顺势疗法), 金伯克氏X线剂量单位",""]],"x.25":[["ecdict","[计] X.25标准",""]],"x.25 gateway":[["ecdict","[计] X.25网关",""]],"x.25 interface":[["ecdict","[计] X·25接口",""]],"x.25 network":[["ecdict","[计] X.25网络",""]],"x.25 protocol":[["ecdict","[计] X·25协议",""]],"x.25 recommendation":[["ecdict","[计] X·25建议",""]]};

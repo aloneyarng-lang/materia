@@ -1,0 +1,1 @@
+export default {"n95マスク":[["jmdict","[noun (common) (futsuumeishi)] N95 mask; N95 respirator","エヌきゅうじゅうごマスク","ja","en"]],"n95 mask":[["jmdict","Ｎ９５マスク [エヌきゅうじゅうごマスク] — N95 mask","","en","ja"]],"n95 respirator":[["jmdict","Ｎ９５マスク [エヌきゅうじゅうごマスク] — N95 respirator","","en","ja"]]};

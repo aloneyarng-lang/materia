@@ -683,6 +683,7 @@ async function init() {
   }
   render();
   $('.import-main').disabled = !state.ready || state.storageError;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>native?.startupReady?.().catch(()=>{})));
 }
 workspaceModules=createWorkspaceModules({native,libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
  builtins:{graph:{render(){}},list:{render:()=>renderList(visiblePapers())},materials:{render:()=>materialList.render()},notes:{render:()=>{const filtered=visiblePapers(),count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=msg`${count} 条笔记 · ${filtered.length} 篇文献`;}}},

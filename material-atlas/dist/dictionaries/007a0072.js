@@ -1,0 +1,1 @@
+export default {"zr":[["ecdict","[医] 锆(40号元素)",""],["wordnet","n. a lustrous grey strong metallic element resembling titanium; it is used in nuclear reactors as a neutron absorber; it occurs in baddeleyite but is obtained chiefly from zircon",""]],"zranklinization":[["ecdict","[医] 静电疗法",""]],"zrm":[["ecdict","n. 自然码",""]]};

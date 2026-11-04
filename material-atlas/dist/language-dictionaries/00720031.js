@@ -1,0 +1,1 @@
+export default {"r18":[["jmdict","[noun (common) (futsuumeishi)] 18 certificate; R-18; restricted to those 18 years or older","アールじゅうはち","ja","en"]],"r12 unlösliches":[["ding","R12-insoluble","","de","en"]],"r12 insoluble":[["ding","R12-Unlösliches","","en","de"]]};

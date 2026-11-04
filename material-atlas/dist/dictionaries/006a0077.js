@@ -1,0 +1,1 @@
+export default {"jw":[["ecdict","abbr. 水套（jacket of water）",""]],"jwc":[["ecdict","abbr. junction wire connector 汇接线连接器",""]],"jwl":[["ecdict","abbr. jewel 宝石; jeweler 宝石商",""]],"jwt":[["ecdict","abbr. J Walter Thompson (advertising agency) J·华尔特·汤普森（广告机构）; joint wavelet transform 联合子波变换",""]]};

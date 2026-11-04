@@ -1,0 +1,1 @@
+export default {"3球三振":[["jmdict","[noun (common) (futsuumeishi)] three-pitch strikeout","さんきゅうさんしん","ja","en"]],"3球3振":[["jmdict","[noun (common) (futsuumeishi)] three-pitch strikeout","さんきゅうさんしん","ja","en"]]};

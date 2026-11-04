@@ -1,0 +1,1 @@
+export default {"yves saint laurent (brand name)":[["jmdict","イヴサンローラン；イブサンローラン [イヴサンローラン・イブサンローラン] — Yves Saint-Laurent (brand name)","","en","ja"]],"yves saint laurent":[["jmdict","イヴサンローラン；イブサンローラン [イヴサンローラン・イブサンローラン] — Yves Saint-Laurent (brand name)","","en","ja"]]};

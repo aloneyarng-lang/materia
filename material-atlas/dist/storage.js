@@ -13,7 +13,7 @@ export const BACKUP_FORMAT = 'materia-backup';
 let connection;
 const native = globalThis.materiaDesktop;
 let richNoteSupport;
-async function assertRichNoteSupport(value){const notes=Object.values(value||{}).filter(Array.isArray).flat();if(native&&notes.some(note=>note.anchor||note.attachments?.length)){richNoteSupport ||= native.info();const info=await richNoteSupport;if(Number(info.readerNotesVersion)<1||!info.readerNotesVersion)throw new Error('请关闭并重新打开 Materia，再保存带标记或图片的笔记；当前桌面存储接口仍是旧版。');if(notes.some(note=>note.anchor&&(note.anchor.kind||note.anchor.label!==undefined))&&!info.readerAnnotationsVersion)throw new Error('请重新启动 Materia 以启用文字和箭头标注；当前标注仍保留在编辑区。');}}
+async function assertRichNoteSupport(value){const notes=Object.values(value||{}).filter(Array.isArray).flat();if(native&&notes.some(note=>note.anchor||note.attachments?.length)){richNoteSupport ||= native.info();const info=await richNoteSupport;if(Number(info.readerNotesVersion)<1||!info.readerNotesVersion)throw new Error('请关闭并重新打开 Materia，再保存带标记或图片的笔记；当前桌面存储接口仍是旧版。');if(notes.some(note=>['highlight','underline'].includes(note.anchor?.kind))&&Number(info.readerAnnotationsVersion||0)<2)throw new Error('请重新启动 Materia 以启用文字高亮和下划线。');if(notes.some(note=>note.anchor&&(note.anchor.kind||note.anchor.label!==undefined))&&!info.readerAnnotationsVersion)throw new Error('请重新启动 Materia 以启用文字和箭头标注；当前标注仍保留在编辑区。');}}
 async function nativePapers(papers) {
   papers = papers.map(normalizePaperMaterials);
   if (papers.length && !(Number((await native.info()).materialsVersion) >= 1)) throw new Error('请关闭并重新打开 Materia，以启用按材料保存性能参数；当前编辑内容仍保留。');

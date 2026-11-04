@@ -1,0 +1,1 @@
+export default {"q&a":[["jmdict","[noun (common) (futsuumeishi)] Q&A; question and answer","キュー・アンド・エー・キューアンドエー","ja","en"],["jmdict","Ｑ＆Ａ [キュー・アンド・エー・キューアンドエー] — Q&A","","en","ja"]],"q&a形式":[["jmdict","[noun (common) (futsuumeishi)] Q&A format; question and answer format","キューアンドエーけいしき","ja","en"]],"q&a format":[["jmdict","Ｑ＆Ａ形式 [キューアンドエーけいしき] — Q&A format","","en","ja"]]};

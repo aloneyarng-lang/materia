@@ -1,0 +1,1 @@
+export default {"0":[["jmdict","[noun (common) (futsuumeishi)] zero; nought","れい","ja","en"],["jmdict","[noun (common) (futsuumeishi)] zero; 0; nought; nil\n[noun (common) (futsuumeishi)] nothing; zilch","ゼロ","ja","en"],["jmdict","０；〇；零 [ゼロ] — 0","","en","ja"]]};

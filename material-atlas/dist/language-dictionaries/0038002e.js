@@ -1,0 +1,1 @@
+export default {"8.3 x 5.4 cm photograph (size)":[["jmdict","名刺判 [めいしばん] — 8.3 x 5.4 cm photograph (size)","","en","ja"]],"8.3 x 5.4 cm photograph":[["jmdict","名刺判 [めいしばん] — 8.3 x 5.4 cm photograph (size)","","en","ja"]]};

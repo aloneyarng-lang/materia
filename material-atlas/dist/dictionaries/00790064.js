@@ -1,0 +1,1 @@
+export default {"yd":[["ecdict","abbr. 码（yard）",""]],"ydc":[["ecdict","abbr. yaw-damping computer 偏航阻尼器计算机","'aɪdk"]],"ydder":[["ecdict","abbr. [复数] yd, yds yard, yards",""]],"ydi":[["ecdict","你活该（缩写）",""]],"yds":[["ecdict","abbr. yards 码数",""]],"ydy":[["ecdict","abbr. 伊甸园论坛（Yi Dian Yuan）",""]]};

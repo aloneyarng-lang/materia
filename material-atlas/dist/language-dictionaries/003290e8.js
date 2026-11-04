@@ -1,0 +1,1 @@
+export default {"2部":[["jmdict","[noun (common) (futsuumeishi)] two parts; two copies; the second part","にぶ","ja","en"]],"2部上場企業":[["jmdict","[noun (common) (futsuumeishi)] Second Section company (on the Tokyo Stock Exchange)","にぶじょうじょうきぎょう","ja","en"]]};

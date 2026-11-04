@@ -1,0 +1,1 @@
+export default {"'quintenquartett'":[["ding","'Fifths Quartet' (by Haydn / work title)","","de","en"]],"'queen mab'":[["ding","'Die Feenkönigin' (von Shelley / Werktitel) [lit.]","","en","de"]],"'quiet days in clichy'":[["ding","'Stille Tage in Clichy' (von Miller / Werktitel) [lit.]","","en","de"]]};

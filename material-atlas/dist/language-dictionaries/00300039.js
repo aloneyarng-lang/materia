@@ -1,0 +1,1 @@
+export default {"090金融":[["jmdict","[noun (common) (futsuumeishi)] loan sharks operating from a cellphone (i.e. without a fixed phone number); 090 financing","ゼロキューゼロきんゆう","ja","en"]],"090 financing":[["jmdict","０９０金融 [ゼロキューゼロきんゆう] — 090 financing","","en","ja"]]};

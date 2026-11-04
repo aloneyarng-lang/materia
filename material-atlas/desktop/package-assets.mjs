@@ -10,6 +10,17 @@ export async function walkFiles(root,relative=''){
 // Check the exact staged application, so a working source tree cannot hide missing release assets.
 export async function validatePackagedAssets(root){
   const files=await walkFiles(root),known=new Set(files.map(p=>p.replaceAll('\\','/'))),missing=[];
+  if(known.has('desktop/ml-engine.mjs'))for(const reference of ['ml/engine.py','ml/runtime/python.exe','ml/runtime/python313.dll','ml/runtime/python313.zip','ml/runtime/python313._pth','ml/runtime/Lib/site-packages/sklearn/__init__.py','ml/runtime/Lib/site-packages/skops/__init__.py','ml/runtime/Lib/site-packages/numpy/__init__.py','ml/runtime/Lib/site-packages/scipy/__init__.py'])if(!known.has(reference))missing.push({file:'machine learning engine',reference});
+  if(known.has('dist/offline-dictionary.js')){
+    const manifestText=await readFile(path.join(root,'dist/dictionaries/manifest.js'),'utf8');
+    const manifest=JSON.parse(manifestText.replace(/^export default /,'').trim().replace(/;$/,''));
+    for(const name of [...manifest.shards.map(key=>key+'.js'),'ECDICT-LICENSE.txt','WORDNET-LICENSE.txt','README.md'])
+      if(!known.has('dist/dictionaries/'+name))missing.push({file:'dictionary manifest',reference:name});
+    const languageText=await readFile(path.join(root,'dist/language-dictionaries/manifest.js'),'utf8');
+    const languages=JSON.parse(languageText.replace(/^export default /,'').trim().replace(/;$/,''));
+    for(const name of [...languages.shards.map(key=>key+'.js'),'JMdict_e.gz','de-en.txt.gz','JMDICT-LICENSE.html','JMDICT-DOCUMENTATION.html','CC-BY-SA-4.0.txt','DING-COPYING.txt','DING-README.txt','README.md'])
+      if(!known.has('dist/language-dictionaries/'+name))missing.push({file:'language dictionary manifest',reference:name});
+  }
   for(const name of files){
     if(!/\.(?:js|mjs|cjs|css|html)$/.test(name))continue;
     const text=await readFile(path.join(root,name),'utf8'),refs=[];

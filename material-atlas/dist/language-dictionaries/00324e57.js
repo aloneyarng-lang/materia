@@ -1,0 +1,1 @@
+export default {"2乗":[["jmdict","[noun (common) (futsuumeishi); noun or participle which takes the aux. verb suru; transitive verb] square (of a number); multiplying (a number) by itself; second power","にじょう・じじょう","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"rj":[["ecdict","abbr. 交叉路口（road junction）",""]],"rj 11":[["ecdict","[计] RJ-11型标准电话连接器",""]],"rje":[["ecdict","[计] 远程作业输入",""]],"rjep":[["ecdict","[计] 远程作业输入协议",""]],"rjr":[["ecdict","abbr. Radio Jamaica Ltd. 牙买加广播公司; RJ Reynolds RJ 雷诺兹",""]],"rjs":[["ecdict","abbr. reaction jet system 反作用射流控制系统; remote job service 远程作业服务",""]]};

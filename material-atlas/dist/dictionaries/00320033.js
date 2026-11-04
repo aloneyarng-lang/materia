@@ -1,0 +1,1 @@
+export default {"23":[["ecdict"," twenty-three; [电影]死亡密码23",""],["wordnet","s. being three more than twenty",""],["wordnet","n. the cardinal number that is the sum of twenty-two and one",""]],"23rd":[["wordnet","s. coming next after the twenty-second in position",""]]};

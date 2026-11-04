@@ -1,7 +1,8 @@
 import {t as tr,html,msg} from './i18n.js';
 import {MARK_COLORS,normalizeAnchor,rectFromPoints} from './note-model.js';
 import {TRANSLATION_LANGUAGES} from './study-model.js';
-export const annotationName=anchor=>({text:tr('文字标注'),arrow:tr('箭头标注'),region:tr('区域标记')}[anchor?.kind]||tr('区域标记'));
+import {isTextMark} from './reader-text-marks.js';
+export const annotationName=anchor=>({highlight:tr('文字高亮'),underline:tr('下划线'),text:tr('文字标注'),arrow:tr('箭头标注'),region:tr('区域标记')}[anchor?.kind]||tr('区域标记'));
 const clamp=value=>Math.min(1,Math.max(0,value));
 export function translationAnnotation({page,selectionRect,text,translatedText,targetLanguage='zh-CN',fingerprint='',pageAspect=792/612}){
   if(typeof text!=='string'||!text.trim()||text.length>4000||typeof translatedText!=='string'||!translatedText.trim())throw new Error(tr('选文或译文无效，请重新划词翻译。'));
@@ -32,6 +33,7 @@ export function gestureAnnotation(tool,page,start,end,color='teal',fingerprint='
   return normalizeAnchor({kind:tool==='text'?'text':'region',page,rect,color,fingerprint,...(tool==='text'?{label:'',fontSize:14}:{})});
 }
 export function transformAnnotation(anchor,dx,dy,handle='move'){
+  if(isTextMark(anchor))return anchor;
   const next=structuredClone(anchor);
   if(next.kind==='arrow'){
     if(handle==='start'||handle==='end'){next[handle]={x:clamp(next[handle].x+dx),y:clamp(next[handle].y+dy)};if(Math.hypot(next.start.x-next.end.x,next.start.y-next.end.y)<.002)return anchor;}
@@ -43,6 +45,10 @@ export function transformAnnotation(anchor,dx,dy,handle='move'){
 }
 export function annotationHTML(anchor,id,{escape:esc,selected=false,draft=false,width=1000,height=1000}={}){
   const r=anchor.rect,kind=anchor.kind||'region',color=MARK_COLORS[anchor.color]||MARK_COLORS.yellow,attrs=`data-reader-mark="${esc(id)}"`,state=`${selected?' selected':''}${draft?' draft':''}`,title=esc(anchor.label||annotationName(anchor)+tr(' · 点击添加详细批注',false)),font=Math.max(11,Math.min(28,(anchor.fontSize||14)*width/612));
+  if(isTextMark(anchor)){
+    const fragments=anchor.rects.map(part=>`<i class="reader-text-fragment reader-${kind}${state}" style="left:${part.x*100}%;top:${part.y*100}%;width:${part.width*100}%;height:${part.height*100}%;--mark-color:${color}"></i>`).join('');
+    return fragments+`<button class="reader-text-mark-pin${state}" ${attrs} style="left:${Math.min(.97,r.x+r.width)*100}%;top:${r.y*100}%;--mark-color:${color}" title="${title}" aria-label="${title}">✎</button>`;
+  }
   if(kind==='arrow'){
     const a={x:anchor.start.x*width,y:anchor.start.y*height},b={x:anchor.end.x*width,y:anchor.end.y*height},angle=Math.atan2(b.y-a.y,b.x-a.x),head=10;
     const wing1={x:b.x-head*Math.cos(angle-.42),y:b.y-head*Math.sin(angle-.42)},wing2={x:b.x-head*Math.cos(angle+.42),y:b.y-head*Math.sin(angle+.42)};

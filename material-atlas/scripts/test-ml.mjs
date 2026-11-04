@@ -1,0 +1,16 @@
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+import {MachineLearningEngine} from '../desktop/ml-engine.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const engine=new MachineLearningEngine({appRoot:root});
+const result=spawnSync(engine.executable(),['-I','-X','utf8',path.join(root,'ml/test_engine.py')],{stdio:'inherit',windowsHide:true});
+if(result.status!==0)process.exit(result.status||1);
+const id='cancellation-smoke-test';
+const running=engine.run('status',{},id);
+assert.equal(engine.cancel(id),true);
+await assert.rejects(running,/已停止/);
+assert.equal(engine.jobs.size,0);
+assert.equal((await engine.run('status')).ready,true);
+console.log('PASS subprocess cancellation, cleanup and subsequent engine restart');

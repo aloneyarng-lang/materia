@@ -1,0 +1,1 @@
+export default {"vj":[["ecdict","abbr. 电视综艺节目主持人（Video Jockey）",""]]};

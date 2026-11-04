@@ -1,0 +1,1 @@
+export default {"børnelund (japanese toy company)":[["jmdict","ボーネルンド [ボーネルンド] — BørneLund (Japanese toy company)","","en","ja"]],"børnelund":[["jmdict","ボーネルンド [ボーネルンド] — BørneLund (Japanese toy company)","","en","ja"]]};

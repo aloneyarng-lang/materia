@@ -1,0 +1,1 @@
+export default {"a' dipyridyl a":[["ecdict","[医] α,α'-双吡啶",""]],"a'man":[["ecdict","[网络] 一个男人；一个人；男子",""],["wordnet","n. the Israeli military intelligence which produces comprehensive national intelligence briefings for the prime minister and the cabinet",""]]};

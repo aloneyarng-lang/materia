@@ -1,0 +1,1 @@
+export default {"yh":[["jmdict","[noun (common) (futsuumeishi)] youth hostel","ワイ・エイチ・ワイエイチ・ワイエッチ","ja","en"]],"yha card":[["ding","Jugendherbergsausweis {m}","","en","de"]],"yha cards":[["ding","Jugendherbergsausweise {pl}","","en","de"]]};

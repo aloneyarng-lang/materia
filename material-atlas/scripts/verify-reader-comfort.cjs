@@ -64,8 +64,8 @@ async function at(number){await page.waitForFunction(n=>Number(document.querySel
   assert.deepEqual((await savedMarks())[0],marked);assert.ok(await page.locator('.reader-highlight').count()>=3);
   await page.setViewportSize({width:1024,height:768});await page.waitForTimeout(400);await ready();
   assert.equal(await page.locator('#pdf-reader').evaluate(el=>el.scrollWidth>el.clientWidth),false);
-  assert.ok(await page.locator('#reader-scroll').evaluate(el=>el.clientHeight>350));await page.screenshot({path:path.join(out,'compact.png')});
-  await page.evaluate(()=>document.documentElement.dataset.themeMode='dark');await page.screenshot({path:path.join(out,'dark.png')});
+  assert.ok(await page.locator('#reader-scroll').evaluate(el=>el.clientHeight>350));await page.locator('[data-reader-action="fit"]').evaluate(el=>el.click());await ready();await page.screenshot({path:path.join(out,'compact.png')});
+  await page.evaluate(async()=>{const {createThemeRuntime}=await import('./theme-runtime.js'),{resolveTheme}=await import('./theme-model.js');const runtime=createThemeRuntime();runtime.apply(resolveTheme({selected:'paper',mode:'dark',themes:[]}));await runtime.ready();});await page.screenshot({path:path.join(out,'dark.png')});
   assert.equal(createHash('sha256').update(await fs.readFile(await lib.pdfPath('continuous'))).digest('hex'),originalHash);
  });
  assert.deepEqual(errors,[]);await fs.writeFile(path.join(out,'report.json'),JSON.stringify({checks,passed:checks.length,pageErrors:errors,isolatedLibrary:true},null,2));

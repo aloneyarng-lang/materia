@@ -37,3 +37,11 @@ test('saved highlights and underlines survive disk reopening and draft storage a
   await reopened.setSetting('readerDrafts',[{paperId:'a',note:notes['paper:a'][0],savedAt:5,baseUpdatedAt:1}]);
   const again=await new LocalLibrary(lib.root).init();assert.deepEqual(again.getSetting('readerDrafts')[0].note.anchor.rects,rects);
 });
+test('older native annotation stores cannot discard text fragment geometry',async()=>{
+  let writes=0;globalThis.materiaDesktop={info:async()=>({readerNotesVersion:1,readerAnnotationsVersion:1}),setSetting:async()=>writes++};
+  try{
+    const {setSetting}=await import('../dist/storage.js?old-text-mark-store');
+    await assert.rejects(setSetting('notes',{'paper:a':[{id:'n',body:'source',anchor:textMarkAnchor({page:1,rects})}]}),/重新启动/);
+    assert.equal(writes,0);
+  }finally{delete globalThis.materiaDesktop;}
+});

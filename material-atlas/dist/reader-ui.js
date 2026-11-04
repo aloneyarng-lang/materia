@@ -230,6 +230,7 @@ export function createPDFReader(config){
   async function chooseNote(id,{reveal=true,locate=true,focus=true}={}){
     const ticket=session;if(!await prepareSwitch()||ticket!==session)return;
     const stored=draftRows.find(row=>row.paperId===paper.id&&row.note.id===id),existing=notes().find(note=>note.id===id);if(!stored&&!existing)return;
+    const deleteButton=$('[data-annotation-action="delete"]');delete deleteButton.dataset.confirmed;deleteButton.textContent=tr('删除');
     let restoreMessage='';draft=structuredClone(stored?.note||existing);baseUpdatedAt=stored?.baseUpdatedAt??existing?.updatedAt??0;dirty=Boolean(stored);selected=id;editVersion++;draftSavedVersion=dirty?editVersion:-1;
     if(stored&&existing&&existing.updatedAt>stored.baseUpdatedAt&&!sameReaderNote(existing,stored.note)){
       draftRows=draftRows.filter(row=>!(row.paperId===paper.id&&row.note.id===id));draft.id=empty().id;baseUpdatedAt=0;selected='';draftSavedVersion=-1;restoreMessage=tr('原笔记已更新，旧草稿恢复为新笔记，避免覆盖。');changed();
@@ -411,7 +412,7 @@ export function createPDFReader(config){
     const frame=event.target.closest('#reader-stage .reader-page');if(!doc||host.dataset.rendering||!frame)return;
     const annotation=event.target.closest('[data-reader-mark]');
     if(mode==='read'&&annotation&&annotation.dataset.readerMark===draft.id&&draft.anchor&&!isTextMark(draft.anchor)&&!busy){event.preventDefault();transformDrag={pointer:event.pointerId,frame,start:point(event,frame),anchor:structuredClone(draft.anchor),handle:annotation.dataset.annotationHandle||annotation.dataset.annotationDrag||'move',moved:false,wasDirty:dirty};frame.setPointerCapture(event.pointerId);return;}
-    if(mode==='read'){selectingText=!annotation;return;}event.preventDefault();drag={start:point(event,frame),pointer:event.pointerId,frame,page:Number(frame.dataset.readerPage),tool:mode};frame.setPointerCapture(event.pointerId);
+    if(mode==='read'){selectingText=!annotation;if(selectingText)study.dismiss();return;}event.preventDefault();drag={start:point(event,frame),pointer:event.pointerId,frame,page:Number(frame.dataset.readerPage),tool:mode};frame.setPointerCapture(event.pointerId);
   });
   host.addEventListener('pointermove',event=>{
     if(pan&&event.pointerId===pan.pointer){const scroll=$('#reader-scroll');scroll.scrollLeft=pan.left+pan.x-event.clientX;scroll.scrollTop=pan.top+pan.y-event.clientY;positionAnnotationTools();return;}
@@ -420,7 +421,6 @@ export function createPDFReader(config){
     if(!drag||drag.pointer!==event.pointerId)return;const anchor=gestureAnnotation(drag.tool,drag.page,drag.start,point(event,drag.frame),color,paper.fingerprint||'');drag.frame.querySelector('.reader-mark-layer').innerHTML=notes().filter(note=>note.anchor?.page===drag.page&&anchorMatchesPaper(note.anchor,paper)&&note.id!==draft.id).map(note=>markerHTML(note.anchor,note.id)).join('')+markerHTML(anchor,draft.id,true);
   });
   host.addEventListener('pointerup',async event=>{
-    if(selectingText){selectingText=false;clearTimeout(selectionTimer);selectionTimer=setTimeout(captureSelection,100);}
     if(pan&&event.pointerId===pan.pointer){pan=null;suppressContextMenu=performance.now()+400;host.classList.remove('reader-panning');return;}
     if(resizeDrag&&event.pointerId===resizeDrag.pointer){resizeDrag=null;if(doc&&typeof zoom==='string')await renderPages({preserve:true});savePosition();return;}
     if(transformDrag&&event.pointerId===transformDrag.pointer){const moved=transformDrag.moved;transformDrag=null;suppressPageClick=performance.now()+220;if(moved){suppressAnnotationClick=performance.now()+180;lastAnnotationTap={id:'',time:0};changed();renderEditor();paintMarks();}else if(lastAnnotationTap.id===draft.id&&performance.now()-lastAnnotationTap.time<380){lastAnnotationTap={id:'',time:0};openInlineEditor();}else lastAnnotationTap={id:draft.id,time:performance.now()};return;}
@@ -449,13 +449,14 @@ export function createPDFReader(config){
       const endNode=selection.focusNode,endElement=endNode?.nodeType===Node.ELEMENT_NODE?endNode:endNode?.parentElement;
       if(mode==='read'&&endElement?.closest('#reader-stage .reader-page')===frame){
         const range=selection.getRangeAt(0),rect=range.getBoundingClientRect(),bounds=frame.getBoundingClientRect();
-        const rects=selectionFragments([...range.getClientRects()],bounds);if(!rects.length)return;
+        const rects=selectionFragments([...range.getClientRects()],bounds);if(!rects.length||rects.length>2000){study.selectionChanged(null);return;}
         const anchor=textMarkAnchor({page:lastQuote.page,rects});
         study.selectionChanged({page:lastQuote.page,text:lastQuote.text,quote:element.textContent.slice(0,1200),rects,selectionRect:anchor.rect,pageAspect:bounds.height/bounds.width,rect:{left:rect.left,top:rect.top,bottom:rect.bottom}});
       }else study.selectionChanged(null);
     }else if(!element?.closest('#reader-selection-translation')&&!document.activeElement?.closest('#reader-selection-translation'))study.selectionChanged(null);
   }
   document.addEventListener('selectionchange',()=>{clearTimeout(selectionTimer);if(!selectingText)selectionTimer=setTimeout(captureSelection,120);});
+  document.addEventListener('pointerup',()=>{if(selectingText){selectingText=false;clearTimeout(selectionTimer);selectionTimer=setTimeout(captureSelection,100);}});
   host.addEventListener('pointerdown',event=>{if(event.target.closest('[data-reader-text-mark],.selection-mark-tools'))event.preventDefault();});
   host.addEventListener('wheel',event=>{
     const scroll=event.target.closest('#reader-scroll');if(!scroll||!doc)return;

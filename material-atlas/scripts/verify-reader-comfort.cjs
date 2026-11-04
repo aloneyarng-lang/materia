@@ -32,6 +32,14 @@ async function at(number){await page.waitForFunction(n=>Number(document.querySel
   assert.ok(await page.locator('#reader-scroll').evaluate(el=>el.scrollTop>100));
   await page.locator('#reader-page-number').fill('1');await page.locator('#reader-page-number').press('Enter');await at(1);
  });
+ await check('mouse selection waits for release and supports immediate toolbar marking',async()=>{
+  const line=page.locator('.reader-page-slot.is-active .textLayer span').nth(1);await line.scrollIntoViewIfNeeded();const r=await line.boundingBox();
+    await page.mouse.move(r.x+2,r.y+r.height/2);await page.mouse.down();await page.mouse.move(r.x+r.width-2,r.y+r.height/2,{steps:10});
+  await page.waitForTimeout(180);assert.equal(await page.locator('#reader-selection-translation').count(),0);
+  await page.mouse.up();await page.locator('[data-study-action="highlight"]').waitFor();
+  await page.locator('.reader-toolbar [data-reader-text-mark="highlight"]').click();await page.waitForFunction(()=>document.querySelector('.reader-highlight'));
+  await page.locator('#reader-scroll').focus();await page.keyboard.press('Control+z');await page.waitForFunction(()=>!document.querySelector('.reader-highlight'));
+ });
  await check('multi-line highlight saves immediately, colors persist, original text stays selectable',async()=>{
   await selectLines(3);await page.locator('[data-study-color="teal"]').click();await page.locator('[data-study-action="highlight"]').click();
   await page.waitForFunction(()=>document.querySelectorAll('.reader-highlight').length>=3);

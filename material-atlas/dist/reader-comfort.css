@@ -1,4 +1,5 @@
 /* Stable paper geometry and comfortable controls, using the active theme. */
+html:has(.pdf-reader[open]){overflow:hidden}
 .pdf-reader.reader-v2[open]{display:flex;flex-direction:column}
 .reader-v2 .reader-header{height:60px;flex:0 0 auto;padding:10px 18px}
 .reader-v2 .reader-header h2{font-size:1rem;line-height:1.5}

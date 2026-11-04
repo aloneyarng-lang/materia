@@ -18,7 +18,7 @@ export function selectionFragments(rectangles,bounds){
 }
 
 export function textMarkAnchor({kind='highlight',page,rects,color='yellow',fingerprint=''}){
-  if(!rects?.length||!['highlight','underline'].includes(kind))throw Error('请先选择同一页中的文字。');
+  if(!Array.isArray(rects)||!rects.length||rects.length>2000||!['highlight','underline'].includes(kind))throw Error('请先选择同一页中的文字。');
   const x=Math.min(...rects.map(r=>r.x)),y=Math.min(...rects.map(r=>r.y));
   const right=Math.max(...rects.map(r=>r.x+r.width)),bottom=Math.max(...rects.map(r=>r.y+r.height));
   return normalizeAnchor({kind,page,rects,rect:{x,y,width:right-x,height:bottom-y},color,fingerprint});

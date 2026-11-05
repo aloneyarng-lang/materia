@@ -49,3 +49,17 @@
 #star-map .relation-node[data-cosmic-shape="nova"] .nova-ray{opacity:.7}
 html[data-theme-mode="light"] #star-map .graph-node[data-cosmic-shape="nova"] .node-core{fill:color-mix(in srgb,var(--node-color) 72%,#173a42);stroke:var(--node-color)}
 html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var(--node-color) 72%,#173a42)}
+
+.graph-mode-help{flex:0 0 auto;margin:0;padding:0 22px 8px;color:var(--muted);font-size:.75rem;line-height:1.5}
+#graph-mode{max-width:150px;min-width:0;padding:6px 8px;font-size:.78rem}
+.graph-mode-bar{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;padding:0 15px 8px;flex-wrap:wrap}
+.graph-mode-bar .graph-mode-help{padding:0;flex:1 1 260px}
+.graph-neighbors-control{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.75rem;white-space:nowrap}
+.graph-neighbors-control select{width:58px;min-width:0;padding:4px 6px}
+.graph-neighbors-control[hidden]{display:none}
+
+/* Keep detailed theme artwork at rest; avoid thousands of filters in motion. */
+svg[data-graph-density="dense"][data-graph-moving="true"] .node-core{filter:none!important}
+svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-node-effects{display:none}
+svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-twinkle{animation-play-state:paused}
+svg[data-graph-density="dense"] .graph-node{transition:none}

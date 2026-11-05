@@ -28,7 +28,8 @@ import { createPaperActions } from './paper-actions.js';
 import { createParameterFinder, parameterInventory, parameterResults, parameterNameKey, parameterRecordPreview } from './parameter-index.js';
 import {getGraphThemeOptions} from './graph-appearance.js';
 import { GRAPH_DEFAULTS, cleanGraphSettings } from './graph-settings.js';
-import { createAssociationController, cleanAssociations, associationLocalPapers } from './associations.js';
+import {similarityLocalPapers} from './paper-similarity.js';
+import { createAssociationController, cleanAssociations, associationLocalPapers, associationMatches } from './associations.js';
 import { createThemeController } from './themes.js';
 import { createAgentController } from './ai-agent.js';
 import {createVocabularyController} from './vocabulary-ui.js';
@@ -63,11 +64,11 @@ function visiblePapers() {
 }
 
 const map = new StarMap($('#star-map'), {
-  onNaturalLayoutState:({busy,canUndo,count})=>{
-    for(const button of document.querySelectorAll('[data-action="graph-arrange"],[data-action="graph-relayout"],[data-action="graph-arrange-all"]'))button.disabled=busy||!count;
+  onNaturalLayoutState:({busy,progress,canUndo,count})=>{
+    for(const button of document.querySelectorAll('[data-action="graph-arrange"],[data-action="graph-relayout"],[data-action="graph-arrange-all"]'))button.disabled=(busy&&button.id!=='graph-arrange')||!count;
     for(const button of document.querySelectorAll('[data-action="graph-arrange-undo"]'))button.disabled=busy||!canUndo;
-    const button=$('#graph-arrange');if(button){button.setAttribute('aria-busy',String(busy));button.title=busy?tr('正在整理星图…'):tr('自然整理星图（右键查看更多）');}
-    const status=$('#graph-arrange-status');if(status)status.textContent=busy?tr('正在自然整理星图'):'';
+    const button=$('#graph-arrange');if(button){button.setAttribute('aria-busy',String(busy));button.title=busy?tr('点击取消整理'):tr('自然整理星图（右键查看更多）');}
+    const status=$('#graph-arrange-status');if(status)status.textContent=busy?(progress?msg`正在整理 ${progress.completed} / ${progress.total} · 点击取消`:tr('正在自然整理星图')):'';
   },
   onRelation: id => associationController.inspect(id), onRemoveAssociation: id => associationController.remove(id).catch(error=>toast(error.message,true)),
   onHide: id => { state.hiddenIds.add(id); render(); },
@@ -160,13 +161,21 @@ function render() {
   $('#legend').innerHTML = groups.slice(0, 6).map(g => html`<button data-tag="${escape(g.name)}" class="${state.tag === g.name ? 'active' : ''}" title="按 ${escape(g.name)} 筛选"><i style="background:${g.color}"></i>${escape(g.name)}</button>`).join('') + (state.tag ? tr('<button data-action="clear-tag" class="tag-filter-clear">清除筛选 ×</button>') : '');
   document.querySelectorAll('[data-view]').forEach(button => { const active = button.dataset.view === state.view; button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
   map.options = { showEdges: state.showEdges, showLabels: state.showLabels };
-  const graphPapers=state.graphPreferences.localMode?associationLocalPapers(filtered,state.associations,state.selected,state.graphPreferences.localDepth):filtered;
+  const tagMode=state.graphPreferences.mode==='tags';
+  const scoped=tagMode?filtered.filter(paper=>state.associations.some(rule=>associationMatches(paper,rule))):filtered;
+  const graphPapers=state.graphPreferences.localMode?(tagMode?associationLocalPapers(scoped,state.associations,state.selected,state.graphPreferences.localDepth):similarityLocalPapers(scoped,state.selected,state.graphPreferences.localDepth,{neighbors:state.graphPreferences.neighbors})):scoped;
+  $('#graph-mode').value=state.graphPreferences.mode;
+  $('#graph-neighbors-control').hidden=tagMode;
+  $('#graph-mode-help').textContent=tagMode?tr('选择标签，展示匹配任一标签的文献及关联。'):tr('按标签、标题与摘要、作者和机构计算相似度；关系越近，连接越短。');
+  document.querySelector('[data-action="associations"]').hidden=!tagMode;
   map.configure(state.graphPreferences,collections(),state.associations);map.setData(graphPapers,state.selected,groups);
+  if(state.view==='graph')$('#visible-count').textContent=msg`${graphPapers.length} 篇文献`;
   if(state.graphPreferences.localMode&&state.view==='graph')$('#visible-count').textContent=msg`局部 ${graphPapers.length} / 筛选 ${filtered.length} 篇`;
   renderGraphPreferences();$('#ribbon-import').disabled=!state.ready||state.storageError;
-  const empty = $('#graph-empty'); empty.hidden = filtered.length > 0;
-  if (!filtered.length) {
-    if (all.length > 0) empty.innerHTML = html`<span data-icon="search"></span><h2>还没有找到这颗星</h2><p>尝试其他关键词，或清除筛选条件。</p><button class="outline-button" data-action="reset-filters">清除筛选</button>`;
+  const empty = $('#graph-empty'); empty.hidden = graphPapers.length > 0;
+  if (!graphPapers.length) {
+    if(tagMode&&!state.associations.length)empty.innerHTML=html`<span data-icon="orbit"></span><h2>选择要探索的标签</h2><p>可选择多个标签，查看它们与文献之间的关联。</p><button class="primary" data-action="associations">选择标签</button>`;
+    else if (all.length > 0) empty.innerHTML = html`<span data-icon="search"></span><h2>还没有找到这颗星</h2><p>尝试其他关键词，或清除筛选条件。</p><button class="outline-button" data-action="reset-filters">清除筛选</button>`;
     else empty.innerHTML = html`<span data-icon="orbit"></span><h2>从第一篇文献开始</h2><p>导入 PDF，添加你的研究标签，<br>让文献在星图中找到位置。</p><button class="primary" data-action="import"><span data-icon="plus"></span>导入文献</button><button class="text-button" data-action="download-md-template">下载 Markdown 规范模板</button>`;
   }
   workspaceModules?.render();
@@ -445,7 +454,7 @@ const actions = {
   themes: () => themeController.open(), settings: settingsModal, 'storage-info': settingsModal, export: exportLibrary, restore: () => $('#backup-input').click(),
   help: helpModal, shortcuts: shortcutsModal,
   'zoom-in': () => map.zoom(1.2), 'zoom-out': () => map.zoom(1 / 1.2), fit: () => map.fit(),
-  'clear-tag': () => { state.tag = ''; render(); }, 'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
+  'clear-tag': () => { state.tag = ''; render(); }, 'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.naturalTask?map.cancelNaturalLayout():map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
   'reset-filters': () => resetFilters(),
   'toggle-sidebar': () => {state.leftPanelOpen=!state.leftPanelOpen;render();},'toggle-detail': () => {state.detailOpen=!state.detailOpen;render();},'toggle-local': () => {state.graphPreferences.localMode=!state.graphPreferences.localMode;render();saveGraphPreferences();},'associations':()=>associationController.open(),'reset-graph-settings':()=>{state.graphPreferences={...GRAPH_DEFAULTS};render();saveGraphPreferences();},
   'graph-focus': () => { state.focusGraph = !state.focusGraph; render(); window.scrollTo({top:0}); },

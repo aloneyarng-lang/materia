@@ -1,5 +1,8 @@
 // Developer-authored interface messages: [English, Japanese]. Chinese is the source locale.
 export const MESSAGES = {
+  "点击取消整理": ["Click to cancel layout", "クリックして整理を中止"],
+  "正在整理 {0} / {1} · 点击取消": ["Arranging {0} / {1} · Click to cancel", "整理中 {0} / {1} · クリックで中止"],
+  "星图整理超时，请减少可见文献后重试。": ["Graph layout timed out. Show fewer papers and try again.", "星図の整理がタイムアウトしました。表示する文献を減らして再試行してください。"],
   "文字高亮": ["Text highlight", "文字のハイライト"],
   "高亮": ["Highlight", "ハイライト"],
   "下划线": ["Underline", "下線"],

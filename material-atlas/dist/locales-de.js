@@ -1,5 +1,8 @@
 // German interface messages. Keys are developer-authored Chinese source strings.
 export const GERMAN_MESSAGES = {
+  "点击取消整理": "Zum Abbrechen klicken",
+  "正在整理 {0} / {1} · 点击取消": "Anordnen {0} / {1} · Zum Abbrechen klicken",
+  "星图整理超时，请减少可见文献后重试。": "Zeitüberschreitung beim Anordnen. Zeigen Sie weniger Literatur an und versuchen Sie es erneut.",
   "文字高亮": "Texthervorhebung",
   "高亮": "Hervorheben",
   "下划线": "Unterstreichen",

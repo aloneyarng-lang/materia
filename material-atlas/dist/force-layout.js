@@ -1,4 +1,5 @@
 import {forceSimulation,forceManyBody,forceLink,forceCollide,forceX,forceY} from './vendor/d3-force.mjs';
+import {similarityLinks} from './paper-similarity.js';
 import { primaryTag } from './tags.js';
 import { GRAPH_DEFAULTS } from './graph-settings.js';
 import { cleanAssociations, associationMatches } from './associations.js';
@@ -9,7 +10,7 @@ export function cleanLayout(value = {}) {
   return Object.fromEntries(Object.entries(value || {}).slice(-10000).filter(([key, point]) => /^(paper|tag|relation):/.test(key) && key.length < 1500 && point && Number.isFinite(point.x) && Number.isFinite(point.y)).map(([key, point]) => [key, { x: clamp(point.x, -3000, 4000), y: clamp(point.y, -3000, 4000), pinned: Boolean(point.pinned) }]));
 }
 
-export function createNetwork(papers, groups, saved = {}, suppliedAssociations = []) {
+export function createNetwork(papers, groups, saved = {}, suppliedAssociations = [], mode = 'tags', neighbors = 3) {
   const allowed=new Set(groups.map(group=>group.name)),colors=new Map(groups.map(group=>[group.name,group.color]));
   const nodes=papers.map((paper,index)=>{
     const angle=index*2.399963+(hash(paper.id)%100)/900,distance=papers.length===1?0:Math.sqrt((index+.5)/papers.length)*300;
@@ -17,7 +18,7 @@ export function createNetwork(papers, groups, saved = {}, suppliedAssociations =
     return{id:'paper:'+paper.id,type:'paper',paper,color:colors.get(primaryTag(paper,allowed))||'#829487',radius:5.8,x:previous?.x??500+Math.cos(angle)*distance,y:previous?.y??310+Math.sin(angle)*distance,pinned:Boolean(previous?.pinned)};
   });
   const relationColors={tag:'#477e74',year:'#a18452',institution:'#6d7caa',author:'#98788e'};
-  const rules=cleanAssociations(suppliedAssociations);
+  const rules=mode==='similarity'?[]:cleanAssociations(suppliedAssociations);
   for(const rule of rules){
     const members=nodes.filter(node=>node.type==='paper'&&associationMatches(node.paper,rule)),seed=hash(rule.id),angle=seed/4294967295*Math.PI*2;
     const x=members.length?members.reduce((sum,node)=>sum+node.x,0)/members.length:500,y=members.length?members.reduce((sum,node)=>sum+node.y,0)/members.length:305;
@@ -27,6 +28,7 @@ export function createNetwork(papers, groups, saved = {}, suppliedAssociations =
   const byId=new Map(nodes.map(node=>[node.id,node])),edges=[];
   for(const node of nodes){node.vx=0;node.vy=0;node.degree=0;}
   for(const node of nodes.filter(node=>node.type==='relation'))for(const id of node.members){const source=byId.get('paper:'+id);edges.push({source,target:node,tag:node.id,associationId:node.id});source.degree++;node.degree++;}
+  if(mode==='similarity')for(const edge of similarityLinks(papers,{neighbors})){const source=nodes[edge.source],target=nodes[edge.target];edges.push({...edge,source,target});source.degree++;target.degree++;}
   for(const node of nodes)node.radius=node.type==='paper'?4.2+Math.min(3.8,Math.sqrt(node.degree)*.85):5+Math.min(5,Math.sqrt(node.degree)*.75);
   const adjacency=new Map(nodes.map(node=>[node.id,[]]));for(const edge of edges){adjacency.get(edge.source.id).push(edge.target);adjacency.get(edge.target.id).push(edge.source);}
   return{nodes,edges,byId,adjacency,omittedTags:0};
@@ -50,7 +52,7 @@ function physicsFor(network,preferences){
   if(key!==physics.key){
     physics.x.strength(.05*center);physics.y.strength(.05*center);
     physics.charge.strength(-90*repulsion);
-    physics.links.distance(linkDistance).strength(edge=>linkStrength/Math.max(1,Math.min(edge.source.degree,edge.target.degree)));
+    physics.links.distance(edge=>edge.similarity===undefined?linkDistance:linkDistance*(1.65-1.15*edge.similarity)).strength(edge=>linkStrength*(edge.similarity===undefined?1:.4+1.6*edge.similarity)/Math.max(1,Math.min(edge.source.degree,edge.target.degree)));
     physics.simulation.velocityDecay(.55-.3*clamp(inertia,0,1));
     physics.key=key;
   }

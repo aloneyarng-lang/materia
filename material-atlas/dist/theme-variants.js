@@ -17,7 +17,7 @@ const palette=(mode,background,ink,muted,accent,tint)=>({
 export function glassUI(ui={}){return {...ui,style:'glass',radius:16,buttonRadius:18,cardRadius:20,menuRadius:18,borderWidth:1,buttonStyle:'solid',cardStyle:'elevated',sidebarStyle:'tinted',shadow:'lifted'};}
 export function curateThemes(themes){
   const designs=[
-    ['liquid-glass','澄璃','银白与石墨',palette('light','#e6e8ec','#1d1d1f','#56565f','#0071e3','#007aff16'),palette('dark','#15161a','#f5f5f7','#acadb6','#67b5ff','#479dff24')],
+    ['liquid-glass','澄璃','银白与石墨',{...palette('light','#f2f2f7','#1c1c1e','#6c6c70','#0066cc','#007aff12'),'--sidebar':'#e8e8ed','--surface':'#ffffff','--panel':'#ffffff','--line':'#3c3c431f'},{...palette('dark','#000000','#f5f5f7','#a1a1a6','#64b5ff','#0a84ff20'),'--sidebar':'#111113','--surface':'#1c1c1e','--panel':'#1c1c1e','--line':'#ffffff1c'}],
     ['buaa-blue','北航蓝','空天蓝 · 轨道圆环',palette('light','#e7eef7','#152d49','#52677f','#005bac','#0067bc17'),palette('dark','#0e192b','#ebf3ff','#a3b7d2','#75baff','#528ee92b')],
     ['paper','纸白','柔和中性 · 专注阅读',palette('light','#eeeee9','#303d39','#65736d','#38675a','#4e79681a'),palette('dark','#191e1c','#edf1ed','#a8b6ad','#92c6ac','#7aaf9326')],
     ['academic-purple','学术紫','雾紫与鸢尾',palette('light','#eeebf4','#342b43','#756787','#705095','#8456b11a'),palette('dark','#1c1726','#f2eafb','#b8a7cc','#c6a0f0','#aa7bdb27')],
@@ -28,7 +28,7 @@ export function curateThemes(themes){
   if(steins)designs.push([steins.id,steins.name,steins.description,steins.variants.light,steins.variants.dark]);
   return designs.map(([id,name,description,light,dark])=>{
     const source=themes.find(t=>t.id===id);
-    return {...source,id,name,description,ui:glassUI(source.ui),tokens:{...source.tokens,...light,'--radius':'16px','--sans':APPLE_UI_STACK,'--serif':id==='sand'||id==='paper'?"'Materia New York', 'Materia Source Han Sans', serif":APPLE_UI_STACK,'--numeric':id==='steins-gate'?APPLE_MONO_STACK:APPLE_UI_STACK,'--mono':APPLE_MONO_STACK,'--font-size':'13px','--font-weight':'400','--heading-weight':'600','--line-height':'1.7'},variants:{light,dark}};
+    return {...source,id,name,description,ui:glassUI({...source.ui,controlHeight:36,cardPadding:18,cardGap:12,...(id==='liquid-glass'?{sidebarWidth:236,controlHeight:38,cardPadding:20,cardGap:14}:{})}),tokens:{...source.tokens,...light,'--radius':'16px','--sans':APPLE_UI_STACK,'--serif':id==='sand'||id==='paper'?"'Materia New York', 'Materia Source Han Sans', serif":APPLE_UI_STACK,'--numeric':id==='steins-gate'?APPLE_MONO_STACK:APPLE_UI_STACK,'--mono':APPLE_MONO_STACK,'--font-size':id==='liquid-glass'?'14px':'13px','--font-weight':'400','--heading-weight':'600','--line-height':'1.65','--heading-line-height':'1.4'},variants:{light,dark}};
   });
 }
 function rgb(value){

@@ -158,3 +158,6 @@ journal,impactFactor,year,source
 也支持直接提供指标数组。同一期刊同一年更新，其余年份保留；匹配忽略大小写和多余空格。请使用与文献元数据一致的完整期刊名。
 
 新版导出的完整备份和已保存材料的桌面文献库使用格式版本 2；本程序同时支持读取版本 1。旧版程序会拒绝打开新版文件，以免遗漏材料数据。
+
+## 性能预测 KG 长表
+预测模块另支持按属性观测行录入 CSV / TSV / XLSX。字段及质量规则见 [KG_OBSERVATIONS.md](KG_OBSERVATIONS.md)，使用 kg-observations-template.csv 填写。文献元数据导入仍遵循本文原格式。

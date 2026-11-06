@@ -63,3 +63,5 @@ svg[data-graph-density="dense"][data-graph-moving="true"] .node-core{filter:none
 svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-node-effects{display:none}
 svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-twinkle{animation-play-state:paused}
 svg[data-graph-density="dense"] .graph-node{transition:none}
+
+.visualization-column:has(#graph-wrap[hidden]) .graph-mode-bar{display:none}

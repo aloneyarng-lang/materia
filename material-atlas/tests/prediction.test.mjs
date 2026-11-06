@@ -32,9 +32,9 @@ test('import retains partial labels, rejects invalid alloys and deduplicates exa
  assert.equal(d.rows.length,2);assert.equal(d.duplicates,1);assert.equal(d.issues.length,2);assert.equal(d.qualified,1);assert.equal(d.rows[1].targets.Tg,undefined);assert.equal(d.rows[1].original.Tg,'<800');assert.equal(d.rows[1].targets.Tx,860);
  assert.throws(()=>buildDataset({name:'bad',basis:'at',form:'powder',table,mapping:[{role:'composition'},{role:'target',id:'Tg'},{role:'target',id:'Tg'}],features:w.features,properties:w.properties}),/两列/);
 });
-test('training isolates material type, composition basis and missing performance labels',()=>{
+test('training isolates material type, converts composition bases and skips missing labels',()=>{
  const w=fixture();w.datasets.push({...structuredClone(w.datasets[0]),id:'core',form:'core'});w.datasets.push({...structuredClone(w.datasets[0]),id:'wt',basis:'wt'});w.datasets[0].rows[0].targets={Tx:540};
- assert.equal(trainingRows(w,{...options,datasetIds:['fixture','core','wt']}).length,59);
+ assert.equal(trainingRows(w,{...options,datasetIds:['fixture','core','wt']}).length,119);
  w.datasets.push({...structuredClone(w.datasets[0]),id:'thin-film',form:'thinFilm'});const model=trainProperty(w,{...options,form:'thinFilm',datasetIds:['thin-film']});assert.equal(model.form,'thinFilm');assert.equal(model.usable,true);
 });
 test('real fitted forest beats a held-out baseline and survives model serialization',()=>{
@@ -84,4 +84,21 @@ test('prediction files preserve data across reopen and keep library roots isolat
  assert.equal(JSON.parse(await readFile(path.join(a.root,'prediction-workspace.previous.json'),'utf8')).revision,0);
  await writeFile(a.file,'broken');await assert.rejects(a.load(),/原文件已保留/);assert.equal(await readFile(a.file,'utf8'),'broken');
  assert.throws(()=>validateWorkspace({...w,version:999}));
+});
+
+test('import detects explicit units and basis while preserving every duplicate citation',()=>{
+ const w=freshWorkspace();
+ const build=(table,basis='at')=>buildDataset({name:'unit-check',basis,form:'powder',table,mapping:table[0].map(h=>suggestMapping(h,w.properties,w.features)),features:w.features,properties:w.properties,rowOffset:2});
+ assert.throws(()=>build([['composition (at.%)','Hc (Oe)'],['Fe80B20',1.5]]),/A\/m/);
+ assert.throws(()=>build([['composition (wt.%)','Ms (emu/g)'],['Fe80B20',150]]),/成分基准/);
+ assert.throws(()=>build([['composition','Ms (T)'],['Fe80B20',1.5]]),/emu\/g/);
+ const ds=build([['composition (at.%)','Ms [A·m²/kg]','annealTemperature °C','DOI'],['Fe80B20',150,500,'A'],['Fe80B20',150,500,'B'],['Fe80B20',150,510,'C']]);
+ assert.equal(ds.rows.length,2);
+ assert.equal(ds.duplicates,1);
+ assert.equal(ds.rows[0].source,'A | B');
+ assert.deepEqual(ds.rows[0].provenance.map(p=>p.row),[4,5]);
+ w.datasets.push(ds);
+ ds.rows[1].provenance={excelRow:6,sample:'legacy'};
+ const rows=trainingRows(w,{form:'powder',basis:'at',target:'Ms',datasetIds:[ds.id]});
+ assert.equal(rows[1].provenance[0].sample,'legacy');
 });

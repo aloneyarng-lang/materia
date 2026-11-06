@@ -1,5 +1,5 @@
 // Font files are app resources, independent of any imported theme package.
-const cjk="'PingFang SC', 'Materia Source Han Sans', 'Microsoft YaHei UI', sans-serif";
+const cjk="'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif";
 export const APPLE_UI_STACK="'Materia SF Pro', -apple-system, BlinkMacSystemFont, 'Materia Inter', "+cjk;
 export const APPLE_MONO_STACK="'Materia SF Mono', 'SF Mono', 'Materia Source Code Pro', Consolas, "+cjk;
 export const BUILTIN_FONT_OPTIONS=[

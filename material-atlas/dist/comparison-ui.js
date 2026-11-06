@@ -38,6 +38,11 @@ export function createComparison(config) {
     const count=config.getSelection().size;
     $('#comparison-count').textContent=count;$('#comparison-bar').hidden=!count||Boolean(config.isMaterialList?.());
     document.querySelectorAll('[data-compare-id]').forEach(input=>input.checked=config.getSelection().has(input.dataset.compareId));
+    document.querySelectorAll('.paper-row[data-select]').forEach(row=>{
+      const selected=config.getSelection().has(row.dataset.select);
+      row.classList.toggle('batch-selected',selected);
+      row.setAttribute('aria-pressed',String(selected));
+    });
     document.querySelectorAll('[data-selected-count]').forEach(node=>node.textContent=count);
     document.querySelectorAll('[data-action="batch-remove"],[data-action="bulk-edit"],[data-selection-required]').forEach(button=>button.disabled=!count);
     const badge=$('#comparison-nav-count');if(badge)badge.textContent=picker.mode()==='material'?(picker.resolved().selected.length?picker.resolved().selected.length+tr(' 材料',false):''):count||'';

@@ -43,6 +43,7 @@ const native = globalThis.materiaDesktop;
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const displayTitle = value => escape(String(value ?? '').replace(/<\/?(?:sub|sup)\b[^>]*>/gi, ''));
 const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
 const emptyFilters = () => ({ tags: [], excludeTags: [], parameterName: '', parameterUnit: '*', tagMode: 'all', journal: '', author: '', institution: '', yearFrom: '', yearTo: '', minIF: '', maxIF: '', impactYear: '', hasNotes: false, onlyFavorites: false, onlyRelated: false });
 const state = { papers: [], collections: [], notes: {}, compareIds: new Set(), hiddenIds: new Set(), hiddenTagNodes: new Set(), focusGraph: true, leftPanelOpen: false, detailOpen: true, graphPreferences: {...GRAPH_DEFAULTS}, associations: [], journalMetrics: [], desktopInfo: null, searchScope: 'all', readingStatus: '', filters: emptyFilters(), showEdges: true, showLabels: true, mode: 'own', nav: 'all', collection: '', query: '', tag: '', year: '', sort: 'newest', view: 'graph', selected: '', listLimit: 100, ready: false, pendingFiles: [], storageError: false };
@@ -130,7 +131,7 @@ function render() {
   $('#page-title').textContent = navTitle;
   $('#page-description').textContent = state.collection ? tr('把同一个研究主题，收进有序的坐标。') : ({ all: tr('让独立的阅读，在这里彼此连接。'), library: tr('每一篇文献，都有迹可循。'), favorites: tr('留住那些让你停下思考的阅读。'), recent: tr('新的阅读，新的研究坐标。') }[state.nav]);
   document.querySelectorAll('[data-nav]').forEach(button => { button.classList.toggle('active', !state.collection && (button.dataset.nav === state.nav||(button.dataset.nav==='library'&&state.nav==='all'))); button.setAttribute('aria-current', !state.collection && (button.dataset.nav === state.nav||(button.dataset.nav==='library'&&state.nav==='all')) ? 'page' : 'false'); });
-  $('#collection-list').innerHTML = folders.length ? folders.map(c => `<button class="collection-item ${state.collection === c.id ? 'active' : ''}" data-collection="${escape(c.id)}"><i class="collection-dot" style="background:${/^#[\da-f]{6}$/i.test(c.color) ? c.color : PALETTE[0]}"></i><span>${escape(c.name)}</span><small>${all.filter(p => p.collection === c.id).length}</small></button>`).join('') : tr('<p class="empty-folders">暂无文献分组</p>');
+  $('#collection-list').innerHTML = folders.length ? folders.map(c => `<button class="collection-item ${state.collection === c.id ? 'active' : ''}" data-collection="${escape(c.id)}"><span>${escape(c.name)}</span><small>${all.filter(p => p.collection === c.id).length}</small></button>`).join('') : tr('<p class="empty-folders">暂无文献分组</p>');
   $('#library-location').title = state.desktopInfo?.path || tr('本地文献库');
   $('.network-header-controls [data-action="associations"]').hidden=state.view!=='graph';$('#toggle-local').hidden=state.view!=='graph';
   $('#graph-caption').textContent = state.view==='graph'?(state.tag?`# ${state.tag}`:state.collection?navTitle:tr('研究星图')):workspaceModules.title();
@@ -146,12 +147,21 @@ function render() {
   $('.surface-toolbar .search-box').hidden = standaloneView;
   $('#sort-order').hidden = standaloneView;
   $('#sort-order option[value="newest"]').textContent=noteView?tr('笔记最近更新'):tr('最近添加');
-  $('.quick-filters').hidden = standaloneView;
-  if (standaloneView) $('#parameter-filter-summary').hidden = true;
-  $('#network-stats').hidden = state.view !== 'graph';
-  $('#filter-button').hidden = standaloneView;
-  $('.map-footer').hidden = standaloneView||noteView;
-  const filterCount = state.filters.excludeTags.length + Object.entries(state.filters).filter(([key, value]) => !['tags', 'excludeTags', 'tagMode', 'parameterName', 'parameterUnit'].includes(key) && Boolean(value)).length;
+  const graphView = state.view === 'graph';
+  const paperView = graphView || state.view === 'list';
+  if (!paperView) $('#parameter-filter-summary').hidden = true;
+  $('#network-stats').hidden = !graphView;
+  $('#graph-mode').hidden = !graphView;
+  $('#graph-view-controls').hidden = !graphView;
+  $('#filter-button').hidden = !paperView;
+  const filterLabel = tr(graphView ? '星图设置与筛选' : '文献筛选');
+  $('#filter-button-label').textContent = tr('筛选');
+  $('#filter-button').title = filterLabel;
+  $('#filter-button').setAttribute('aria-label', filterLabel);
+  $('#filter-dialog-title').textContent = filterLabel;
+  $('#advanced-filter-dialog').classList.toggle('paper-filters-only', !graphView);
+  $('.map-footer').hidden = standaloneView||noteView||state.view==='list';
+  const filterCount = Number(Boolean(state.tag)) + Number(Boolean(state.year)) + Number(Boolean(state.readingStatus)) + Number(Boolean(state.filters.parameterName)) + state.filters.tags.length + state.filters.excludeTags.length + Object.entries(state.filters).filter(([key, value]) => !['tags', 'excludeTags', 'tagMode', 'parameterName', 'parameterUnit'].includes(key) && Boolean(value)).length;
   $('#active-filter-count').textContent = filterCount;
   $('#active-filter-count').hidden = !filterCount;
   $('#advanced-result-count').textContent = msg`当前匹配 ${filtered.length} 篇文献`;
@@ -192,7 +202,9 @@ function render() {
 
 async function applyParameterFilter(name, unit = '*') {
   if (!ensureStorage()) return;
-  closeModal(); $('#advanced-filter-dialog').close(); resetFilters(false);
+  const fromFilters = $('#advanced-filter-dialog').open;
+  closeModal(); $('#advanced-filter-dialog').close();
+  if (!fromFilters) resetFilters(false);
   state.nav='library';state.view='list';state.filters.parameterName=parameterNameKey(name);state.filters.parameterUnit=unit;state.selected='';const matchingIds=new Set(parameterResults(papers(),name,unit).map(p=>p.id));await comparison.selectIds([...state.compareIds].filter(id=>matchingIds.has(id)));render();
 }
 async function plotActiveParameter(){const key=state.filters.parameterName;if(!key)return false;const rows=parameterResults(papers(),key,state.filters.parameterUnit).filter(p=>state.compareIds.has(p.id));if(!rows.length){toast(tr('请先勾选相关文献，或点击全选匹配结果。'));return true;}await comparison.selectIds(rows.map(p=>p.id));comparison.open('chart',{name:key,unit:state.filters.parameterUnit},'paper');return true;}
@@ -205,12 +217,12 @@ function renderParameterSummary(filtered) {
   host.innerHTML=html`<div><span>性能参数筛选</span><strong>${escape(item?.name||key)}${unit==='*'?tr(' · 全部单位'):' · '+escape(unit||tr('单位未填'))}</strong><p>全库 ${all.length} 篇 · ${recordCount} 条记录 · 当前匹配 ${filtered.length} 篇</p></div><button class="outline-button" data-material-parameter="${escape(key)}" data-material-parameter-unit="${escape(unit)}">直接选材料</button><button class="outline-button" data-action="select-parameter-results" ${filtered.length?'':'disabled'}>全选匹配 ${filtered.length} 篇</button><button class="icon-button" data-action="clear-parameter" title="清除性能参数筛选" aria-label="清除性能参数筛选">${icon('close')}</button>`;
 }
 
+function firstAuthor(p){return normalizeAuthors(p.authorDetails||[])[0]?.name||String(p.authors||'').split(/[,;，；]|\s+and\s+/i)[0].trim();}
 function documentArt() { return '<div class="document-art" aria-hidden="true"><i></i><i></i><i></i><i></i><span>PDF</span></div>'; }
 function renderList(filtered) {
-  $('#paper-list').innerHTML = filtered.length ? html`<div class="list-selection-toolbar" ${state.filters.parameterName?'hidden':''}><button class="text-button" data-action="select-filtered">全选当前结果（${filtered.length} 篇）</button><span></span></div>` + filtered.slice(0,state.listLimit).map((p,index)=>{
-    const metric=impactOf(p,state.journalMetrics,state.filters.impactYear);
+  $('#paper-list').innerHTML = filtered.length ? html`<div class="list-selection-toolbar" ${state.filters.parameterName?'hidden':''}><button class="text-button" data-action="select-filtered">全选当前结果（${filtered.length} 篇）</button><span>Shift＋点击多选</span></div>` + filtered.slice(0,state.listLimit).map((p,index)=>{
     const groupHeading=state.sort==='reading-status'&&!state.readingStatus&&(index===0||readingStatusOf(filtered[index-1])!==readingStatusOf(p))?readingStatusHeading(p,filtered.filter(row=>readingStatusOf(row)===readingStatusOf(p)).length):'';
-    return html`${groupHeading}<article class="paper-row ${p.id===state.selected?'selected':''}" data-select="${escape(p.id)}" tabindex="0" role="button" aria-label="查看 ${escape(p.title)}"><label class="compare-checkbox" title="选择文献，用于分组、标签、作图或批量移除"><input type="checkbox" data-compare-id="${escape(p.id)}" ${state.compareIds.has(p.id)?'checked':''} aria-label="选择文献 ${escape(p.title)}"></label>${documentArt()}<div class="paper-row-content"><h3>${escape(p.title)}</h3><div class="list-paper-badges">${readingStatusBadge(p,escape)}${metric?`<span class="impact-badge">IF ${metric.value} · ${escape(metric.year || '')}</span>`:''}${paperMaterials(p).length?html`<span>${paperMaterials(p).length} 个材料 · ${paperMeasurements(p).length} 条参数</span>`:''}${notes.count('paper',p.id)?html`<span>${notes.count('paper',p.id)} 条笔记</span>`:''}</div><p>${escape([p.journal,p.year,p.authors].filter(Boolean).join(' · ') || p.filename)}</p>${state.filters.parameterName?parameterRecordPreview(p,state.filters.parameterName,state.filters.parameterUnit,escape):''}<div class="tags">${p.tags.slice(0,4).map(t=>`<span class="tag">${escape(t)}</span>`).join('')}</div>${p.collection?`<span class="paper-row-folder">▱ ${escape(collections().find(c=>c.id===p.collection)?.name||tr('分组'))}</span>`:''}</div><button class="icon-button paper-row-menu" data-paper-menu aria-label="文献快捷操作" title="文献快捷操作（也可右键）">${icon('more')}</button></article>`;
+    return html`${groupHeading}<article class="paper-row ${p.id===state.selected?'selected':''}" data-select="${escape(p.id)}" tabindex="0" role="button" aria-label="查看 ${displayTitle(p.title)}"><div class="paper-row-content"><h3>${displayTitle(p.title)}</h3><p class="paper-row-citation">${escape([p.journal,p.year,firstAuthor(p)].filter(Boolean).join(' · ') || p.filename)}</p>${state.filters.parameterName?parameterRecordPreview(p,state.filters.parameterName,state.filters.parameterUnit,escape):''}</div><button class="icon-button paper-row-menu" data-paper-menu aria-label="文献快捷操作" title="文献快捷操作（也可右键）">${icon('more')}</button></article>`;
   }).join('') + (filtered.length>state.listLimit?html`<button class="outline-button list-load-more" data-action="more-list">显示更多（剩余 ${filtered.length-state.listLimit} 篇）</button>`:'') : papers().length ? tr('<div class="list-empty"><strong>没有匹配的文献</strong><p>可清除标题搜索、调整条件，或切换性能参数。</p><button class="outline-button" data-action="parameter-index">切换性能参数</button></div>') : tr('<div class="list-empty"><strong>从第一批文献开始</strong><button class="outline-button" data-action="import">批量导入 PDF + Markdown</button></div>');
 }
 
@@ -226,22 +238,20 @@ function renderDetail() {
     ${documentArt()}
     <div class="paper-journal"><i class="journal-mark"></i><button data-journal="${escape(p.journal)}" title="按期刊筛选">${escape(p.journal || tr('未填写期刊'))}</button><span>·</span>${escape(p.year || tr('年份待补充'))}</div>
     ${metric?`<div class="impact-badge" title="${escape(metric.source||'')}">IF ${metric.value} <span>· ${escape(metric.year||'')}</span></div>`:''}
-    <h2 class="paper-title"><button data-action="paper-notes" title="打开这篇文献的全部笔记">${escape(p.title)}</button></h2>
-    <div class="detail-reading-status">${readingStatusBadge(p,escape)}</div>
-    <p class="paper-authors">${escape(authors.length ? authors.map(a => a.name).join(', ') : p.authors || tr('作者待补充'))}</p>
+    <h2 class="paper-title"><button data-action="paper-notes" title="打开这篇文献的全部笔记">${displayTitle(p.title)}</button></h2>
+    <p class="paper-authors">${escape(firstAuthor(p)||tr('作者待补充'))}</p>
     <details class="author-details"><summary>全部作者与机构 <span>${authors.length ? authors.length + tr(' 位作者',false) : tr('待补全')}</span></summary>${authors.length ? `<ol>${authors.map(a => `<li><button data-author="${escape(a.name)}">${escape(a.name)}</button>${a.affiliations.length ? a.affiliations.map(institution => `<button class="affiliation" data-institution="${escape(institution)}">${escape(institution)}</button>`).join('') : tr('<small>机构待补充</small>')}</li>`).join('')}</ol>` : tr('<p>编辑信息或导入元数据，可逐位记录作者与所属机构。</p>')}</details>
     ${p.doi ? `<p class="doi-label">DOI ${escape(p.doi)}</p>` : ''}
 
-    <div class="detail-divider"></div>
-    <div class="detail-label"><span>研究标签</span></div>
+    <details class="detail-disclosure"><summary>标签与分组</summary><div class="detail-label"><span>研究标签</span></div>
     <div class="tags">${p.tags.length ? p.tags.map(tag => `<button class="tag" data-link-tag="${escape(tag)}">${escape(tag)}</button>`).join('') : tr('<span class="help-inline">暂无标签</span>')}</div>
     <p class="detail-label">文献分组</p><button class="collection-value collection-value-button" data-action="paper-collection" title="更改分组"><span data-icon="folder"></span>${escape(folder?.name || tr('未分组'))}<span aria-hidden="true">⌄</span></button>
-    <div class="detail-label"><span>材料 · ${paperMaterials(p).length} 个</span><button class="text-button" data-action="performance-editor">编辑</button></div>
+    </details><details class="detail-disclosure"><summary>材料与性能 · ${paperMaterials(p).length} 个</summary><div class="detail-label"><span>材料 · ${paperMaterials(p).length} 个</span><button class="text-button" data-action="performance-editor">编辑</button></div>
     <div class="material-preview-list">${paperMaterials(p).map(material=>html`<section class="material-preview"><h3>${escape(material.name)}</h3>${material.composition?`<p class="material-composition">${escape(material.composition)}</p>`:''}${material.description?`<p class="material-description-text">${escape(material.description)}</p>`:''}<small>${material.measurements.length} 条性能参数</small><div class="performance-preview">${material.measurements.slice(0,4).map(m=>html`<div><button class="performance-parameter-link" data-parameter-name="${escape(parameterNameKey(m.name))}" data-parameter-unit="*" title="查找全库录入此参数的文献">${escape(m.name)} ↗</button><strong>${escape(m.qualifier)}${escape(m.value)} <small>${escape(m.unit)}</small></strong><small>${escape([m.sample,m.conditions].filter(Boolean).join(' · '))}</small></div>`).join('')||tr('<p class="help-inline">尚未录入性能参数。</p>')}</div>${material.measurements.length>4?tr('<p class="help-inline">管理材料可查看全部参数。</p>'):''}</section>`).join('')||''}</div>
-    <div class="detail-label"><span>文献笔记 · ${notes.count('paper', p.id)} 条</span><button class="text-button" data-action="paper-notes">添加</button></div>
+    </details><details class="detail-disclosure"><summary>文献笔记 · ${notes.count('paper',p.id)} 条</summary><div class="detail-label"><span>文献笔记 · ${notes.count('paper', p.id)} 条</span><button class="text-button" data-action="paper-notes">添加</button></div>
     ${notes.preview('paper', p.id) || ''}
-    <div class="detail-divider"></div>${relatedPaperSections(related,escape)}
-    <div class="detail-bottom"><button class="primary open-pdf" data-action="open-pdf"><span data-icon="external"></span>阅读 PDF</button><p class="detail-file-note">${bytesLabel(p.file?.size || p.size || 0)} · ${escape(p.filename || tr('PDF 文献'))}</p></div>`;
+    </details><details class="detail-disclosure"><summary>相关文献</summary>${relatedPaperSections(related,escape)}</details>
+    <div class="detail-bottom"><p class="detail-file-note">${bytesLabel(p.file?.size || p.size || 0)} · ${escape(p.filename || tr('PDF 文献'))}</p><div class="detail-reading-links"><button type="button" class="detail-read-link" data-action="open-pdf"><span data-icon="external"></span>阅读 PDF</button><div class="detail-reading-status">${readingStatusBadge(p,escape)}</div></div></div>`;
 }
 
 function selectPaper(id, showMobile = false) {
@@ -285,7 +295,7 @@ async function addFiles(files) { if (ensureStorage()) await batch.addFiles(files
 function editModal() {
   const p = selectedPaper(); if (!p) return;
   if (!ensureStorage()) return;
-  showModal(tr('编辑文献信息'), tr('完整记录作者、机构与期刊指标。'), html`<form id="edit-form" data-id="${escape(p.id)}"><label class="form-field">文献标题<input name="title" required maxlength="1000" value="${escape(p.title)}"></label>${bibliographyFields(p)}<label class="form-field">研究标签<input name="tags" maxlength="2500" value="${escape(p.tags.join('，'))}" placeholder="用逗号分隔标签"><small>标签关联至少 3 篇文献后参与常规筛选与颜色分组。星图只连接手动加入的关联节点，原始标签及笔记始终保留。</small></label><label class="form-field">分组<select name="collection">${folderOptions(p.collection)}</select></label><div class="modal-footer"><button type="button" class="text-button" data-action="close-modal">取消</button><button type="submit" class="primary">保存修改</button></div></form>`, 'edit');
+  showModal(tr('编辑文献信息'), tr('完整记录作者、机构与期刊指标。'), html`<form id="edit-form" data-id="${escape(p.id)}"><label class="form-field">文献标题<input name="title" required maxlength="1000" value="${displayTitle(p.title)}"></label>${bibliographyFields(p)}<label class="form-field">研究标签<input name="tags" maxlength="2500" value="${escape(p.tags.join('，'))}" placeholder="用逗号分隔标签"><small>标签关联至少 3 篇文献后参与常规筛选与颜色分组。星图只连接手动加入的关联节点，原始标签及笔记始终保留。</small></label><label class="form-field">分组<select name="collection">${folderOptions(p.collection)}</select></label><div class="modal-footer"><button type="button" class="text-button" data-action="close-modal">取消</button><button type="submit" class="primary">保存修改</button></div></form>`, 'edit');
 }
 
 async function submitEdit(form) {
@@ -335,7 +345,7 @@ function deleteModal(ids = [state.selected]) {
   if (!removed.length) { toast(tr('请先在文献列表中勾选要移除的文献。')); return; }
   pendingRemovalIds = removed.map(p => p.id);
   const visible = new Set(visiblePapers().map(p => p.id)), hidden = removed.filter(p => !visible.has(p.id)).length;
-  showModal(msg`移除选中的 ${removed.length} 篇文献？`, tr('确认下面的标题后移除，完成后可撤销上次移除。'), html`<div class="removal-summary"><strong>${removed.length}</strong><span>篇选中文献${hidden ? msg` · 其中 ${hidden} 篇不在当前筛选结果中` : ''}</span></div><div class="removal-preview">${removed.map(p => `<div><strong>${escape(p.title)}</strong><small>${escape([p.journal,p.year,p.filename].filter(Boolean).join(' · '))}</small></div>`).join('')}</div><p class="help-inline">${native ? tr('原始 PDF 保留在本地文件夹，文献信息、性能参数与文献笔记会一同保存到恢复记录。') : tr('文献信息、PDF、性能参数与文献笔记会一同保存到本地恢复记录。')} 标签笔记和其他文献不受影响。</p><div class="modal-footer"><button class="text-button" data-action="close-modal">取消</button><button class="danger-button" data-action="confirm-removal">确认移除 ${removed.length} 篇</button></div>`, 'delete');
+  showModal(msg`移除选中的 ${removed.length} 篇文献？`, tr('确认下面的标题后移除，完成后可撤销上次移除。'), html`<div class="removal-summary"><strong>${removed.length}</strong><span>篇选中文献${hidden ? msg` · 其中 ${hidden} 篇不在当前筛选结果中` : ''}</span></div><div class="removal-preview">${removed.map(p => `<div><strong>${displayTitle(p.title)}</strong><small>${escape([p.journal,p.year,p.filename].filter(Boolean).join(' · '))}</small></div>`).join('')}</div><p class="help-inline">${native ? tr('原始 PDF 保留在本地文件夹，文献信息、性能参数与文献笔记会一同保存到恢复记录。') : tr('文献信息、PDF、性能参数与文献笔记会一同保存到本地恢复记录。')} 标签笔记和其他文献不受影响。</p><div class="modal-footer"><button class="text-button" data-action="close-modal">取消</button><button class="danger-button" data-action="confirm-removal">确认移除 ${removed.length} 篇</button></div>`, 'delete');
 }
 
 async function confirmRemoval() {
@@ -516,7 +526,14 @@ document.addEventListener('click', async event => {
     if (button?.dataset.removeFilterTag) { state.filters.tags = state.filters.tags.filter(t => t !== button.dataset.removeFilterTag); render(); return; }
     if (button?.dataset.related) { resetFilters(false); state.nav = 'all'; state.selected = button.dataset.related; render(); return; }
         if (button?.dataset.color) { $('#collection-form [name="color"]').value = button.dataset.color; document.querySelectorAll('.color-choice').forEach(b => { b.classList.toggle('active', b === button); b.setAttribute('aria-pressed', String(b === button)); }); return; }
-    const row = event.target.closest('[data-select]'); if (row) { selectPaper(row.dataset.select, true); return; }
+    const row = event.target.closest('.paper-row[data-select]');
+    if (row && event.shiftKey) {
+      event.preventDefault();
+      await comparison.toggle(row.dataset.select);
+      renderParameterSummary(visiblePapers());
+      return;
+    }
+    const selectedRow = event.target.closest('[data-select]'); if (selectedRow) { selectPaper(selectedRow.dataset.select, true); return; }
     if (matchMedia('(max-width: 650px)').matches && !event.target.closest('#sidebar')) $('#sidebar').classList.remove('mobile-open');
     if ($('#detail-panel').classList.contains('mobile-open') && !event.target.closest('#detail-panel')) $('#detail-panel').classList.remove('mobile-open');
   } catch (error) { toast(msg`操作未完成：${error.message || tr('请重试。')}`, true); if (button) button.disabled = false; }
@@ -605,7 +622,7 @@ async function previewDataImport() {
   const incoming = kind === 'metrics' ? parseMetrics(text) : matchMetadata(text, state.papers);
   if (kind === 'metadata' && !incoming.updates.length) { toast(tr('没有唯一匹配的文献。请核对 PDF 文件名或文献标题。'), true); return; }
   const message = kind === 'metrics' ? msg`${incoming.length} 条期刊年度指标将导入。` : msg`${incoming.updates.length} 篇文献将更新；${incoming.unmatched.length} 条未匹配或存在歧义，将跳过。`;
-  showModal(tr('确认导入这些信息'), message, html`<div class="import-preview-list">${kind === 'metrics' ? incoming.slice(0, 12).map(m => `<p><strong>${escape(m.journal)}</strong><span>IF ${m.impactFactor} · ${escape(m.year)}</span></p>`).join('') : incoming.updates.slice(0, 12).map(p => html`<p><strong>${escape(p.title)}</strong><span>${p.authorDetails?.length || 0} 位作者 · ${p.tags.length} 个标签</span></p>`).join('')}${kind === 'metadata' && incoming.unmatched.length ? html`<small>未匹配：${escape(incoming.unmatched.slice(0, 8).join('；'))}</small>` : ''}</div><div class="modal-footer"><button class="text-button" data-action="close-modal">取消</button><button class="primary" id="confirm-data-import">确认导入</button></div>`, 'data-confirm');
+  showModal(tr('确认导入这些信息'), message, html`<div class="import-preview-list">${kind === 'metrics' ? incoming.slice(0, 12).map(m => `<p><strong>${escape(m.journal)}</strong><span>IF ${m.impactFactor} · ${escape(m.year)}</span></p>`).join('') : incoming.updates.slice(0, 12).map(p => html`<p><strong>${displayTitle(p.title)}</strong><span>${p.authorDetails?.length || 0} 位作者 · ${p.tags.length} 个标签</span></p>`).join('')}${kind === 'metadata' && incoming.unmatched.length ? html`<small>未匹配：${escape(incoming.unmatched.slice(0, 8).join('；'))}</small>` : ''}</div><div class="modal-footer"><button class="text-button" data-action="close-modal">取消</button><button class="primary" id="confirm-data-import">确认导入</button></div>`, 'data-confirm');
   $('#confirm-data-import').addEventListener('click', async event => {
     const button = event.currentTarget; button.disabled = true;
     try {

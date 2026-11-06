@@ -45,6 +45,41 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(m['training']['evaluation'], 'nested-group-cv-5x3')
         self.assertGreater(len(m['training']['leaderboard']), 1)
 
+    def test_alloy_descriptors_use_atomic_fractions(self):
+        wt = engine.alloy_schema(['Fe', 'Cu'], 'wt')
+        at = engine.alloy_schema(['Fe', 'Cu'], 'at')
+        x_fe = 63.546 / (63.546 + 55.845)
+        self.assertAlmostEqual(engine.alloy_values([.5, .5], wt)[2], x_fe * 26 + (1 - x_fe) * 29)
+        self.assertAlmostEqual(engine.alloy_values([.5, .5], at)[2], 27.5)
+        self.assertIsNone(engine.alloy_schema(['Fe', 'Og'], 'wt'))
+        self.assertNotIn('电负性加权均值', engine.alloy_schema(['Fe', 'He'], 'at')['names'])
+
+    def test_alloy_model_persists_and_marks_joint_extrapolation(self):
+        model = train(fixture(), validation='source', descriptorMode='alloy')
+        self.assertTrue(model['usable'])
+        self.assertEqual(model['training']['compositionFeatures']['mode'], 'alloy')
+        self.assertEqual(len(model['training']['compositionFeatures']['selected']), 8)
+        self.assertIn('配方整体', {x['name'] for x in model['featureImportance']})
+        rows = [{'composition': {'Fe': 75, 'B': 25}, 'features': {}},
+                {'composition': {'Fe': 100, 'B': 0}, 'features': {}}]
+        results = engine.predict({'model': json.loads(json.dumps(model)), 'rows': rows})
+        self.assertFalse(results[0]['compositionDomain']['outside'])
+        self.assertTrue(results[1]['compositionDomain']['outside'])
+        self.assertIn('超过参考距离', ' '.join(results[1]['warnings']))
+
+        # All individual element fractions can be within their training ranges
+        # while the full candidate is far from both alloy families.
+        chemistry = [dict(composition={'Fe': fe, 'Co': (100-fe)/2, 'Ni': (100-fe)/2})
+                     for fe in (60, 61, 62, 78, 79, 80)]
+        schema = engine.schema_for([dict(r, features={}) for r in chemistry], [], [])
+        domain = engine.composition_domain(chemistry, schema['elements'])
+        candidate = {'composition': {'Fe': 70, 'Co': 20, 'Ni': 10}}
+        for el, (lo, hi) in schema['ranges'].items():
+            self.assertTrue(lo <= candidate['composition'][el] <= hi)
+        info = engine.nearest_compositions({'encoder': schema, 'compositionDomain': domain}, [candidate])[0]
+        self.assertTrue(info['outside'])
+        self.assertGreater(info['distance'], info['threshold'])
+
     def test_inference_domains_and_missing_values(self):
         rows = [dict(composition={'Fe': 75, 'Cu': 25}, features={}),
                 dict(composition={'Fe': 95, 'B': 5}, features={}),
@@ -78,6 +113,66 @@ class EngineTests(unittest.TestCase):
         rows[0]['features'].pop('phase')
         with self.assertRaisesRegex(ValueError, '必填'):
             train(ws)
+
+
+    def test_duplicate_source_links_and_legacy_provenance(self):
+        ws = fixture()
+        rows = ws['datasets'][0]['rows']
+        duplicate = copy.deepcopy(rows[0])
+        duplicate.update(id='duplicate', source=rows[3]['source'],
+                         provenance={'excelRow': 42, 'sample': 'old observation'})
+        rows.append(duplicate)
+        selected = engine.training_rows(ws, dict(target='Tg', form='powder', basis='at',
+                                                 datasetIds=['synthetic']))
+        self.assertEqual(len(selected), 48)
+        self.assertEqual(selected[0]['source'], 'source-0 | source-1')
+        self.assertEqual(selected[0]['provenance'][1]['excelRow'], 42)
+        groups = engine.groups_for(selected, 'source')
+        self.assertEqual(groups[0], groups[3])
+
+    def test_log_target_roundtrip_and_original_units(self):
+        ws = fixture()
+        for i, row in enumerate(ws['datasets'][0]['rows']):
+            row['targets']['Tg'] = float(engine.np.exp(i / 8))
+        m = train(ws, targetScale='log', inputMode='composition')
+        self.assertTrue(m['usable'])
+        self.assertEqual(m['encoder']['specs'], [])
+        self.assertEqual(m['training']['targetScale'], 'log')
+        self.assertEqual(m['metrics']['baselineKind'], 'median')
+        self.assertEqual(m['targetRange'][0], 1)
+        self.assertGreater(m['targetRange'][1], 300)
+        result = engine.predict({'model': json.loads(json.dumps(m)), 'rows': [ws['datasets'][0]['rows'][20]]})[0]
+        self.assertAlmostEqual(result['value'], float(engine.np.exp(2.5)), delta=.1)
+        self.assertGreater(result['interval'][0], 0)
+        self.assertEqual(result['intervalKind'], 'multiplicative')
+        self.assertAlmostEqual(result['interval'][1] / result['value'], result['value'] / result['interval'][0])
+        self.assertAlmostEqual(m['validationPoints'][20]['actual'], float(engine.np.exp(2.5)))
+        ws['datasets'][0]['rows'][0]['targets']['Tg'] = 0
+        with self.assertRaisesRegex(ValueError, '严格大于'):
+            train(ws, targetScale='log')
+
+    def test_design_inputs_exclude_measured_phase_and_require_contract(self):
+        ws = fixture()
+        self.assertEqual(engine.selected_features(ws, {'inputMode': 'composition'}), [])
+        self.assertEqual(engine.selected_features(ws, {'inputMode': 'process'}), [])
+        ws['features'].append({'id': 'annealTime', 'name': 'Anneal time', 'type': 'number', 'unit': 'min'})
+        self.assertEqual([f['id'] for f in engine.selected_features(ws, {'inputMode': 'process'})], ['annealTime'])
+        ws['properties'][0]['requiredFeatures'] = ['phase']
+        with self.assertRaisesRegex(ValueError, '预测场景'):
+            train(ws, inputMode='composition')
+
+    def test_source_normalization_and_conflicting_inputs(self):
+        ws = fixture(); rows = ws['datasets'][0]['rows']
+        rows[0]['source'] = 'https://doi.org/10.1000/ABC'
+        rows[3]['source'] = 'DOI:10.1000/abc'
+        groups = engine.groups_for(rows, 'source')
+        self.assertEqual(groups[0], groups[3])
+        rows[1]['source'] = ''
+        rows[1]['composition'] = rows[0]['composition'].copy()
+        audit = engine.data_audit(rows, [], engine.groups_for(rows, 'source'),
+                                  {'target': 'Tg', 'form': 'powder', 'inputMode': 'composition'})
+        self.assertEqual(audit['missingSources'], 1)
+        self.assertEqual(audit['conflictingInputs'], 1)
 
     def test_small_constant_and_single_group_data(self):
         ws = fixture()

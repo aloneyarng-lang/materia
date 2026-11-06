@@ -1,3 +1,5 @@
+import {scopedDataset} from './prediction-composition.js';
+import {KG_PROPERTIES,KG_FEATURES,isKGTable,buildKGDataset} from './prediction-kg.js';
 // Local, serializable regression models. Measured labels are never filled with predictions.
 export const ELEMENTS = 'H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og'.split(' ');
 const elementSet = new Set(ELEMENTS);
@@ -16,7 +18,7 @@ export const BASE_PROPERTIES = [
  ['compressionStrength','压缩强度 σc','MPa',['σc']], ['plasticStrain','塑性应变 εp','%',['εp']],
  ['KIC','断裂韧性 KIC','MPa·m½',['KIC']], ['HV','维氏硬度 HV','HV',['HV']],
  ['Ms','饱和磁化强度 Ms','emu/g',['Ms']], ['Bs','饱和磁感应强度 Bs','T',['Bs']],
- ['Hc','矫顽力 Hc','A/m',['Hc']], ['permeability','有效磁导率 μe','',['μe','μ','permeability']],
+ ['Hc','矫顽力 Hc','A/m',['Hc']], ['permeability','有效磁导率 μe','',['μe']],
  ['coreLoss','磁芯损耗 Pcv','kW/m³',['Pcv','Pcm','core loss']], ['dcBias','直流偏置保持率','%',['DC bias']],
  ['resistivity','电阻率','μΩ·cm',['resistivity']], ['Tc','居里温度 Tc','K',['Tc']],
  ['magnetostriction','饱和磁致伸缩系数 λs','ppm',['λs']],
@@ -42,16 +44,19 @@ export const BASE_FEATURES = [
  ['substrate','基底','','category',['substrate','基底']],
  ['coating','包覆材料','','category',['coating','包覆材料']],
 ].map(([id,name,unit,type,aliases])=>({id,name,unit,type,aliases}));
+for(const p of KG_PROPERTIES)if(!BASE_PROPERTIES.some(f=>f.id===p.id))BASE_PROPERTIES.push(p);
+for(const f of KG_FEATURES)if(!BASE_FEATURES.some(p=>p.id===f.id))BASE_FEATURES.push(f);
 export const uid = () => crypto.randomUUID();
 export const freshWorkspace = () => ({format:'materia-prediction',version:1,revision:0,properties:structuredClone(BASE_PROPERTIES),features:structuredClone(BASE_FEATURES),datasets:[],models:[]});
 export function validateWorkspace(value) {
  if(!value||value.format!=='materia-prediction'||value.version!==1||!Array.isArray(value.datasets)||!Array.isArray(value.models)||!Array.isArray(value.properties)||!Array.isArray(value.features))throw Error('预测工作区格式不正确。');
  if(value.datasets.length>100||value.properties.length>150||value.features.length>80||value.models.length>300)throw Error('工作区过大，请拆分数据集。');
+ for(const [list,defaults] of [[value.properties,KG_PROPERTIES],[value.features,KG_FEATURES]])for(const field of defaults)if(!list.some(f=>f.id===field.id))list.push(structuredClone(field));
  for(const rows of [value.properties,value.features]){const ids=new Set();for(const row of rows){if(!row||typeof row.id!=='string'||!row.id||ids.has(row.id)||typeof row.name!=='string'||!row.name.trim()||typeof row.unit!=='string')throw Error('性能或输入字段定义无效。');ids.add(row.id);}}
  for(const property of value.properties){if(!Array.isArray(property.requiredFeatures))property.requiredFeatures=structuredClone(BASE_PROPERTIES.find(base=>base.id===property.id)?.requiredFeatures||[]);if(property.requiredFeatures.some(id=>!value.features.some(feature=>feature.id===id)))throw Error('性能依赖了不存在的输入字段。');}
  if(value.features.some(f=>!['number','category'].includes(f.type)))throw Error('输入字段类型无效。');
  if(value.datasets.reduce((n,d)=>n+(Array.isArray(d.rows)?d.rows.length:100001),0)>30000)throw Error('最多保留 30,000 条记录，请拆分工作区。');
- for(const d of value.datasets){d.form=normalizeForm(d.form);if(typeof d.id!=='string'||!BASIS[d.basis]||!Array.isArray(d.rows))throw Error('数据集定义无效。');for(const r of d.rows){validateComposition(r.composition);if(!r.features||!r.targets||Object.values(r.targets).some(x=>typeof x!=='number'||!Number.isFinite(x)))throw Error('性能标签无效。');}}
+ for(const d of value.datasets){d.form=normalizeForm(d.form);if(typeof d.id!=='string'||!BASIS[d.basis]||!Array.isArray(d.rows))throw Error('数据集定义无效。');for(const r of d.rows){if(d.form==='mixed'&&!r.form)throw Error('混合数据集缺少逐行材料形态。');if(r.form)normalizeForm(r.form);validateComposition(r.composition);if(!r.features||!r.targets||Object.values(r.targets).some(x=>typeof x!=='number'||!Number.isFinite(x)))throw Error('性能标签无效。');}}
  if(!Number.isSafeInteger(value.revision)||value.revision<0)throw Error('工作区数据版本无效。');
  const checkTree=(node,depth=0)=>{if(!node||depth>12)throw Error('模型树结构无效。');if(node.f===undefined){if(!Number.isFinite(node.v))throw Error('模型叶节点无效。');return;}if(!Number.isSafeInteger(node.f)||node.f<0||!Number.isFinite(node.t))throw Error('模型节点无效。');checkTree(node.l,depth+1);checkTree(node.r,depth+1);};
  for(const m of value.models){m.form=normalizeForm(m.form);if(m.algorithm==='sklearn-regression-v1'){if(!value.properties.some(p=>p.id===m.target)||!BASIS[m.basis]||!m.encoder||!Array.isArray(m.encoder.elements)||!Array.isArray(m.encoder.specs)||!m.property||!Array.isArray(m.datasetIds)||!Array.isArray(m.validationPoints)||!m.metrics||!Number.isFinite(m.metrics.mae)||!m.environment||!m.training||!Array.isArray(m.training.leaderboard)||m.training.leaderboard.some(r=>!r||!r.params||!Number.isFinite(r.mae)||!Number.isFinite(r.std))||!Array.isArray(m.training.warnings)||m.training.warnings.some(w=>typeof w!=='string')||!m.training.options||!m.training.bestParams||!Array.isArray(m.featureImportance)||m.featureImportance.some(f=>!f||typeof f.name!=='string'||!Number.isFinite(f.importance))||typeof m.usable!=='boolean'||!Array.isArray(m.metrics.folds)||m.validationPoints.some(p=>!p||!Number.isFinite(p.actual)||!Number.isFinite(p.predicted))||!m.artifact||m.artifact.format!=='skops'||typeof m.artifact.data!=='string'||m.artifact.data.length>400*1024*1024||!/^[A-Za-z0-9+/]+={0,2}$/.test(m.artifact.data)||! /^[a-f0-9]{64}$/.test(m.artifact.sha256))throw Error('机器学习模型或训练报告格式无效。');continue;}if(m.algorithm!=='extra-trees-v1'||!value.properties.some(p=>p.id===m.target)||!BASIS[m.basis]||!m.encoder||!Array.isArray(m.encoder.elements)||!Array.isArray(m.encoder.specs)||!Array.isArray(m.forest)||!m.forest.length||m.forest.length>100||!m.metrics||!Number.isFinite(m.metrics.mae)||!Array.isArray(m.datasetIds)||!Array.isArray(m.validationPoints)||!m.property)throw Error('保存的模型格式无效，请使用原始工作区导出文件。');m.forest.forEach(tree=>checkTree(tree));}
@@ -83,20 +88,64 @@ export function parseComposition(text,basis='at') {
 export const compositionKey=c=>Object.entries(c).filter(([,v])=>v>0).sort(([a],[b])=>a.localeCompare(b)).map(([e,n])=>e+Number(n.toFixed(5))).join('');
 const norm=s=>String(s).normalize('NFKC').toLowerCase().replace(/[\s_]/g,'');
 export function suggestMapping(header,properties=BASE_PROPERTIES,features=BASE_FEATURES) {
- const h=String(header).trim(), base=h.split(/[（(]/)[0].trim();
- if(elementSet.has(h))return{role:'element',id:h};
- if(['alloys','alloy','composition','成分','成分式','合金成分'].includes(norm(h)))return{role:'composition',id:''};
+ const h=String(header).normalize('NFKC').trim();
+ const {base,unit}=headerParts(h);
+ if(elementSet.has(h)||elementSet.has(base)&&['at.%','wt.%','mol.%'].includes(unitKey(unit)))return{role:'element',id:base};
+ if(['alloys','alloy','composition','成分','成分式','合金成分'].includes(norm(base)))return{role:'composition',id:''};
  if(/^(url|doi|ref|参考|来源)/i.test(h))return{role:'source',id:''};
- for(const [role,items]of [['target',properties],['feature',features]])for(const f of items)if([f.id,f.name,...(f.aliases||[])].some(a=>norm(a)===norm(base)||norm(a)===norm(h)))return{role,id:f.id};
- return{role:'ignore',id:''};
+ const matches=[];
+ for(const [role,items] of [['target',properties],['feature',features]]){
+  for(const f of items){
+   const names=[f.id,f.name,...(f.aliases||[])];
+   if(names.some(a=>norm(a)===norm(base)||norm(a)===norm(h)))matches.push({role,f});
+  }
+ }
+ const match=matches.find(({f})=>unit&&unitKey(f.unit)===unitKey(unit))||matches[0];
+ return match?{role:match.role,id:match.f.id}:{role:'ignore',id:''};
 }
-export function buildDataset({name,basis,form,table,mapping,features,properties,sheetName='',filename=''}) {
+// Duplicate observations keep every source so source-connected validation stays intact.
+const mergeSources=(...values)=>[...new Set(values.flatMap(value=>String(value||'').split(' | ')).map(s=>s.trim()).filter(Boolean))].join(' | ');
+const unitKey=value=>{
+ const key=String(value||'').normalize('NFKC').replace(/[μµ]/g,'u').replace(/[·⋅*\s]/g,'').replace(/\^/g,'');
+ return ({'Am2/kg':'emu/g','Am2kg-1':'emu/g','A/m':'A/m','Am-1':'A/m','gcm-3':'g/cm3','kgm-3':'kg/m3','Wkg-1':'W/kg','Wm-3':'W/m3','kWm-3':'kW/m3','℃':'°C'})[key]||key;
+};
+const explicitUnits=new Set([...BASE_PROPERTIES,...BASE_FEATURES].map(f=>unitKey(f.unit)).concat(['Oe','kOe','kA/m','T','mT','G','kG','Hz','MHz','Pa','MPa','GPa','W/kg','W/m3','kg/m3','s','h','min','m','mm','um','nm','at.%','wt.%','mol.%']));
+function headerParts(header){
+ const h=String(header||'').normalize('NFKC').trim();
+ const bracket=h.match(/(?:\(([^()]*)\)|\[([^\[\]]*)\])\s*$/);
+ if(bracket)return{base:h.slice(0,bracket.index).trim(),unit:(bracket[1]??bracket[2]).trim()};
+ const plain=h.match(/^(.+?)\s+(\S+)$/);
+ if(plain&&explicitUnits.has(unitKey(plain[2])))return{base:plain[1],unit:plain[2]};
+ return{base:h,unit:''};
+}
+function validateMappedUnits(headers,mapping,features,properties,basis){
+ const basisUnits={'at.%':'at','wt.%':'wt','mol.%':'mol'};
+ mapping.forEach((m,index)=>{
+  if(!m)return;
+  const header=String(headers[index]||''),{unit:declared}=headerParts(header),unit=unitKey(declared);
+  if(!unit)return;
+  if(['composition','element'].includes(m.role)&&basisUnits[unit]&&basisUnits[unit]!==basis){
+   throw Error(`列“${header}”的成分基准是 ${declared}，与所选的“${basisLabel(basis)}”不一致。请按原表选择成分表达。`);
+  }
+  if(!['target','feature'].includes(m.role))return;
+  const field=(m.role==='target'?properties:features).find(f=>f.id===m.id);if(!field)return;
+  // An unrecognized free-text annotation may be a test condition, rather than a unit.
+  const knownUnit=explicitUnits.has(unit)||[...features,...properties].some(f=>unitKey(f.unit)===unit);
+  if(knownUnit&&unit!==unitKey(field.unit)){
+   throw Error(`列“${header}”标注单位 ${declared}，但字段“${field.name}”要求 ${field.unit||'无量纲'}。请先换算源数据，或新增使用原单位的字段。软件不会自动换算。`);
+  }
+ });
+}
+export function buildDataset({name,basis,form,table,mapping,features,properties,sheetName='',filename='',rowOffset=0}) {
  form=normalizeForm(form);if(!name.trim()||!BASIS[basis])throw Error('请填写数据集名称、成分表达方式和材料类型。');
+ if(isKGTable(table))return buildKGDataset({name,basis,form,table,filename,sheetName,rowOffset},{parseComposition,exactNumber,uid});
  if(!mapping.some(m=>m.role==='composition'||m.role==='element'))throw Error('至少指定一个成分式列或元素列。');
  if(mapping.filter(m=>m.role==='composition').length>1||mapping.some(m=>m.role==='composition')&&mapping.some(m=>m.role==='element'))throw Error('成分式与元素百分比列请选择一种方式。');
  const assigned=mapping.filter(m=>['target','feature','element'].includes(m.role)).map(m=>m.role+':'+m.id);if(new Set(assigned).size!==assigned.length)throw Error('同一个性能、条件或元素不能映射到两列。');
  if(!mapping.some(m=>m.role==='target'))throw Error('请至少指定一项实测性能。');
- const rows=[],issues=[],seen=new Set();let duplicates=0,qualified=0;
+ validateMappedUnits(table[0]||[],mapping,features,properties,basis);
+ if(!Number.isSafeInteger(rowOffset)||rowOffset<0)throw Error('源表行号偏移无效。');
+ const rows=[],issues=[],seen=new Map();let duplicates=0,qualified=0;
  for(let index=1;index<table.length;index++){
   const raw=table[index];if(!raw?.some(v=>String(v??'').trim()))continue;
   try{
@@ -118,9 +167,11 @@ export function buildDataset({name,basis,form,table,mapping,features,properties,
    }
    c=validateComposition(c);if(!Object.keys(values).length)throw Error('无可用于训练的确定数值性能。');
    const signature=JSON.stringify([compositionKey(c),Object.entries(conditions).sort(),Object.entries(values).sort()]);
-   if(seen.has(signature)){duplicates++;continue;}seen.add(signature);
-   rows.push({id:uid(),row:index+1,composition:c,features:conditions,targets:values,source:source.join(' | '),original});
-  }catch(e){issues.push({row:index+1,message:e.message});}
+   const sourceValue=mergeSources(...source),provenance={row:index+1+rowOffset,source:sourceValue,original:{...original}};
+   if(seen.has(signature)){const existing=seen.get(signature);existing.source=mergeSources(existing.source,sourceValue);existing.provenance.push(provenance);duplicates++;continue;}
+   const row={id:uid(),row:index+1+rowOffset,composition:c,features:conditions,targets:values,source:sourceValue,original,provenance:[provenance]};
+   seen.set(signature,row);rows.push(row);
+  }catch(e){issues.push({row:index+1+rowOffset,message:e.message});}
  }
  if(!rows.length)throw Error('没有可导入的记录，请检查列映射、成分合计和性能数值。');
  return{id:uid(),name:name.trim(),basis,form,filename,sheetName,createdAt:Date.now(),rows,issues,duplicates,qualified};
@@ -164,9 +215,14 @@ function forestPredict(forest,x){return avg(forestValues(forest,x));}
 function featureImportance(forest,names){const counts=Array(names.length).fill(0);const visit=node=>{if(node.f===undefined)return;counts[node.f]++;visit(node.l);visit(node.r);};forest.forEach(visit);const total=counts.reduce((a,b)=>a+b,0)||1;return counts.map((count,index)=>({name:names[index]||`输入 ${index+1}`,importance:count/total})).filter(row=>row.importance>0).sort((a,b)=>b.importance-a.importance).slice(0,12);}
 export function trainingRows(workspace,{datasetIds,form,basis,target}) {
  form=normalizeForm(form);
- const rows=[],seen=new Set();
- for(const d of workspace.datasets)if(datasetIds.includes(d.id)&&d.form===form&&d.basis===basis)for(const r of d.rows){if(!Number.isFinite(r.targets[target]))continue;
-  const key=JSON.stringify([compositionKey(r.composition),Object.entries(r.features).sort(),r.targets[target]]);if(seen.has(key))continue;seen.add(key);rows.push({...r,datasetId:d.id});
+ const rows=[],seen=new Map();
+ for(const original of workspace.datasets)if(datasetIds.includes(original.id))for(const d of [scopedDataset(original,form,basis)])for(const r of d.rows){if(!Number.isFinite(r.targets[target]))continue;
+  const key=JSON.stringify([compositionKey(r.composition),Object.entries(r.features).sort(),r.targets[target]]);
+  const provenance=(Array.isArray(r.provenance)&&r.provenance.length?r.provenance:[
+   {row:r.row,source:r.source,original:r.original,...(r.provenance||{})},
+  ]).map(p=>({...p,rowId:r.id,datasetId:d.id}));
+  if(seen.has(key)){const existing=seen.get(key);existing.source=mergeSources(existing.source,r.source);existing.provenance.push(...provenance);continue;}
+  const row={...r,source:mergeSources(r.source),datasetId:d.id,provenance};seen.set(key,row);rows.push(row);
  }return rows;
 }
 export function trainProperty(workspace,options) {
@@ -180,7 +236,10 @@ export function trainProperty(workspace,options) {
  // Connected source/composition groups keep repeated alloys out of both sides of a fold.
  const parent=rows.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));const seenC=new Map(),seenS=new Map();
  rows.forEach((r,i)=>{const c=compositionKey(r.composition);if(seenC.has(c))parent[find(i)]=find(seenC.get(c));else seenC.set(c,i);
-  if(validation==='source'&&r.source){if(seenS.has(r.source))parent[find(i)]=find(seenS.get(r.source));else seenS.set(r.source,i);}});
+  if(validation==='source'&&r.source)for(const s of r.source.split(' | ').map(v=>v.trim().toLowerCase()).filter(Boolean)){
+   if(seenS.has(s))parent[find(i)]=find(seenS.get(s));else seenS.set(s,i);
+  }
+ });
  const groups=[...new Set(rows.map((_,i)=>find(i)))];if(groups.length<5)throw Error('所选验证方式不足 5 个独立分组，请补充不同来源／成分的数据。');
  const random=rng(8427);for(let i=groups.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[groups[i],groups[j]]=[groups[j],groups[i]];}
  const foldOf=new Map(groups.map((g,i)=>[g,i%5])),predictions=[],errors=[],baselineErrors=[];const folds=[];

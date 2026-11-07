@@ -1,0 +1,97 @@
+{
+  "id": "grid-contour",
+  "name": "等阶 · 网格等值线",
+  "category": "响应面",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "从全量参考库筛选的绘图结构。封面与数据为合成示例。",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "x",
+      "label": "网格 X",
+      "type": "number"
+    },
+    {
+      "key": "y",
+      "label": "网格 Y",
+      "type": "number"
+    },
+    {
+      "key": "z",
+      "label": "响应 Z",
+      "type": "number"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 等阶 · 网格等值线"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "Process X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Process Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "levels",
+      "label": "等值线级数",
+      "type": "number",
+      "default": 5,
+      "min": 2,
+      "max": 10
+    },
+    {
+      "key": "zLabel",
+      "label": "响应量名称",
+      "type": "text",
+      "default": "Response"
+    }
+  ],
+  "dataDescription": "必须提供完整的直角网格：至少两个不同 X 和 Y，每个组合唯一。每格沿固定对角线拆成三角形并线性插值；不补缺、不外推。"
+}

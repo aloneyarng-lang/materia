@@ -1,0 +1,137 @@
+{
+  "id": "ternary-points",
+  "name": "三衡 · 三元组成",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "通用数据绘图方案；封面与数据为合成示例，非原论文结果。",
+  "category": "组成空间",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "a",
+      "label": "A 组分",
+      "type": "number",
+      "min": 0
+    },
+    {
+      "key": "b",
+      "label": "B 组分",
+      "type": "number",
+      "min": 0
+    },
+    {
+      "key": "c",
+      "label": "C 组分",
+      "type": "number",
+      "min": 0
+    },
+    {
+      "key": "group",
+      "label": "分组",
+      "type": "string"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 三衡 · 三元组成"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "total",
+      "label": "组成总量",
+      "type": "select",
+      "default": "100",
+      "options": [
+        "100",
+        "1"
+      ]
+    },
+    {
+      "key": "aLabel",
+      "label": "A 顶点名称",
+      "type": "text",
+      "default": "A"
+    },
+    {
+      "key": "bLabel",
+      "label": "B 顶点名称",
+      "type": "text",
+      "default": "B"
+    },
+    {
+      "key": "cLabel",
+      "label": "C 顶点名称",
+      "type": "text",
+      "default": "C"
+    },
+    {
+      "key": "markerSize",
+      "label": "散点半径",
+      "type": "number",
+      "default": 5,
+      "min": 1,
+      "max": 12
+    }
+  ],
+  "dataDescription": "a+b+c 必须等于所选总量 100 或 1（绝对容差为总量×1e-6），全部非负，不自动归一。只绘组成散点，不推断热力学相区或相边界。"
+}

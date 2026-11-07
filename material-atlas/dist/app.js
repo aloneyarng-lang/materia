@@ -143,7 +143,12 @@ function render() {
   renderFilterOptions();
   renderParameterSummary(filtered);
   const noteView=state.view==='notes';
-  const materialView = state.view === 'materials';
+  const predictionView=state.view==='prediction', predictionEntry=$('#material-prediction-toggle');
+  predictionEntry.hidden=!(state.view==='materials'||predictionView)||!workspaceModules.available('prediction');
+  predictionEntry.disabled=!state.ready||state.storageError;
+  predictionEntry.setAttribute('aria-controls',predictionView?'material-list':'prediction-workspace');
+  predictionEntry.querySelector('[data-icon]').dataset.icon=predictionView?'chevron-left':'chart';
+  predictionEntry.querySelector('.material-prediction-label').textContent=tr(predictionView?'返回材料':'性能预测');
   $('.surface-toolbar .search-box').hidden = standaloneView;
   $('#sort-order').hidden = standaloneView;
   $('#sort-order option[value="newest"]').textContent=noteView?tr('笔记最近更新'):tr('最近添加');
@@ -169,7 +174,6 @@ function render() {
   $('#restore-hidden').innerHTML=icon('eye')+tr('<span>恢复隐藏文献</span>',false);$('#restore-hidden').title=msg`恢复隐藏的 ${state.hiddenIds.size} 篇文献`;
   $('#hide-node').disabled = !state.selected;
   $('#legend').innerHTML = groups.slice(0, 6).map(g => html`<button data-tag="${escape(g.name)}" class="${state.tag === g.name ? 'active' : ''}" title="按 ${escape(g.name)} 筛选"><i style="background:${g.color}"></i>${escape(g.name)}</button>`).join('') + (state.tag ? tr('<button data-action="clear-tag" class="tag-filter-clear">清除筛选 ×</button>') : '');
-  document.querySelectorAll('[data-view]').forEach(button => { const active = button.dataset.view === state.view; button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active)); });
   map.options = { showEdges: state.showEdges, showLabels: state.showLabels };
   const tagMode=state.graphPreferences.mode==='tags';
   const scoped=tagMode?filtered.filter(paper=>state.associations.some(rule=>associationMatches(paper,rule))):filtered;
@@ -471,6 +475,10 @@ const actions = {
   'close-detail': () => $('#detail-panel').classList.remove('mobile-open'),
   'more-list': () => { state.listLimit += 100; renderList(visiblePapers()); hydrateIcons($('#paper-list')); },
   filters: openAdvancedFilters, 'close-filters': () => $('#advanced-filter-dialog').close(),
+  'toggle-prediction': () => {
+    if(!workspaceModules.available('prediction')||!['materials','prediction'].includes(state.view))return;
+    state.view=state.view==='materials'?'prediction':'materials';render();
+  },
   menu: () => $('#sidebar').classList.toggle('mobile-open'),
   'parameter-index': () => parameterFinder.open(), 'clear-parameter': () => { state.filters.parameterName='';state.filters.parameterUnit='*';render(); }, 'plot-parameter-results': plotActiveParameter, 'select-parameter-results': async()=>{await comparison.selectIds(visiblePapers().map(p=>p.id));renderParameterSummary(visiblePapers());},
   'tag-index': () => notes.openIndex(),
@@ -563,7 +571,7 @@ document.addEventListener('dragleave', event => { if (!event.dataTransfer || ![.
 document.addEventListener('drop', async event => { if (!event.dataTransfer.files.length) return; event.preventDefault(); dragDepth = 0; $('#drop-overlay').hidden = true; $('.upload-zone')?.classList.remove('dragging'); if ($('#modal').open && modalContext !== 'import') { toast(tr('请先关闭当前弹窗，再拖入 PDF。')); return; } try { await addFiles([...event.dataTransfer.files]); } catch (error) { toast(error.message, true); } });
 
 document.addEventListener('keydown', event => {
-  if(event.defaultPrevented||event.target.closest('#workspace-command-dialog'))return;
+  if(event.defaultPrevented||event.target.closest('#workspace-command-dialog, #material-list-filter-dialog'))return;
   if (event.key === 'Escape') { $('#detail-panel').classList.remove('mobile-open'); $('#sidebar').classList.remove('mobile-open'); return; }
   if (event.target.closest('#vocabulary-dialog') || event.target.matches('input,textarea,select') || event.target.isContentEditable || event.metaKey || event.ctrlKey || event.altKey || $('#modal').open || reader?.isOpen() || researchCanvas?.isOpen()) return;
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-select]')) { event.preventDefault(); selectPaper(event.target.dataset.select, true); return; }
@@ -661,7 +669,12 @@ reader=createPDFReader({escape,toast,saveText,openStudySource,translate:(...args
 associationController=createAssociationController({escape,showModal,toast,getPapers:papers,getVisible:visiblePapers,getRules:()=>state.associations,save:async rules=>{const clean=cleanAssociations(rules);await setSetting('graphAssociations',clean);state.associations=clean;},changed:render});
 themeController=createThemeController({escape,showModal,toast,saveText,persist:async value=>{if(native&&!(Number(state.desktopInfo?.themeSchemaVersion)>=2))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持完整主题包。'));if(native&&!(Number(state.desktopInfo?.graphThemeVersion)>=4))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持新版星图主题。'));await setSetting('themePreferences',value);},changed:()=>{renderGraphPreferences();map.applyAppearance();}});
 parameterFinder=createParameterFinder({escape,showModal,toast,getPapers:papers,apply:applyParameterFilter});
-comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.view==='materials',materialSelectionChanged:()=>materialList?.refreshSelection(),canSaveMaterialSelection:()=>!native||Number(state.desktopInfo?.materialSelectionVersion)>=1,canSaveMaterialGroups:()=>!native||Number(state.desktopInfo?.materialGroupsVersion)>=1,saveMaterialSelection:value=>setSetting('comparisonState',value),openSourcePaper:id=>{closeModal();if(!papers().some(p=>p.id===id)){toast(tr('来源文献已不在当前文献库。'));return;}state.nav='all';resetFilters(false);state.selected=id;state.detailOpen=true;render();selectPaper(id,true);},getPapers:papers,getFiltered:visiblePapers,getMetrics:()=>state.journalMetrics,findParameter:applyParameterFilter,openParameterFinder:()=>parameterFinder.open(),plotActiveParameter,savePreferences:value=>setSetting('chartPreferences',value),getSelection:()=>state.compareIds,setSelection:async ids=>{const previous=state.compareIds;state.compareIds=ids;const refresh=()=>{comparison.refreshBar();renderDetail();hydrateIcons($('#detail-panel'));renderParameterSummary(visiblePapers());};refresh();try{await setSetting('comparisonSelection',[...ids]);}catch(error){if(state.compareIds===ids)state.compareIds=previous;refresh();throw error;}},pickList:()=>{closeModal();state.view='list';render();},saveText,saveDataURL:async(url,filename,type)=>{
+comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.view==='materials',materialSelectionChanged:()=>materialList?.refreshSelection(),canSaveMaterialSelection:()=>!native||Number(state.desktopInfo?.materialSelectionVersion)>=1,canSaveMaterialGroups:()=>!native||Number(state.desktopInfo?.materialGroupsVersion)>=1,saveMaterialSelection:value=>setSetting('comparisonState',value),openSourcePaper:id=>{
+  closeModal();
+  if(!papers().some(p=>p.id===id)){toast(tr('来源文献已不在当前文献库。'));return;}
+  if(state.view==='materials')state.view='list';
+  state.nav='all';resetFilters(false);state.selected=id;state.detailOpen=true;render();selectPaper(id,true);
+},getPapers:papers,getFiltered:visiblePapers,getMetrics:()=>state.journalMetrics,findParameter:applyParameterFilter,openParameterFinder:()=>parameterFinder.open(),plotActiveParameter,savePreferences:value=>setSetting('chartPreferences',value),getSelection:()=>state.compareIds,setSelection:async ids=>{const previous=state.compareIds;state.compareIds=ids;const refresh=()=>{comparison.refreshBar();renderDetail();hydrateIcons($('#detail-panel'));renderParameterSummary(visiblePapers());};refresh();try{await setSetting('comparisonSelection',[...ids]);}catch(error){if(state.compareIds===ids)state.compareIds=previous;refresh();throw error;}},pickList:()=>{closeModal();state.view='list';render();},saveText,saveDataURL:async(url,filename,type)=>{
   const comma=url.indexOf(','),head=url.slice(0,comma),body=url.slice(comma+1);
   if(type==='svg')return saveText(head.includes(';base64')?new TextDecoder().decode(Uint8Array.from(atob(body),c=>c.charCodeAt(0))):decodeURIComponent(body),filename,'svg');
   if(native){const bytes=Uint8Array.from(atob(body),c=>c.charCodeAt(0));return native.saveImage({filename,bytes,type});}

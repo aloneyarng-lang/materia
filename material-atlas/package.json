@@ -19,6 +19,7 @@
     "verify:i18n-desktop": "node scripts/verify-i18n-desktop.cjs",
     "verify:typography": "node scripts/verify-typography.cjs",
     "verify:materials": "node scripts/verify-materials.cjs",
+    "verify:figura": "node scripts/verify-figura.cjs",
     "verify:prediction": "node scripts/verify-prediction.cjs",
     "verify:modules": "node scripts/verify-module-contract.cjs",
     "verify:workspace": "node scripts/verify-workspace-polish.cjs",

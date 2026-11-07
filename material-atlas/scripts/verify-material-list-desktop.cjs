@@ -32,9 +32,9 @@ const {chromium} = require(path.join(process.env.USERPROFILE, '.cache/codex-runt
     await page.waitForFunction(async () => (await materiaDesktop.getSetting('comparisonSelection')).length === 0);
     await page.locator('[data-view="materials"]').click(); assert.equal(await page.locator('[data-material-list-choice]').count(), 2);
     await materialAction('select-results');
-    await page.locator('[data-material-list-action="create-group"]').click(); await page.locator('#material-group-form [name="name"]').fill('跨来源合金组'); await page.locator('#material-group-form [type="submit"]').click(); await page.waitForFunction(() => !document.querySelector('#modal').open);
+    await materialAction('create-group'); await page.locator('#material-group-form [name="name"]').fill('跨来源合金组'); await page.locator('#material-group-form [type="submit"]').click(); await page.waitForFunction(() => !document.querySelector('#modal').open);
     let saved = await page.evaluate(() => materiaDesktop.getSetting('comparisonState')); assert.equal(saved.groups.length, 1); assert.equal(saved.groups[0].members.length, 2); assert.equal(saved.keys.length, 2);
-    await materialAction('table'); assert.equal(await page.locator('.material-matrix thead strong').count(), 2); assert.equal(await page.locator('.material-source-row td').count(), 2); await page.locator('#modal [data-action="close-modal"]').last().click();
+    await materialAction('chart'); await page.locator('[data-comparison-tab="table"]').click(); assert.equal(await page.locator('.material-matrix thead strong').count(), 2); assert.equal(await page.locator('.material-source-row td').count(), 2); await page.locator('#modal [data-action="close-modal"]').last().click();
     await page.locator('[data-material-list-action="chart"]').click(); await page.waitForFunction(() => document.querySelector('#chart-point-count')?.textContent.includes('2 个观测点')); await page.locator('#modal [data-action="close-modal"]').last().click();
     await page.screenshot({path: path.join(output, 'desktop-material-list.png'), timeout: 3000}).catch(() => {}); await stop();
     await start(); await page.locator('[data-view="materials"]').click(); saved = await page.evaluate(() => materiaDesktop.getSetting('comparisonState')); assert.equal(saved.groups[0].name, '跨来源合金组'); assert.equal(saved.keys.length, 2);

@@ -1,0 +1,179 @@
+{
+  "id": "benchmark-map",
+  "name": "坐标 · 性能对标",
+  "category": "材料选型",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "从全量参考库筛选的绘图结构。封面与数据为合成示例。 论文样式「分区聚焦」参考 Nature 0165 Fig. 4a 的淡蓝绘图区、透明材料族区块、轮廓异形点与候选星标。区块边界由用户输入。",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "x",
+      "label": "性能 X",
+      "type": "number"
+    },
+    {
+      "key": "y",
+      "label": "性能 Y",
+      "type": "number"
+    },
+    {
+      "key": "group",
+      "label": "材料族",
+      "type": "string"
+    },
+    {
+      "key": "label",
+      "label": "点标签",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "zoneXMin",
+      "label": "区块 X 下限",
+      "type": "number",
+      "required": false
+    },
+    {
+      "key": "zoneXMax",
+      "label": "区块 X 上限",
+      "type": "number",
+      "required": false
+    },
+    {
+      "key": "zoneYMin",
+      "label": "区块 Y 下限",
+      "type": "number",
+      "required": false
+    },
+    {
+      "key": "zoneYMax",
+      "label": "区块 Y 上限",
+      "type": "number",
+      "required": false
+    }
+  ],
+  "parameters": [
+    {
+      "key": "figureStyle",
+      "label": "论文样式",
+      "type": "select",
+      "default": "Figura 默认",
+      "options": [
+        "Figura 默认",
+        "分区聚焦"
+      ]
+    },
+    {
+      "key": "highlightGroup",
+      "label": "星标系列名称",
+      "type": "text",
+      "default": "Candidate"
+    },
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 坐标 · 性能对标"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "Magnetic flux density (T)"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Coercivity (A/m)"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "markerSize",
+      "label": "散点半径",
+      "type": "number",
+      "default": 4,
+      "min": 1,
+      "max": 10
+    },
+    {
+      "key": "xScale",
+      "label": "X 轴尺度",
+      "type": "select",
+      "default": "线性",
+      "options": [
+        "线性",
+        "对数"
+      ]
+    },
+    {
+      "key": "yScale",
+      "label": "Y 轴尺度",
+      "type": "select",
+      "default": "线性",
+      "options": [
+        "线性",
+        "对数"
+      ]
+    },
+    {
+      "key": "xTarget",
+      "label": "X 目标阈值（留空隐藏）",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "yTarget",
+      "label": "Y 目标阈值（留空隐藏）",
+      "type": "text",
+      "default": ""
+    }
+  ],
+  "dataDescription": "每行一条材料记录，两轴各自保持单位一致。颜色表示材料族，标签可留空。阈值线为用户输入的目标，不推定材料家族边界。对数轴仅接受正数。 「分区聚焦」可为同一材料族提供一组完整的四个区块边界，至少在该族一行填写，其他行可留空。"
+}

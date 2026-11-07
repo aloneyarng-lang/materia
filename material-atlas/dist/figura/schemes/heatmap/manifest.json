@@ -1,0 +1,99 @@
+{
+  "id": "heatmap",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": "矩阵热图 · 扩展示例",
+  "description": "合成演示方案；不是实际科研成果。",
+  "category": "矩阵分析",
+  "cover": "cover.svg",
+  "requires": [],
+  "dataDescription": "长表格式；第一行表头，每行一条观测。行列组合须唯一，缺失单元格显示空白。",
+  "fields": [
+    {
+      "key": "row",
+      "label": "行名称",
+      "type": "string"
+    },
+    {
+      "key": "column",
+      "label": "列名称",
+      "type": "string"
+    },
+    {
+      "key": "value",
+      "label": "颜色数值",
+      "type": "number"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "Synthetic example"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "color",
+      "label": "主色",
+      "type": "color",
+      "default": "#326b95"
+    },
+    {
+      "key": "showValues",
+      "label": "显示数值",
+      "type": "select",
+      "default": "显示",
+      "options": [
+        "显示",
+        "隐藏"
+      ]
+    }
+  ]
+}

@@ -9,16 +9,19 @@ const settings={collections:[{id:'g1',name:'非晶粉末',color:'#548fbd'},{id:'
 let page,browser,server;const errors=[],checks=[];
 async function check(name,fn){await fn();checks.push(name);console.log('PASS '+name);}
 async function shot(name){await page.screenshot({path:path.join(output,name+'.png'),animations:'disabled'});}
-async function captureAll(prefix){for(const view of ['graph','list','materials','notes','prediction']){await page.locator(`[data-view="${view}"]`).click();if(view==='prediction')await page.locator('#prediction-form').waitFor();await shot(prefix+'-'+view);}}
+const views=['graph','list','materials','notes','figura'];
+async function captureAll(prefix){for(const view of views){await page.locator(`[data-view="${view}"]`).click();if(view==='figura')await page.locator('.figura-gallery').waitFor();await shot(prefix+'-'+view);}}
 (async()=>{
  await fs.mkdir(output,{recursive:true});const {createPreviewServer}=await import(pathToFileURL(path.join(root,'server.mjs')));server=createPreviewServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
  browser=await chromium.launch({headless:true,executablePath:process.env.MATERIA_CHROME||path.join(process.env['ProgramFiles(x86)'],'Microsoft/Edge/Application/msedge.exe')});page=await browser.newPage({viewport:{width:1440,height:1000}});page.on('pageerror',e=>errors.push(e.message));
- await page.exposeFunction('__polishAPI',(method,...args)=>{if(method==='getPapers')return structuredClone(papers);if(method==='getSetting')return structuredClone(settings[args[0]]);if(method==='setSetting'){settings[args[0]]=structuredClone(args[1]);return true;}if(method==='info')return{path:'ISOLATED POLISH LIBRARY'};if(method==='moduleLoad')return{libraryKey:'ISOLATED',state:null};if(method==='canvasReady'||method==='canvasConfirmClose')return true;if(method==='agentGetConfig')return{providers:[],configured:false};throw Error('Unexpected API '+method);});
- await page.addInitScript(()=>{globalThis.materiaDesktop=Object.fromEntries(['getPapers','getSetting','setSetting','info','moduleLoad','canvasReady','canvasConfirmClose','agentGetConfig'].map(m=>[m,(...args)=>__polishAPI(m,...args)]));materiaDesktop.onCanvasClose=()=>()=>{};});
+ const {schemeCatalog}=await import(pathToFileURL(path.join(root,'desktop/figura/catalog.mjs')));
+ const schemes=await schemeCatalog(path.join(root,'dist/figura/schemes'),path.join(output,'no-custom-schemes'));
+ await page.exposeFunction('__polishAPI',(method,...args)=>{if(method==='getPapers')return structuredClone(papers);if(method==='getSetting')return structuredClone(settings[args[0]]);if(method==='setSetting'){settings[args[0]]=structuredClone(args[1]);return true;}if(method==='info')return{path:'ISOLATED POLISH LIBRARY'};if(method==='moduleLoad')return{libraryKey:'ISOLATED',state:null};if(method==='figureCall'&&args[0]==='catalog')return schemes;if(method==='canvasReady'||method==='canvasConfirmClose')return true;if(method==='agentGetConfig')return{providers:[],configured:false};throw Error('Unexpected API '+method);});
+ await page.addInitScript(()=>{globalThis.materiaDesktop=Object.fromEntries(['getPapers','getSetting','setSetting','info','moduleLoad','figureCall','canvasReady','canvasConfirmClose','agentGetConfig'].map(m=>[m,(...args)=>__polishAPI(m,...args)]));materiaDesktop.onCanvasClose=()=>()=>{};});
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});
  if(process.env.MATERIA_CAPTURE_BASELINE){await captureAll('before');return;}
- await check('original Mac radii and liquid-glass selected surfaces survive all five registered tabs',async()=>{
-  for(const view of ['graph','list','materials','notes','prediction']){
+ await check('original Mac radii and liquid-glass selected surfaces survive all five top-level tabs',async()=>{
+  for(const view of views){
    const button=page.locator(`[data-view="${view}"]`);await button.click();await page.waitForTimeout(160);
    const visual=await button.evaluate(el=>{const probe=document.createElement('span');probe.style.background='var(--glass-card)';document.body.append(probe);const expected=getComputedStyle(probe).backgroundColor;probe.remove();const style=getComputedStyle(el);return{radius:style.borderRadius,background:style.backgroundColor,expected,shadow:style.boxShadow,group:getComputedStyle(el.parentElement).borderRadius};});
    assert.equal(visual.radius,'20px');assert.equal(visual.group,'24px');assert.equal(visual.background,visual.expected);assert.ok(visual.shadow.includes('inset'));
@@ -42,7 +45,7 @@ async function captureAll(prefix){for(const view of ['graph','list','materials',
  });
  await check('view tabs have roving focus and support arrow keys, Home and End',async()=>{
   await page.locator('[data-view="list"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('[data-view="materials"]').getAttribute('aria-selected'),'true');
-  await page.keyboard.press('End');assert.equal(await page.locator('[data-view="prediction"]').getAttribute('aria-selected'),'true');await page.keyboard.press('Home');assert.equal(await page.locator('[data-view="graph"]').getAttribute('aria-selected'),'true');
+  await page.keyboard.press('End');assert.equal(await page.locator('[data-view="figura"]').getAttribute('aria-selected'),'true');await page.keyboard.press('Home');assert.equal(await page.locator('[data-view="graph"]').getAttribute('aria-selected'),'true');
  });
  await check('last view, sidebar and inspector persist across reload',async()=>{
   await page.locator('[data-view="list"]').click();await page.locator('#toggle-sidebar').click();await page.locator('#workspace-details').click();await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});

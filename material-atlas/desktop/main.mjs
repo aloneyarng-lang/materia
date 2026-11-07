@@ -1,5 +1,5 @@
 ﻿import {CanvasFile} from './canvases.mjs';
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage, protocol } from 'electron';
 import {createStartup} from './startup.mjs';
 import {DesktopModuleServices} from './module-services.mjs';
 import {DESKTOP_MODULES} from './modules/index.mjs';
@@ -16,6 +16,7 @@ import { translateText } from './translation.mjs';
 import {t,setLocale,normalizeLocale} from '../dist/i18n.js';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+protocol.registerSchemesAsPrivileged([{scheme:'materia-figure', privileges:{standard:true, secure:true, supportFetchAPI:true}}]);
 app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(appRoot, '.local', 'desktop-profile'));
 app.setPath('userData', profile);
@@ -86,6 +87,11 @@ async function start() {
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
   handle('startup:ready',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);return true;});
   moduleServices.register(handle);
+  let figura;
+  handle('figura:call', async ({action, payload, libraryKey}) => {
+    figura ??= import('./figura/service.mjs').then(({createFigureService}) => createFigureService({appRoot, getRoot:()=>library.root, window:mainWindow}));
+    return (await figura)(action, payload, libraryKey);
+  });
   handle('ml:status',()=>mlEngine.run('status'));
   handle('ml:run',async({id,action,libraryKey,...payload})=>{
     if(libraryKey!==library.root)throw Error('文献库已切换，请重新打开模型页面。');

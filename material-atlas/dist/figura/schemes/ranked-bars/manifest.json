@@ -1,0 +1,95 @@
+{
+  "id": "ranked-bars",
+  "name": "序列 · 横向排序",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "通用数据绘图方案；封面与数据为合成示例，非原论文结果。",
+  "category": "分类比较",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "label",
+      "label": "项目名称",
+      "type": "string"
+    },
+    {
+      "key": "value",
+      "label": "数值",
+      "type": "number"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 序列 · 横向排序"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "color",
+      "label": "条形颜色",
+      "type": "color",
+      "default": "#326b95"
+    },
+    {
+      "key": "sort",
+      "label": "排列",
+      "type": "select",
+      "default": "降序",
+      "options": [
+        "降序",
+        "升序",
+        "原顺序"
+      ]
+    }
+  ],
+  "dataDescription": "每行一项，名称须唯一；允许负值。适合重要性、效应值或性能排名；仅排序用户数值，不训练模型、不计算显著性。"
+}

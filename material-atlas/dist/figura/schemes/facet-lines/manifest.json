@@ -1,0 +1,132 @@
+{
+  "id": "facet-lines",
+  "name": "分览 · 多面板趋势",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "通用数据绘图方案；封面与数据为合成示例，非原论文结果。",
+  "category": "多面板",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "panel",
+      "label": "面板名称",
+      "type": "string"
+    },
+    {
+      "key": "x",
+      "label": "横坐标",
+      "type": "number"
+    },
+    {
+      "key": "y",
+      "label": "纵坐标",
+      "type": "number"
+    },
+    {
+      "key": "group",
+      "label": "系列名称",
+      "type": "string"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 分览 · 多面板趋势"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "lineWidth",
+      "label": "线宽",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 8
+    },
+    {
+      "key": "markerSize",
+      "label": "标记半径",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "max": 10
+    },
+    {
+      "key": "columns",
+      "label": "每行面板数",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "key": "sharedY",
+      "label": "Y 轴范围",
+      "type": "select",
+      "default": "各自范围",
+      "options": [
+        "各自范围",
+        "共享范围"
+      ]
+    }
+  ],
+  "dataDescription": "长表 panel/x/y/group。最多六面板；X 全局共享范围，Y 可独立或共享。不同量纲建议独立范围，面板名标明单位。"
+}

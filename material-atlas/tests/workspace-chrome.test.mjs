@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cleanWorkspaceLayout,workspaceLayoutKey,readWorkspaceLayout,writeWorkspaceLayout} from '../dist/workspace-chrome.js';
 test('workspace layout restores only known views and real boolean preferences',()=>{
- assert.deepEqual(cleanWorkspaceLayout({view:'prediction',leftPanelOpen:true,detailOpen:false,focusGraph:true,query:'not persisted',papers:['not persisted']}),{view:'prediction',leftPanelOpen:true,detailOpen:false,focusGraph:true});
+ assert.deepEqual(cleanWorkspaceLayout({view:'prediction',leftPanelOpen:true,detailOpen:false,focusGraph:true,query:'not persisted',papers:['not persisted']}),{view:'materials',leftPanelOpen:true,detailOpen:false,focusGraph:true});
  for(const v of [null,undefined,[],{view:'unknown',leftPanelOpen:'true',detailOpen:1}])assert.deepEqual(cleanWorkspaceLayout(v),{});
 });
 test('workspace preferences survive restart and stay isolated by library without changing content',()=>{

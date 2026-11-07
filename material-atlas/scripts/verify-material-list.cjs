@@ -12,13 +12,17 @@ async function check(name, run) {await run(); checks.push(name); console.log('PA
 async function choose(reference, selected = true) {const inputs = page.locator('[data-material-list-choice]'), refs = await inputs.evaluateAll(nodes => nodes.map(node => node.dataset.materialListChoice)); const index = refs.indexOf(reference); assert.ok(index >= 0, reference); await inputs.nth(index).setChecked(selected);}
 async function action(name) {
   const target = page.locator(`[data-material-list-action="${name}"]`);
-  if (!await target.isVisible()) {
+  if (!await target.isVisible() && !await page.locator('#material-list-filter-dialog').isVisible()) {
     const toggle = page.locator('[data-menu-toggle="material-organize-menu"]');
     if (await toggle.isVisible()) await toggle.click();
   }
   await target.click();
 }
-async function group(name) {await page.getByRole('button', {name, exact: false}).filter({has: page.locator('small')}).click();}
+async function group(value) {
+  await action('filters');
+  await page.locator('#material-list-group').selectOption(value);
+  await action('close-filters');
+}
 (async () => {
   await fs.mkdir(output, {recursive: true}); const stage = await fs.mkdtemp(path.join(output, 'stage-'));
   await fs.cp(path.join(root, 'dist'), path.join(stage, 'dist'), {recursive: true});
@@ -43,8 +47,13 @@ async function group(name) {await page.getByRole('button', {name, exact: false})
   });
   await check('main material list shows distinct materials, source papers, empty materials and mixed sample selection', async () => {
     await page.locator('[data-view="materials"]').click(); assert.equal(await page.locator('[data-material-list-row]').count(), 4);
+    const first = page.locator('[data-material-list-details]').first();
+    assert.equal(await first.locator('.material-library-citation').textContent(), 'FeCoNi · 材料来源文献一');
+    assert.equal(await first.locator('.material-library-detail').isVisible(), false);
+    assert.equal(await page.locator('#material-list-selected-count').isVisible(), false);
     await choose(ref('p1', 'a')); assert.equal((await page.evaluate(() => __listTest.comparison.getMaterialSelection())).keys.length, 2);
-    await page.locator('[data-material-list-details]').first().locator('summary').click();
+    await first.locator('summary').click();
+    assert.equal(await first.getByRole('button', {name: '材料来源文献一'}).isVisible(), true);
     const cohort = page.locator('[data-material-list-cohort]').first(); await cohort.uncheck();
     assert.equal(await page.locator('[data-material-list-choice]').first().evaluate(node => node.indeterminate), true);
     assert.equal((await page.evaluate(() => __listTest.comparison.getMaterialSelection())).keys.length, 1);
@@ -55,11 +64,12 @@ async function group(name) {await page.getByRole('button', {name, exact: false})
     assert.equal(settings.comparisonState.groups[0].members.length, 2); assert.equal(await page.locator('[data-material-list-row]').count(), 2);
     await action('edit-group'); await page.locator('#material-group-form [name="name"]').fill('性能对比组'); await page.locator('#material-group-form [type="submit"]').click(); await page.waitForFunction(() => !document.querySelector('#modal').open);
     assert.equal(settings.comparisonState.groups[0].name, '性能对比组');
-    await page.locator('[data-material-list-group="ungrouped"]').click(); assert.equal(await page.locator('[data-material-list-row]').count(), 2);
+    await group('ungrouped'); assert.equal(await page.locator('[data-material-list-row]').count(), 2);
+    assert.equal(await page.locator('#material-list-filter-count').textContent(), '1');
     assert.ok((await page.locator('#material-list-selected-count').textContent()).includes('筛选外选择'));
     await choose(ref('p1', 'b')); await action('assign-group'); await page.locator('#material-group-assign-form [name="group"]').selectOption(settings.comparisonState.groups[0].id); await page.locator('#material-group-assign-form [type="submit"]').click(); await page.waitForFunction(() => !document.querySelector('#modal').open);
     assert.equal(settings.comparisonState.groups[0].members.length, 3);
-    await page.locator('[data-material-list-group]').first().click(); await page.screenshot({path: path.join(output, 'material-list-groups.png')});
+    await group(''); await page.screenshot({path: path.join(output, 'material-list-groups.png')});
   });
   await check('table and chart consume only selected cohorts and leave paper selection independent', async () => {
     await action('chart'); await page.locator('[data-comparison-tab="table"]').click(); await page.locator('.material-matrix').waitFor(); assert.equal(await page.locator('.material-matrix thead strong').count(), 3);
@@ -75,7 +85,7 @@ async function group(name) {await page.getByRole('button', {name, exact: false})
     failSave = true; await choose(ref('p2', 'empty')); await page.waitForFunction(() => document.querySelector('.material-library-status [data-material-save-status]')?.textContent.includes('未保存'));
     assert.equal(settings.comparisonState.keys.length, 3); failSave = false; await page.locator('.material-library-status [data-material-retry]').click();
     await page.evaluate(() => __closeList()); assert.equal(settings.comparisonState.keys.length, 4);
-    await page.locator('[data-material-list-group]').filter({hasText: '性能对比组'}).click(); await action('edit-group'); await action('delete-group'); await action('confirm-delete-group'); await page.waitForFunction(() => !document.querySelector('#modal').open);
+    await group(settings.comparisonState.groups[0].id); await action('edit-group'); await action('delete-group'); await action('confirm-delete-group'); await page.waitForFunction(() => !document.querySelector('#modal').open);
     assert.equal(settings.comparisonState.groups.length, 0); assert.equal(await page.locator('[data-material-list-row]').count(), 4);
   });
   await check('select-all spans more than 100 results, preserves hidden choices, and clear empties the complete material set', async () => {
@@ -84,9 +94,21 @@ async function group(name) {await page.getByRole('button', {name, exact: false})
     await page.locator('#material-list-query').fill('批量材料'); await page.waitForFunction(() => document.querySelectorAll('[data-material-list-row]').length === 100);
     await action('select-results'); assert.equal((await page.evaluate(() => __listTest.comparison.getMaterialSelection())).keys.length, 109);
     await action('clear'); assert.deepEqual((await page.evaluate(() => __listTest.comparison.getMaterialSelection())).keys, []);
+    await action('filters');
+    await page.locator('#material-list-only-selected').check();
+    assert.equal(await page.locator('[data-material-list-row]').count(), 0);
+    await page.locator('#material-list-filter-dialog [data-material-list-action="reset-filters"]').click();
+    assert.equal(await page.locator('#material-list-query').inputValue(), '');
+    assert.equal(await page.locator('#material-list-only-selected').isChecked(), false);
+    await page.keyboard.press('Escape');
+    await page.locator('#material-list-filter-button[aria-expanded="false"]').waitFor();
     await page.locator('#material-list-query').fill('尚未测量'); await page.waitForFunction(() => document.querySelectorAll('[data-material-list-row]').length === 1);
     await page.setViewportSize({width: 1000, height: 760}); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({path: path.join(output, 'material-list-narrow.png')});
+    await page.locator('[data-material-list-details] summary').click();
+    await page.locator('[data-material-open-paper="p2"]').click();
+    await page.locator('#detail-panel .paper-title').waitFor();
+    assert.equal(await page.locator('#detail-panel .paper-title').textContent(), '材料来源文献二');
   });
   assert.deepEqual(errors, []); await fs.writeFile(path.join(output, 'report.json'), JSON.stringify({passed: checks.length, checks, errors}, null, 2)); await browser.close();
 })().catch(async error => {console.error(error); process.exitCode = 1; await fs.mkdir(output, {recursive: true}); await fs.writeFile(path.join(output, 'failure.json'), JSON.stringify({error: error.stack, checks, errors}, null, 2)); await page?.screenshot({path: path.join(output, 'failure.png')}).catch(() => {}); await browser?.close();});

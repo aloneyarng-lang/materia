@@ -6,6 +6,11 @@ const root=path.resolve(__dirname,'..'),output=path.join(root,'.local/prediction
 let browser,app,page,server,mlEngine;const errors=[],checks=[],settings={};let stored=null,failSave=false;
 async function check(name,fn){await fn();checks.push(name);console.log('PASS '+name);}
 async function openPanel(name){await page.locator(`[data-prediction-panel="${name}"]`).first().click();}
+async function enterPrediction(){
+ await page.locator('.view-tabs [data-view="materials"]').click();
+ await page.locator('#material-prediction-toggle').click();
+ await page.locator('#prediction-form').waitFor();
+}
 async function launch(){
  const {MachineLearningEngine}=await import(pathToFileURL(path.join(root,'desktop/ml-engine.mjs')));mlEngine=new MachineLearningEngine({onProgress:progress=>page?.evaluate(value=>globalThis.__mlProgress?.(value),progress).catch(()=>{})});
  if(process.env.MATERIA_VERIFY_DESKTOP){const desktopRoot=await fs.mkdtemp(path.join(output,'desktop-'));const env={...process.env,MATERIA_HEADLESS:'1',MATERIA_PROFILE_DIR:path.join(desktopRoot,'profile'),MATERIA_LIBRARY_DIR:path.join(desktopRoot,'library')};delete env.ELECTRON_RUN_AS_NODE;
@@ -17,16 +22,23 @@ async function launch(){
   await page.addInitScript(()=>{globalThis.materiaDesktop=Object.fromEntries(['mlStatus','mlRun','mlCancel','moduleLoad','moduleSave','getPapers','getSetting','setSetting','info','canvasReady','canvasConfirmClose','saveText'].map(k=>[k,async(...args)=>{const r=await __predictionFixture(k,...args);if(k==='saveText'){globalThis.__predictionExport=args[0].filename;globalThis.__predictionExportContent=args[0].content;};return r;}]));materiaDesktop.onCanvasClose=()=>()=>{};const callbacks=new Set();materiaDesktop.onMLProgress=fn=>{callbacks.add(fn);return()=>callbacks.delete(fn);};globalThis.__mlProgress=value=>callbacks.forEach(fn=>fn(value));});
   await page.goto('http://127.0.0.1:'+server.address().port);
  }
- page.on('pageerror',e=>errors.push(e.message));await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await page.locator('[data-view="prediction"]').click();await page.locator('#prediction-form').waitFor();
+ page.on('pageerror',e=>errors.push(e.message));await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await enterPrediction();
 }
 (async()=>{
  await fs.mkdir(output,{recursive:true});
  await launch();
- await check('fifth home tab follows notes, opens an empty prediction workspace and leaves old views usable',async()=>{
-  const views=await page.locator('.view-tabs [data-view]').evaluateAll(ns=>ns.map(n=>n.dataset.view));assert.deepEqual(views,['graph','list','materials','notes','prediction']);
+ await check('prediction is a material subpage and returning preserves the material search',async()=>{
+  const views=await page.locator('.view-tabs [data-view]').evaluateAll(ns=>ns.map(n=>n.dataset.view));assert.deepEqual(views,['graph','list','materials','notes','figura']);
+  const materials=page.locator('.view-tabs [data-view="materials"]'),entry=page.locator('#material-prediction-toggle');
+  assert.equal(await materials.getAttribute('aria-selected'),'true');assert.equal(await materials.getAttribute('aria-controls'),'prediction-workspace');
   assert.equal(await page.locator('#prediction-form button[type=submit]').isDisabled(),true);assert.equal(await page.locator('#detail-panel').isVisible(),false);
   if(!app)await page.screenshot({path:path.join(output,'empty.png')});
-  await page.locator('[data-view="notes"]').click();assert.equal(await page.locator('#prediction-workspace').isVisible(),false);await page.locator('[data-view="prediction"]').click();
+  await entry.click();await page.locator('#material-list-query').fill('保留搜索');
+  if(!app)await page.screenshot({path:path.join(output,'materials-entry.png')});
+  await entry.click();await page.locator('#prediction-form').waitFor();await entry.click();
+  assert.equal(await page.locator('#material-list-query').inputValue(),'保留搜索');
+  await page.locator('[data-view="notes"]').click();assert.equal(await entry.isVisible(),false);
+  await enterPrediction();
  });
  await check('actual XLSX headers, Unicode and cached formulas can be read without modifying the source',async()=>{
   const source=process.env.MATERIA_PREDICTION_WORKBOOK;if(!source)return;const before=await fs.readFile(source);
@@ -44,7 +56,7 @@ async function launch(){
  await check('three official scikit-learn models expose nested held-out metrics and survive page reload',async()=>{
   await openPanel('models');await page.waitForFunction(()=>document.querySelector('.prediction-engine-status')?.textContent.includes('已就绪'),{},{timeout:60000});await page.getByText('高级设置 · 候选算法与计算参数',{exact:true}).click();for(const item of await page.locator('[name=algorithm]').all())await item.uncheck();await page.locator('[name=algorithm][value=ridge]').check();for(const id of ['Tg','Tx','Hc'])await page.locator(`#prediction-train-form [name=target][value="${id}"]`).check();await page.locator('#prediction-train-form button[type=submit]').click();
   await page.waitForFunction(()=>document.querySelector('#prediction-train-status')?.textContent.includes('已完成 3 项'),{},{timeout:180000});assert.equal(await page.locator('[data-model-details]').count(),3);
-  await page.reload();await page.locator('[data-view="prediction"]').click();await page.locator('#prediction-form').waitFor();await openPanel('models');assert.equal(await page.locator('[data-model-details]').count(),3);
+  await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});assert.equal(await page.locator('#prediction-workspace').isVisible(),false);await enterPrediction();await openPanel('models');assert.equal(await page.locator('[data-model-details]').count(),3);
  });
  await check('training report renders diagnostics, algorithm ranking and reproducible metadata',async()=>{
   await page.locator('[data-model-details]').first().click();await page.locator('.prediction-model-report svg').first().waitFor();
@@ -57,7 +69,9 @@ async function launch(){
   await page.waitForFunction(()=>document.querySelectorAll('.prediction-result b').length===4,{},{timeout:120000});assert.equal(await page.locator('.prediction-result b').count(),4);assert.ok((await page.locator('.prediction-result-list').textContent()).includes('由 Tx − Tg 计算'));assert.ok((await page.locator('.prediction-result-list').textContent()).includes('待训练'));
   if(!app)await page.screenshot({path:path.join(output,'prediction.png')});
   await page.locator('#prediction-form [name=formula]').fill('Fe80Cu20');await page.locator('#prediction-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('.prediction-result-list')?.textContent.includes('训练数据未包含元素'),{},{timeout:120000});assert.equal(await page.locator('.prediction-result b').count(),0);assert.ok((await page.locator('.prediction-result-list').textContent()).includes('训练数据未包含元素'));
-  await page.locator('#prediction-form [name=basis]').selectOption('wt');assert.equal(await page.locator('#prediction-form button[type=submit]').isDisabled(),true);
+  await page.locator('#prediction-form [name=basis]').selectOption('wt');
+  assert.equal(await page.locator('.prediction-result b').count(),0);
+  assert.equal(await page.locator('#prediction-form button[type=submit]').isEnabled(),true);
  });
  await check('batch predictions preserve valid rows and invalid-row reasons',async()=>{
   if(app)return;await page.locator('#prediction-form [name=basis]').selectOption('at');
@@ -67,13 +81,17 @@ async function launch(){
  });
  await check('custom properties persist without changing source code and exports work',async()=>{
   await openPanel('properties');await page.locator('#prediction-field-form [name=name]').fill('新增测试性能');await page.locator('#prediction-field-form [name=unit]').fill('unit');await page.locator('#prediction-field-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('.prediction-field-list')?.textContent.includes('新增测试性能'));
-  await page.reload();await page.locator('[data-view="prediction"]').click();await page.locator('#prediction-form').waitFor();await openPanel('properties');assert.ok((await page.locator('#prediction-workspace').textContent()).includes('新增测试性能'));
+  await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await enterPrediction();await openPanel('properties');assert.ok((await page.locator('#prediction-workspace').textContent()).includes('新增测试性能'));
   if(!app){await openPanel('datasets');await page.locator('[data-prediction-action="export-workspace"]').click();await page.waitForFunction(()=>globalThis.__predictionExport==='materia-prediction-workspace.json');}
  });
  await check('optional module disable, restart and re-enable preserve its datasets and trained models',async()=>{
-  await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').uncheck();await page.waitForFunction(()=>!document.querySelector('[data-view="prediction"]'));
-  assert.equal(await page.locator('.view-tabs [data-view]').count(),4);await page.locator('#modal [data-action="close-modal"]').last().click();await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});assert.equal(await page.locator('[data-view="prediction"]').count(),0);
-  await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').check();await page.locator('[data-view="prediction"]').waitFor();await page.locator('#modal [data-action="close-modal"]').last().click();await page.locator('[data-view="prediction"]').click();await page.locator('#prediction-form').waitFor();await openPanel('models');assert.equal(await page.locator('[data-model-details]').count(),3);
+  const entry=page.locator('#material-prediction-toggle');
+  await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').uncheck();await entry.waitFor({state:'hidden'});
+  assert.equal(await page.locator('.view-tabs [data-view]').count(),5);await page.locator('#modal [data-action="close-modal"]').last().click();await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});assert.equal(await entry.isVisible(),false);
+  await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').check();await entry.waitFor();
+  const materialSetting=page.locator('[data-workspace-module="materials"]'),materials=page.locator('.view-tabs [data-view="materials"]');
+  await materialSetting.uncheck();await materials.waitFor({state:'detached'});assert.equal(await entry.isVisible(),false);
+  await materialSetting.check();await materials.waitFor();await page.locator('#modal [data-action="close-modal"]').last().click();await enterPrediction();await openPanel('models');assert.equal(await page.locator('[data-model-details]').count(),3);
   await openPanel('properties');assert.ok((await page.locator('#prediction-workspace').textContent()).includes('新增测试性能'));
  });
  await check('browser save failures stay visible and cannot replace the last successful dataset state',async()=>{

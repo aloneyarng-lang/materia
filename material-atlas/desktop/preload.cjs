@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('materiaDesktop', {
   onMLProgress: callback => {const listener=(_event,value)=>callback(value);ipcRenderer.on('ml:progress',listener);return()=>ipcRenderer.removeListener('ml:progress',listener);},
   moduleLoad: id => ipcRenderer.invoke('modules:load',id),
   moduleSave: (id,payload) => ipcRenderer.invoke('modules:save',{id,payload}),
+  figureCall: (action,payload,libraryKey) => ipcRenderer.invoke('figura:call',{action,payload,libraryKey}),
   predictionGet: () => ipcRenderer.invoke('modules:load','prediction'),
   predictionSave: payload => ipcRenderer.invoke('modules:save',{id:'prediction',payload}),
   getLocale: () => ipcRenderer.invoke('preferences:get-locale'),

@@ -1,10 +1,11 @@
 import {t,html} from './i18n.js';
 import {icon} from './icons.js';
-import {WORKSPACE_MODULES} from './modules/index.js';
-const VIEWS=WORKSPACE_MODULES.map(module=>module.id);
+import {WORKSPACE_MODULES,workspaceTab} from './modules/index.js';
+const primaryViews=WORKSPACE_MODULES.filter(module=>!module.parentView);
 export function cleanWorkspaceLayout(input={}){
  const result={};if(!input||typeof input!=='object')return result;
- if(VIEWS.includes(input.view))result.view=input.view;
+ const tab=workspaceTab(input.view);
+ if(tab)result.view=tab;
  for(const key of ['leftPanelOpen','detailOpen','focusGraph'])if(typeof input[key]==='boolean')result[key]=input[key];
  return result;
 }
@@ -19,7 +20,7 @@ export function createWorkspaceChrome(config){
  const dialog=document.createElement('dialog');dialog.id='workspace-command-dialog';dialog.className='workspace-command-dialog';dialog.setAttribute('aria-label',t('快速操作'));document.body.append(dialog);
  const mac=/Mac|iPhone|iPad/.test(navigator.platform),modifier=mac?'⌘':'Ctrl';
  function commands(){return[
-  ...(config.getViews?.()||WORKSPACE_MODULES).map((module,i)=>({id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:i<9?modifier+' '+(i+1):'',keywords:[module.id],run:()=>openView(module.id)})),
+  ...(config.getViews?.()||primaryViews).map((module,i)=>({id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:i<9?modifier+' '+(i+1):'',keywords:[module.id],run:()=>openView(module.id)})),
   ...[['import','导入文献','plus'],['module-settings','功能管理','sliders'],['research-canvas','研究画布','network'],['ai-agent','AI 研究助手','assistant'],['parameter-index','性能参数目录','ruler'],['themes','主题与字体','palette'],['settings','设置','settings']].map(([id,label,image])=>({id,label:t(label),image,detail:t('常用操作'),keywords:[id],run:()=>runAction(id)})),
  ];}
  function openView(view){const button=document.querySelector(`.view-tabs [data-view="${view}"]`);button?.click();button?.focus();}
@@ -48,14 +49,22 @@ export function createWorkspaceChrome(config){
   if(dialog.open||!canOpen())return;
   if(e.key==='Escape'&&e.target.id==='search'&&e.target.value){e.preventDefault();clearSearch();return;}
   const editing=e.target.matches('input,textarea,select')||e.target.isContentEditable;
-  const views=(config.getViews?.()||WORKSPACE_MODULES).map(module=>module.id);
+  const views=(config.getViews?.()||primaryViews).map(module=>module.id);
   if(!editing&&(e.ctrlKey||e.metaKey)&&!e.altKey&&/^[1-9]$/.test(e.key)&&views[Number(e.key)-1]){e.preventDefault();openView(views[Number(e.key)-1]);return;}
   const tab=e.target.closest('.view-tabs [data-view]');if(!tab||e.ctrlKey||e.metaKey||e.altKey)return;
   let index=views.indexOf(tab.dataset.view);if(e.key==='ArrowLeft')index--;else if(e.key==='ArrowRight')index++;else if(e.key==='Home')index=0;else if(e.key==='End')index=views.length-1;else return;
   e.preventDefault();openView(views[(index+views.length)%views.length]);
  });
  return{sync(){const state=getState();
-  document.querySelectorAll('.view-tabs [data-view]').forEach(button=>{button.disabled=!state.ready||state.storageError;button.tabIndex=button.dataset.view===state.view?0:-1;button.id='workspace-tab-'+button.dataset.view;const id=button.dataset.panel;button.setAttribute('aria-controls',id);const panel=$('#'+id);panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);});
+  const tab=workspaceTab(state.view),child=WORKSPACE_MODULES.find(module=>module.id===state.view&&module.parentView);
+  document.querySelectorAll('.view-tabs [data-view]').forEach(button=>{
+    const selected=button.dataset.view===tab;
+    button.disabled=!state.ready||state.storageError;button.tabIndex=selected?0:-1;button.id='workspace-tab-'+button.dataset.view;
+    button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));
+    const id=selected&&child?child.panelId:button.dataset.panel;
+    button.setAttribute('aria-controls',id);
+    const panel=$('#'+id);panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);
+  });
   $('#clear-workspace-search').hidden=!state.query;$('#workspace-details').hidden=!['graph','list'].includes(state.view);$('#workspace-details').setAttribute('aria-pressed',String(state.detailOpen));
   $('#ribbon-import').hidden=!config.getViews?.().find(view=>view.id===state.view)?.libraryView;
   $('#workspace-command').title=t('快速操作')+' · '+modifier+' K';

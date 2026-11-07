@@ -1,0 +1,118 @@
+{
+  "id": "parity-residual",
+  "name": "校准 · 实测与预测",
+  "category": "模型评估",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "从全量参考库筛选的绘图结构。封面与数据为合成示例。 论文样式「校准条带」参考 0068 Fig. S7 的方形小面板、虚线一致线、组内小圆点和图内 R²。按可选面板字段拆分不同量纲。",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "observed",
+      "label": "实测值",
+      "type": "number"
+    },
+    {
+      "key": "predicted",
+      "label": "预测值",
+      "type": "number"
+    },
+    {
+      "key": "group",
+      "label": "数据集",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "panel",
+      "label": "面板名称（样式拆分用）",
+      "type": "string",
+      "required": false
+    }
+  ],
+  "parameters": [
+    {
+      "key": "figureStyle",
+      "label": "论文样式",
+      "type": "select",
+      "default": "Figura 默认",
+      "options": [
+        "Figura 默认",
+        "校准条带"
+      ]
+    },
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 校准 · 实测与预测"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "Observed"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Predicted"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 395,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "markerSize",
+      "label": "散点半径",
+      "type": "number",
+      "default": 4,
+      "min": 1,
+      "max": 10
+    }
+  ],
+  "dataDescription": "每行一对相同量纲的实测和预测值。上图共享等比例坐标，虚线为 1:1。下图残差 = 预测 − 实测。MAE / RMSE / R² 汇总所有输入行。 选「校准条带」后按可选面板字段分别计算，每个面板内单位须一致。默认样式对多个面板拒绝合并。"
+}

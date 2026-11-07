@@ -1,0 +1,5 @@
+category,value,error,group
+Alloy A,12,1.2,Control
+Alloy A,17,1.4,Treated
+Alloy B,15,0.8,Control
+Alloy B,21,1.1,Treated

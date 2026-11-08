@@ -3,6 +3,8 @@ import {parseDelimited, readPredictionFile} from '../prediction-import.js';
 import {browserCatalog, browserPlot, browserSample} from './browser.js';
 import {exportPNG, svgImage} from './export.js';
 import {defaults, emptyWorkspace, mapColumns, maxCells, maxColumns, maxRows, normalizeTable, preparePlot, readDraft, readWorkspace} from './model.js';
+import {createMontage,montageHTML} from './montage.js';
+import {plotMarkdownExample,readPlotMarkdown} from './markdown-plot.js';
 import {sanitizeSVG} from './svg.js';
 import {resolveFigureTheme} from './schemes/figure-themes.js';
 import {escape, mappingHTML, parameterHTML, tableHTML, workspaceHTML} from './view.js';
@@ -83,6 +85,13 @@ export async function createFiguraController(context, native) {
     plotTimer = setTimeout(() => preview().catch(() => {}), 450);
   }
 
+  async function renderPlot(item, snapshot) {
+    if (!item) throw Error(t('项目所需方案或版本未安装。原数据可从「项目」备份。'));
+    const {params:{width,height}} = preparePlot(item,snapshot), size = {width,height};
+    const source = native ? await call('render',snapshot) : await browserPlot(item,snapshot);
+    return {svg:sanitizeSVG(source,size),size};
+  }
+
   async function preview() {
     clearTimeout(plotTimer);
     const item = scheme(), wanted = plotRevision;
@@ -94,16 +103,14 @@ export async function createFiguraController(context, native) {
     const operation = (async () => {
       plotStatus(t('正在绘图…'));
       try {
-        const {params:{width, height}} = preparePlot(item, snapshot), size = {width, height};
-        const source = native ? await call('render', snapshot) : await browserPlot(item, snapshot);
+        const {svg,size} = await renderPlot(item,snapshot);
         if (disposed || wanted !== plotRevision) return null;
-        const svg = sanitizeSVG(source, size);
         const image = find('image');
         image.src = svgImage(svg);
         image.hidden = false;
         find('placeholder').hidden = true;
         find('stage').classList.remove('is-stale');
-        plotStatus(msg`${width} × ${height} px · 预览已更新`);
+        plotStatus(msg`${size.width} × ${size.height} px · 预览已更新`);
         return plot = {svg, size, revision:wanted};
       } catch (error) {
         if (!disposed && wanted === plotRevision) {
@@ -311,11 +318,12 @@ export async function createFiguraController(context, native) {
     }
     const incoming = readWorkspace(value);
     if (state.projects.length + incoming.projects.length > 200) throw Error(t('项目已达 200 个，请备份后整理。'));
-    await replaceDraft(async () => {
+    const apply = async () => {
       find('projects').close();
       const projects = incoming.projects.map(item => ({...item, projectId:crypto.randomUUID()}));
       state.projects.push(...projects);
       state.metadata = {...incoming.metadata, ...state.metadata};
+      if (incoming.montage) state.montage=incoming.montage;
       const working = incoming.draft ? {...incoming.draft, touched:true} : null;
       if (working) delete working.projectId;
       if (working) activate(working);
@@ -325,6 +333,59 @@ export async function createFiguraController(context, native) {
       }
       await persist();
       status(msg`已导入 ${projects.length} 个已保存项目`);
+    };
+    if (incoming.montage && state.montage?.panels.length) {
+      confirm(t('导入会替换当前拼版草稿。当前图稿可先保存。'),apply,Boolean(draft()?.touched));
+    } else await replaceDraft(apply);
+  }
+
+  function openMarkdownImport() {
+    const projectOptions=state.projects.filter(project=>project.projectId).map(project=>
+      `<option value="project:${escape(project.projectId)}">${escape(project.name || t('未命名绘图'))} · ${escape(project.projectId.slice(0,8))}</option>`).join('');
+    const schemeOptions=schemes.filter(item=>!item.error).map(item=>
+      `<option value="scheme:${escape(item.id)}">${escape(item.name)} · ${escape(item.id)}</option>`).join('');
+    const select=find('markdown-template');
+    select.innerHTML=html`<optgroup label="绘图方案">${schemeOptions}</optgroup>`+
+      (projectOptions?html`<optgroup label="已保存项目">${projectOptions}</optgroup>`:'');
+    const preferred=scheme()?.id||'grouped-line';
+    if([...select.options].some(option=>option.value==='scheme:'+preferred))select.value='scheme:'+preferred;
+    button('markdown-template').disabled=!select.value;
+    showDialog('markdown-import');
+  }
+
+  function markdownSource(config) {
+    const project=config.project&&state.projects.find(item=>item.projectId===config.project);
+    if(config.project&&!project)throw Error(t('找不到该编号的绘图项目。'));
+    const item=schemes.find(item=>!item.error&&item.id===(project?.schemeId||config.scheme)&&(!project||item.version===project.schemeVersion));
+    if(!item)throw Error(t('找不到该编号对应的绘图方案或版本。'));
+    return {project,item};
+  }
+
+  async function downloadMarkdown() {
+    const selection=find('markdown-template').value, separator=selection.indexOf(':');
+    const type=selection.slice(0,separator), id=selection.slice(separator+1);
+    const {project,item}=markdownSource({[type]:id});
+    const styleExample=project?.params.figureStyle&&project.params.figureStyle!=='Figura 默认'&&item.samples.includes('style-example.csv');
+    const csv=await sample(item,styleExample?'style-example.csv':sampleName);
+    await context.saveText(plotMarkdownExample({scheme:item.id,project:project?.projectId,name:project?.name||item.name,csv}),
+      'Materia-'+filename(project?.name||item.id)+'-绘图参考.md','md');
+  }
+
+  async function importMarkdown(file) {
+    if(file.size>20*1024*1024)throw Error(t('Markdown 文件最多 20 MB。'));
+    const input=readPlotMarkdown(await file.text()), {project,item}=markdownSource(input);
+    const value={
+      schemeId:item.id,schemeVersion:item.version,name:input.name||file.name.replace(/\.m(?:d|arkdown)$/i,'').slice(0,250),
+      rows:input.rows,mapping:mapColumns(item,input.rows[0],project?.mapping),
+      params:{...defaults(item),...project?.params},themeId:project?.themeId,touched:true,
+    };
+    preparePlot(item,value);
+    await replaceDraft(async()=>{
+      find('markdown-import').close();
+      activate(value);
+      await preview();
+      await persist();
+      status(t('Markdown 已导入并生成预览。'));
     });
   }
 
@@ -345,19 +406,24 @@ export async function createFiguraController(context, native) {
   async function exportFigure(type) {
     const latest = await preview();
     if (!latest) throw Error(t('数据已变化，请重新导出。'));
-    const name = filename(draft().name) + '.' + type;
+    await saveFigure(latest,type,draft().name,Number(find('dpi').value));
+  }
+
+  async function saveFigure(latest,type,label,dpi,automatic=false) {
+    const name = filename(label) + '.' + type;
     let result;
-    if (type === 'svg') result = await context.saveText(latest.svg, name, 'svg');
+    if (type === 'svg') result = native ? await call('saveFigure',{filename:name,type,svg:latest.svg,automatic}) : await context.saveText(latest.svg,name,'svg');
     if (type === 'png') {
-      const {blob} = await exportPNG(latest.svg, latest.size, Number(find('dpi').value));
-      if (native) result = await native.saveImage({filename:name, bytes:new Uint8Array(await blob.arrayBuffer()), type:'png'});
+      const {blob} = await exportPNG(latest.svg, latest.size, dpi);
+      if (native) result = await call('saveFigure',{filename:name,type,bytes:new Uint8Array(await blob.arrayBuffer()),automatic});
       else download(blob, name);
     }
     if (type === 'pdf') {
-      const bytes = await call('pdf', {svg:latest.svg, ...latest.size});
-      result = await call('savePDF', {filename:name, bytes});
+      const bytes = await call('pdf',{svg:latest.svg,...latest.size,montage:latest.montage===true});
+      result = await call('saveFigure',{filename:name,type,bytes,automatic});
     }
     status(result?.canceled ? t('已取消导出') : msg`${type.toUpperCase()} 已导出`);
+    return result;
   }
 
   async function rescan() {
@@ -457,10 +523,14 @@ export async function createFiguraController(context, native) {
       changed();
     },
     export: () => { updateExportSize(); showDialog('export-dialog'); },
+    montage: () => montage.show(),
     svg: () => exportFigure('svg'),
     png: () => exportFigure('png'),
     pdf: () => exportFigure('pdf'),
     projects: () => { updateProjects(); showDialog('projects'); },
+    'quick-import':openMarkdownImport,
+    'choose-markdown':()=>find('markdown-file').click(),
+    'markdown-template':downloadMarkdown,
     save: () => saveProject(),
     'save-copy': () => saveProject(true),
     'open-project': () => {
@@ -534,7 +604,14 @@ export async function createFiguraController(context, native) {
   }
 
   await load();
-  host.innerHTML = workspaceHTML(Boolean(native));
+  host.innerHTML = workspaceHTML(Boolean(native)) + montageHTML(Boolean(native));
+  const montage = createMontage({
+    dialog:find('montage'),on:context.on,read:()=>state.montage,
+    write:value=>{state.montage=value;changed(false,false);},
+    getDraft:()=>scheme()?draft():null,getProjects:()=>state.projects,
+    plot:project=>renderPlot(schemes.find(item=>!item.error&&item.id===project.schemeId&&item.version===project.schemeVersion),project),
+    save:saveFigure,run,images:native?call:null,
+  });
   updateCatalog();
   renderDraft();
   schedulePlot();
@@ -570,10 +647,10 @@ export async function createFiguraController(context, native) {
       selectedProject = target.value;
       for (const action of ['open-project', 'delete-project']) button(action).disabled = !selectedProject;
     }
-    if (target !== find('file') && target !== find('project-file')) return;
+    if (![find('file'),find('project-file'),find('markdown-file')].includes(target)) return;
     const [file] = target.files;
     target.value = '';
-    if (file) run(() => target === find('file') ? importData(file) : importProject(file));
+    if (file) run(() => target===find('file')?importData(file):target===find('markdown-file')?importMarkdown(file):importProject(file));
   });
 
   context.on(host, 'paste', event => {
@@ -601,7 +678,7 @@ export async function createFiguraController(context, native) {
   context.on(host, 'click', event => {
     const control = event.target.closest('[data-fig-action]'), action = control?.dataset.figAction;
     if (!action || !Object.hasOwn(actions, action) || control.disabled) return;
-    if (action === 'done' || action === 'choose-data' || action === 'import-project') actions[action](control);
+    if (action === 'done' || action === 'choose-data' || action === 'import-project' || action === 'choose-markdown') actions[action](control);
     else run(() => actions[action](control));
   });
 
@@ -612,7 +689,8 @@ export async function createFiguraController(context, native) {
     if (type !== 'drop') return;
     const [file] = event.dataTransfer.files;
     if (!file) return;
-    if (/\.json$/i.test(file.name)) run(() => importProject(file));
+    if (/\.m(?:d|arkdown)$/i.test(file.name)) run(() => importMarkdown(file));
+    else if (/\.json$/i.test(file.name)) run(() => importProject(file));
     else if (!scheme()) status(t('请先选择绘图方案。'), true);
     else run(async () => {
       chooseTab('data');

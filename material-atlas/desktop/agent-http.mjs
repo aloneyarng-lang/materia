@@ -19,6 +19,7 @@ export async function handleAgentRequest(req, res) {
     // Decode only after all chunks to preserve split UTF-8 sequences.
     let payload;
     try { payload = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new Error('请求格式无效。'); }
+    if(payload.config?.connection==='antigravity')throw Error('本地反重力接入仅在 Materia 桌面版中可用。');
     if(req.url==='/api/ai-agent/models'){const result=await listAgentModels(payload.config,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}
     if(req.url==='/api/ai-agent/test'){const result=await testAgentConnection(payload.config,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}
     if(req.url==='/api/translation'){const result=await translateText(payload.config,payload.request,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}

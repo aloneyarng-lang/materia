@@ -4,6 +4,20 @@
 
 ## 配置与使用
 
+当需要选择讨论方向、偏好或下一步时，AI 可给出三个可选回复，显示为画面中部的半透明选项条。悬停或点击会提亮，点击后继续对话，输入框中尚未发送的草稿会保留。选项会随历史记录保存，也会包含在后续对话上下文中；普通问答可以直接回答。
+
+左上角可切换 Amadeus 和 DeepSeek 娘，两者分别保存角色卡。切换会新建对话，历史对话继续使用当时的角色设定。DeepSeek 场景使用本地 Workshop 3787353838 的视频，开启动态后，发送消息会触发看手机、去电脑前、返回床上的完整片段。回复提前结束也会继续播放动作；动作期间再次发送会保留一次后续触发。
+
+动作映射集中在 `dist/agent-actors.js`，通过事件名映射到片段序列，播放器位于 `dist/agent-actions.js`。扩展指令时，增加片段与事件映射，再由对应业务调用 `characterStage.trigger(事件名)`。切换角色、隐藏窗口或关闭动态时会停止或暂停对应场景播放。
+
+红莉栖眨眼采用独立闭眼素材与眼睑分层合成，过渡限制在眼部小区域，避免流向图拉扯眼睛和眉毛。背景复用了原场景的脉动纹理，加入独立的缓慢流动、明暗变化和粒子运动，仍采用浏览器兼容渲染，未接入系统音频响应。
+
+助手采用整屏场景、中央 Amadeus 立绘与底部横向对话框的构图。右下角固定九宫格可打开对话记录、历史对话、角色卡、上下文与 AI 设置，点击「返回」收起浮层。立绘会进行轻量呼吸动画，并在思考时切换姿态。「动态效果」可关闭动画，系统的减少动态效果设置也会生效。
+
+「角色卡」可编辑角色名、性格、开场白，导入或导出 JSON，也可导入 Character Card V2 的 JSON。自定义形象支持不超过 2 MB 的 PNG、JPEG 或 WebP。保存角色卡会开始新对话，已有对话可从「历史对话」恢复，继续使用当时的性格设定。
+
+「上下文」可查看发送给模型的最近 12 条历史消息。「导出对话」保存为 Markdown。日常问题可以直接交流，研究问题继续使用文献检索工具与来源引用。
+
 1. 点击右上角「对话操作 → 服务设置」，从「AI 服务厂商」选择厂商，填入该站点的 API 密钥。停止输入后自动查询模型列表，也可点击「刷新模型」。查询只获取列表，不提交问题、文献或生成请求；不会自动保存密钥或设置。
 2. 从「可用模型」选择模型并保存。列表以服务实时返回为准，不维护固定的模型清单；列出不代表账号已获全部调用权限，研究助手需模型支持工具调用。旧设置中的模型不会因刷新列表而丢失。列表获取失败时可勾选「手动填写模型 ID」。「自定义服务 / 本机模型」保留地址、模型和 Chat Completions / Responses / Claude Messages 协议设置，本机服务可留空密钥。
 3. 保存设置，选择「整个文献库」或「当前选中文献」。后者使用列表中勾选的文献；未勾选时使用当前打开的文献。空选择会阻止发送，不会退回全库。
@@ -81,3 +95,7 @@ OpenAI 预设采用 Responses；Gemini 采用 Google 的 OpenAI 兼容接口；C
 接口依据：[OpenAI 模型列表](https://developers.openai.com/api/reference/resources/models/methods/list)、[DeepSeek 模型列表](https://api-docs.deepseek.com/api/list-models/)、[Gemini 兼容接口](https://ai.google.dev/gemini-api/docs/openai)、[Claude 模型列表](https://platform.claude.com/docs/en/api/models/list)、[阿里云百炼模型列表](https://help.aliyun.com/zh/model-studio/list-models)、[硅基流动模型列表](https://api-docs.siliconflow.cn/docs/api/models-get)、[百度千帆模型列表](https://cloud.baidu.com/doc/qianfan-api/s/Dmba8k71y)。各预设的官方文档地址同时保存在 `dist/agent-providers.js`。
 
 验证：`npm test`、`npm run check`、`npm run verify:agent-providers`、`npm run verify:agent-providers-desktop`。使用隔离文献库与模拟接口，覆盖无模型时发现、切换厂商、迟到结果、手动模式、错误提示、原生 Claude 工具轮次、密钥隔离与桌面加密密钥重启，不消耗真实服务额度。实际厂商账号可调用的模型以其返回及权限为准。
+
+当前场景兼容用户提供的 Workshop 2950669609。使用原始透明立绘、几何背景和动态遮罩，以 WebGL 实现头发、衣服、呼吸、头部及眨眼动态。隐藏助手或切换到其他应用时暂停，关闭动态后显示静态原图。音频响应尚未接入。
+
+DeepSeek 的封面使用视频待机段的原尺寸帧，完成目标帧解码后才显示视频，以避免正方形预览图先被放大、再切回横屏视频。

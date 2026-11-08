@@ -9,6 +9,8 @@ import {FigureFile} from '../desktop/figura/store.mjs';
 import {defaults, emptyWorkspace, mapColumns, normalizeTable, preparePlot, readDraft, readWorkspace} from '../dist/figura/model.js';
 import {parseDelimited} from '../dist/prediction-import.js';
 import {applyFigureTheme, FIGURE_THEMES, rampColor} from '../dist/figura/schemes/figure-themes.js';
+import {appendPanels,arrangePanels,autoSizePanels,emptyMontage,montageBoard,montageLayout,panelBox,readMontage} from '../dist/figura/montage-layout.js';
+import {plotMarkdownExample,readPlotMarkdown} from '../dist/figura/markdown-plot.js';
 
 const bundled = fileURLToPath(new URL('../dist/figura/schemes/', import.meta.url));
 const temporary = async t => {
@@ -115,4 +117,98 @@ test('drawing workspaces are independent and preserve old bytes after an invalid
   assert.equal((await store.load()).draft.name, 'Second');
   await mkdir(other);
   assert.deepEqual(await new FigureFile(other).load(), emptyWorkspace());
+});
+
+const montagePanels=Array.from({length:4},(_,index)=>({name:String(index),svg:'<svg/>',width:900,height:600,weight:1}));
+
+test('montage migrates older drafts and can explicitly arrange four figures in one row', () => {
+  const state=readMontage({...emptyMontage(),panels:montagePanels});
+  assert.equal(new Set(state.panels.map(panel=>panel.y)).size,2);
+  const row=arrangePanels({...state,columns:4});
+  assert.equal(new Set(row.map(panel=>panel.y)).size,1);
+  assert.ok(row.every((panel,i)=>i===0||panel.x>row[i-1].x+panelBox(row[i-1],true).width));
+  const large=montageLayout(readMontage({...state,columns:1,panels:[...montagePanels,...montagePanels,...montagePanels]}));
+  assert.ok(large.width<=4000&&large.height<=4000&&large.width*large.height<6500000);
+});
+
+test('montage keeps free positions, relative sizes and original proportions in the rectangular export', () => {
+  const coordinates=[[-180,-40],[955,-150],[690,400],[1360,610]];
+  const panels=montagePanels.map((panel,i)=>({...panel,x:coordinates[i][0],y:coordinates[i][1],weight:i===0?1.6:.75}));
+  const state=readMontage({...emptyMontage(),panels});
+  assert.deepEqual(readWorkspace({...emptyWorkspace(),montage:state}).montage,state);
+  assert.deepEqual(montageBoard(state).placements.map(({x,y})=>[x,y]),coordinates);
+  const {width,height,placements}=montageLayout(state);
+  const left=Math.min(...coordinates.map(pair=>pair[0])),top=Math.min(...coordinates.map(pair=>pair[1]));
+  for(const [i,tile] of placements.entries()){
+    assert.equal(tile.x,coordinates[i][0]-left+state.gap);
+    assert.equal(tile.y,coordinates[i][1]-top+state.gap);
+    assert.ok(Math.abs(tile.width/(tile.height-tile.labelHeight)-1.5)<1e-10);
+    assert.ok(tile.x>0&&tile.y>0&&tile.x+tile.width<width&&tile.y+tile.height<height);
+  }
+  assert.ok(Math.abs(placements[0].width/placements[1].width-1.6/.75)<1e-10);
+});
+
+test('montage bulk addition finds open space while preserving previously placed figures', () => {
+  const first={...montagePanels[0],x:215,y:460};
+  const state=readMontage({...emptyMontage(),panels:[first]});
+  const panels=appendPanels(state,montagePanels.slice(1));
+  assert.deepEqual(panels[0],first);
+  assert.equal(panels.length,4);
+  const boxes=panels.map(panel=>panelBox(panel,true));
+  for(const [index,box] of boxes.entries()){
+    for(const other of boxes.slice(index+1)){
+      assert.ok(box.x+box.width<=other.x||other.x+other.width<=box.x||box.y+box.height<=other.y||other.y+other.height<=box.y);
+    }
+  }
+  assert.deepEqual(readMontage({...state,panels:[first,...montagePanels.slice(1)]}).panels,panels);
+});
+
+test('automatic montage sizing keeps a single row and the spatial hierarchy of a large panel beside three small panels', () => {
+  const row=readMontage({...emptyMontage(),columns:4,panels:montagePanels.map((panel,i)=>({...panel,weight:i===1?.5:1}))});
+  const resized=autoSizePanels(row);
+  assert.ok(resized.some((panel,i)=>panel.weight!==row.panels[i].weight));
+  const rowBoxes=resized.map(panel=>panelBox(panel,true));
+  assert.ok(rowBoxes.every((box,i)=>i===0||box.x>=rowBoxes[i-1].x+rowBoxes[i-1].width));
+  assert.ok(rowBoxes.every(box=>Math.abs(box.y+box.height/2-rowBoxes[0].y-rowBoxes[0].height/2)<=1));
+  const staggered={...row,panels:row.panels.map((panel,i)=>({...panel,y:panel.y+(i===0?350:0)}))};
+  const staggeredBoxes=autoSizePanels(staggered).map(panel=>panelBox(panel,true));
+  assert.ok(staggeredBoxes[0].y>staggeredBoxes[2].y+150);
+  const panels=montagePanels.map((panel,i)=>({...panel,width:i===0?900:1000,height:i===0?1200:400,
+    weight:i===0?2:.7,x:i===0?-500:200,y:i===0?-200:-200+(i-1)*340}));
+  const original=readMontage({...emptyMontage(),panels});
+  const result=autoSizePanels(original);
+  const boxes=result.map(panel=>panelBox(panel,true));
+  for(const [i,box] of boxes.entries()){
+    assert.ok(Math.abs(box.width/(box.height-box.labelHeight)-panels[i].width/panels[i].height)<1e-10);
+    assert.equal(result[i].svg,panels[i].svg);
+    for(const other of boxes.slice(i+1))assert.ok(box.x+box.width<=other.x||other.x+other.width<=box.x||box.y+box.height<=other.y||other.y+other.height<=box.y);
+  }
+  assert.ok(boxes.slice(1).every(box=>box.x>=boxes[0].x+boxes[0].width));
+  assert.ok(boxes[1].y<boxes[2].y&&boxes[2].y<boxes[3].y);
+  assert.deepEqual(readMontage({...original,panels:result}).panels,result);
+  assert.deepEqual(original.panels,panels);
+});
+
+test('automatic montage sizing handles overlapping figures, extreme aspect ratios and coordinate limits', () => {
+  assert.deepEqual(autoSizePanels(emptyMontage()),[]);
+  for(const labels of [false,true]){
+    const state=readMontage({...emptyMontage(),gap:12,labels,panels:Array.from({length:12},(_,i)=>({
+      ...montagePanels[0],width:i%2?1:4000,height:i%2?4000:1,weight:i%3?.25:3,x:29990,y:-29990,
+    }))});
+    const result=autoSizePanels(state),boxes=result.map(panel=>panelBox(panel,labels));
+    assert.doesNotThrow(()=>readMontage({...state,panels:result}));
+    for(const [i,box] of boxes.entries()){
+      assert.ok(Number.isFinite(box.width)&&Number.isFinite(box.height));
+      for(const other of boxes.slice(i+1))assert.ok(box.x+box.width<=other.x||other.x+other.width<=box.x||box.y+box.height<=other.y||other.y+other.height<=box.y);
+    }
+  }
+});
+
+test('Markdown reference templates round-trip and support both plot scheme and project IDs', () => {
+  const template=plotMarkdownExample({scheme:'grouped-line',name:'Example',csv:'x,y,group\n1,2,A\n3,4,B'});
+  assert.deepEqual(readPlotMarkdown(template),{scheme:'grouped-line',name:'Example',rows:[['x','y','group'],['1','2','A'],['3','4','B']]});
+  const project='---\n项目编号: abc-123\n---\n| x | y | group |\n| --- | ---: | --- |\n| 1 | 7 | A\\|B |';
+  assert.deepEqual(readPlotMarkdown(project),{project:'abc-123',rows:[['x','y','group'],['1','7','A|B']]});
+  assert.throws(()=>readPlotMarkdown(template.replace('scheme: grouped-line','scheme: grouped-line\nproject: other')),/只填写一个/);
+  assert.throws(()=>readPlotMarkdown('---\nscheme: x\n---\n~~~csv\nx,y\n1,2'),/结束标记/);
 });

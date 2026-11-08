@@ -5,7 +5,7 @@ import path from 'node:path';
 
 export const figureProtocol = 'materia-figure';
 const html = '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;padding:0}svg{display:block}</style><body></body>';
-const policy = "default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+const policy = "default-src 'none'; script-src 'self'; worker-src 'self'; img-src data:; style-src 'unsafe-inline'; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
 export function createFigureRuntime(dist) {
   const partition = session.fromPartition('materia-figura-runtime');
@@ -63,10 +63,10 @@ export function createFigureRuntime(dist) {
       if (typeof result?.svg !== 'string') throw Error(result?.error || '方案没有生成 SVG。');
       return result.svg;
     },
-    async pdf(svg, size) {
+    async pdf(svg, size, montage) {
       const assets = new Map([['/svg.js', await readFile(path.join(dist, 'svg.js'))]]);
       return run(assets, async page => {
-        const args = JSON.stringify([svg, size]);
+        const args = JSON.stringify([svg,size,montage]);
         await page.executeJavaScript(`(async () => {
           const {parseSVG} = await import('/svg.js');
           const style = document.createElement('style');
@@ -74,6 +74,11 @@ export function createFigureRuntime(dist) {
           document.head.append(style);
           document.body.append(document.importNode(parseSVG(...${args}), true));
           await document.fonts.ready;
+          await Promise.all([...document.querySelectorAll('image')].map(node=>{
+            const source=new Image();
+            source.src=node.getAttribute('href');
+            return source.decode();
+          }));
         })()`);
         return page.printToPDF({printBackground:true, preferCSSPageSize:true, margins:{top:0, right:0, bottom:0, left:0}});
       }, 15000, '生成 PDF 超时。');

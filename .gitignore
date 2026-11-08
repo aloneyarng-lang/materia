@@ -10,6 +10,7 @@ release/
 *.tar
 *.tar.gz
 *.tgz
+*.mp4
 
 # Local environments & test results
 .local/
@@ -40,6 +41,7 @@ library.previous.json
 preferences.json
 desktop-profile/
 文献库/
+/图片库/
 papers/
 backups/
 .trash/

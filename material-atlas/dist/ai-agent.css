@@ -51,3 +51,122 @@
 #agent-connection-status{max-height:75px;overflow:auto;flex-shrink:0}
 #agent-connection-status:empty{display:none}
 .agent-panel:has(#agent-settings[open]) .agent-messages{min-height:0}
+/* Full-scene visual novel composition. */
+.agent-panel{inset:12px 14px 12px 62px;width:auto;display:block;border-radius:14px;overflow:hidden;background:#e3e9df}
+.agent-stage{position:absolute;inset:0;min-height:0;border:0;background:#e3e9df url('./assets/amadeus/laboratory.svg') center/cover no-repeat;isolation:isolate;overflow:hidden;color:#263c37}
+.agent-stage-grid{position:absolute;inset:0;background:linear-gradient(180deg,#f3f5e860,transparent 24%,transparent 55%,#32463c38);pointer-events:none}
+.agent-stage-signal{position:absolute;top:82px;left:30px;right:30px;display:flex;justify-content:space-between;font:9px monospace;letter-spacing:2px;opacity:.65}
+.agent-stage-signal span{color:#32634c;letter-spacing:1px}
+.agent-portrait{position:absolute;top:2%;left:15%;width:70%;height:140%;object-fit:contain;object-position:center top;mix-blend-mode:multiply;transform-origin:50% 70%;pointer-events:none}
+.agent-panel .agent-header{position:absolute;inset:0 0 auto;z-index:5;height:70px;padding:15px 28px;border:0;background:linear-gradient(#f2f4e8c9,transparent);align-items:flex-start}
+.agent-header small{font-size:9px;letter-spacing:3px}.agent-header h2{font-size:16px}
+.agent-toolbar{position:absolute;right:76px;top:22px;padding:0;z-index:6;gap:14px}.agent-toolbar label{font-size:10px}.agent-toolbar select{background:#f4f7edb0;border-color:#fff8}
+.agent-chatbar{display:none}
+.agent-character-tools{position:absolute;bottom:calc(clamp(254px,32dvh,370px) + 10px);right:5%;left:5%;z-index:8;display:flex;justify-content:flex-end;gap:4px;flex-wrap:wrap;padding:0}
+.agent-character-tools button{font-size:11px!important;padding:6px 12px!important;border-radius:4px;border:1px solid #ffffff75!important;background:#f3f6e9c4;color:#36564b;backdrop-filter:blur(12px)}
+.agent-character-tools button:hover{background:#ffffffed}
+.agent-dialogue{position:absolute;inset:auto 0 0;height:clamp(254px,32dvh,370px);padding:20px max(5%,24px) 14px;display:grid;grid-template-rows:auto minmax(45px,1fr) auto auto;gap:7px;border:0;border-top:1px solid #fff9;border-radius:0;background:linear-gradient(100deg,#f6f6e9ef,#e7eee1ed);backdrop-filter:blur(18px);box-shadow:0 -8px 40px #2d504312;z-index:4;max-height:none;overflow:hidden;color:#233c35}
+.agent-dialogue>small{font-size:16px;font-weight:650;color:#3c6d59;letter-spacing:2px;margin:0}
+.agent-stage-answer{overflow:auto;min-height:0;font-size:15px;line-height:1.9;overflow-wrap:anywhere;padding-right:12px}
+.agent-stage-answer>:first-child{margin-top:0}.agent-stage-answer>:last-child{margin-bottom:0}.agent-stage-answer .agent-citation{color:#35654e}
+.agent-dialogue .agent-status{min-height:0;padding:0;font-size:11px;max-height:38px;overflow:auto;color:#4b7160}
+.agent-dialogue .agent-composer{margin:0;border:0;border-top:1px solid #78998040;padding:9px 0 0;display:flex;align-items:center;gap:14px;min-height:0}
+.agent-dialogue .agent-composer textarea{flex:1;resize:none;min-height:42px;max-height:75px;height:44px;padding:11px 14px;background:#fffffc80;color:#29483b;border:1px solid #8fa79850;font-size:13px}
+.agent-dialogue .agent-composer>div{margin:0;gap:8px}.agent-dialogue .agent-composer small{display:none}
+.agent-dialogue .agent-composer .primary{background:#416d58;color:#fff;border-color:#416d58}
+.agent-art-credit{position:absolute;bottom:calc(clamp(254px,32dvh,370px) + 48px);right:5%;font-size:8px;color:#3e5e51;opacity:.6}
+.agent-panel .agent-messages{display:none}.agent-panel.agent-log-open .agent-messages{display:block}
+.agent-panel .agent-settings,.agent-panel .agent-character-editor,.agent-panel .agent-context,.agent-panel .agent-history,.agent-panel .agent-messages{position:absolute;z-index:7;top:88px;left:50%;transform:translateX(-50%);width:min(780px,calc(100% - 64px));max-height:calc(100% - clamp(254px,32dvh,370px) - 140px);overflow:auto;margin:0;padding:18px 22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 18px 70px #193c3438;color:var(--ink)}
+.agent-panel .agent-settings:not([open]){display:none}
+.agent-settings form{max-height:none}.agent-config-fields{overflow:visible}.agent-settings .agent-data-notice{display:block;margin:12px 0 0}
+.agent-character-editor form{display:grid;gap:10px;padding-top:12px}.agent-character-editor label{display:grid;gap:5px;font-size:12px}.agent-character-editor form>div{display:flex;flex-wrap:wrap;gap:10px}.agent-character-editor button{font-size:11px}
+.agent-context pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.8}.agent-character-editor summary,.agent-context summary{cursor:pointer;font-weight:600}
+.agent-panel .agent-history[hidden],.agent-panel .agent-messages[hidden],.agent-panel .agent-character-editor[hidden],.agent-panel .agent-context[hidden],.agent-dialogue .agent-composer[hidden]{display:none}
+.agent-panel.agent-motion .agent-portrait{animation:amadeus-breathe 7s ease-in-out infinite}.agent-motion.agent-thinking .agent-stage-signal span{animation:amadeus-signal 1.3s ease-in-out infinite}
+@keyframes amadeus-breathe{50%{transform:translateY(-4px) scale(1.006)}}@keyframes amadeus-signal{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.agent-panel .agent-portrait,.agent-panel .agent-stage-signal span{animation:none!important}}
+@media(max-width:760px){.agent-panel{inset:6px;border-radius:10px}.agent-panel .agent-header{padding:12px 16px;height:58px}.agent-header h2{font-size:13px}.agent-header small{font-size:8px}.agent-toolbar{right:54px;top:16px}.agent-toolbar label{display:none}.agent-toolbar .text-button{font-size:10px}.agent-stage-signal{top:65px;left:16px;right:16px;font-size:8px}.agent-portrait{left:0;width:100%;height:120%;top:8%}.agent-character-tools{left:12px;right:12px;gap:3px}.agent-character-tools button{font-size:10px!important;padding:5px 7px!important}.agent-dialogue{padding:15px 18px 12px}.agent-dialogue>small{font-size:14px}.agent-stage-answer{font-size:13px}.agent-dialogue .agent-composer{gap:8px}.agent-dialogue .agent-composer .primary{padding:8px 12px}.agent-panel .agent-settings,.agent-panel .agent-character-editor,.agent-panel .agent-context,.agent-panel .agent-history,.agent-panel .agent-messages{top:80px;width:calc(100% - 28px);padding:14px;max-height:calc(100% - clamp(254px,32dvh,370px) - 135px)}}
+.agent-portrait{left:50%;width:auto;max-width:none;height:140%;mix-blend-mode:normal;transform:translateX(-50%)}
+.agent-stage:not(.agent-custom-art) .agent-portrait{clip-path:polygon(51% 4.4%,59% 5%,64% 8%,66% 12%,65% 18%,64% 22%,68% 24%,71% 28%,73% 37%,75% 45%,73% 49%,70% 50%,73% 61%,72% 66%,65% 68%,65% 100%,35% 100%,35% 68%,29% 65%,30% 60%,32% 50%,29% 48%,29% 43%,31% 35%,33% 28%,35% 24%,40% 22%,38% 17%,38% 11%,40% 7%,45% 5%)}
+.agent-thinking .agent-stage:not(.agent-custom-art) .agent-portrait{clip-path:polygon(47% 2%,58% 3%,65% 7%,69% 14%,71% 23%,73% 30%,73% 43%,76% 54%,76% 100%,27% 100%,27% 60%,29% 43%,28% 35%,31% 29%,37% 25%,37% 17%,35% 11%,39% 5%)}
+@keyframes amadeus-breathe{0%,100%{transform:translateX(-50%)}50%{transform:translateX(-50%) translateY(-4px) scale(1.006)}}
+@media(max-width:760px){.agent-portrait{left:50%;width:auto;height:120%}}
+/* Supplied Workshop wallpaper and the reference screen's 3 x 3 function pad. */
+.agent-panel{--agent-dialogue-height:clamp(220px,25dvh,310px)}
+.agent-stage{background:#f7f7f7 url('./assets/amadeus/workshop-2950669609/background.png') center/cover no-repeat}
+.agent-stage-grid{background:radial-gradient(ellipse at 50% 40%,transparent 35%,#00000023 100%)}
+.agent-stage .agent-portrait,.agent-effect-canvas{position:absolute;left:50%;top:1%;height:118%;width:auto;aspect-ratio:3555/5000;max-width:none;transform:translateX(-50%);object-fit:contain;mix-blend-mode:normal;pointer-events:none;clip-path:none!important;animation:none!important}
+.agent-effect-canvas{display:block}.agent-effect-canvas[hidden]{display:none}
+.agent-stage.agent-wallpaper-ready:not(.agent-custom-art) .agent-portrait{visibility:hidden}
+.agent-stage.agent-custom-art .agent-effect-canvas{display:none}
+.agent-character-tools{left:auto;right:18px;bottom:18px;width:180px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:0;z-index:8}
+.agent-character-tools .agent-function-label{grid-column:1/-1;text-align:center;letter-spacing:2px;font:9px monospace;color:#fff;opacity:.8;border-bottom:1px solid #ffffff70;padding-bottom:3px}
+.agent-character-tools button{height:51px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:3px!important;border:1px solid #ffffff55!important;border-radius:4px;background:#a5aaa852;color:#fff;backdrop-filter:blur(8px)}
+.agent-character-tools button:hover,.agent-character-tools button[aria-pressed=true]{background:#eeeeee65}
+.agent-character-tools button svg{width:20px;height:20px}.agent-character-tools button span{font-size:9px;line-height:1.1}.agent-character-tools button small{font-size:7px;letter-spacing:.8px;line-height:1.1;opacity:.8}
+.agent-dialogue{height:var(--agent-dialogue-height);padding:16px 220px 14px 5%;background:linear-gradient(100deg,#24232bc9,#38363db3);color:#fff;border-top:1px solid #ffffff9c;backdrop-filter:blur(9px);box-shadow:none}
+.agent-dialogue>small{color:#fff;font-size:17px}.agent-stage-answer{font-size:15px;color:#fff}.agent-dialogue .agent-status{color:#e4e0e7}.agent-dialogue .agent-composer{border-top-color:#ffffff35}
+.agent-dialogue .agent-composer textarea{background:#ffffff13;color:#fff;border-color:#ffffff4a}.agent-dialogue .agent-composer textarea::placeholder{color:#e0dce4b0}.agent-dialogue .agent-composer .primary{background:#ffffff25;border-color:#ffffff55}
+.agent-stage-answer .agent-citation,.agent-stage-answer a{color:#e5d2fa}.agent-stage-answer :is(h1,h2,h3,h4,h5,h6){color:#fff}.agent-stage-answer :is(th,code,pre){background:#ffffff17;color:#fff}
+.agent-art-credit{bottom:calc(var(--agent-dialogue-height) + 10px);right:18px;color:#333;font-size:8px}.agent-stage-signal{color:#333}.agent-panel .agent-header{background:linear-gradient(#ffffffad,transparent)}
+.agent-panel .agent-settings,.agent-panel .agent-character-editor,.agent-panel .agent-context,.agent-panel .agent-history,.agent-panel .agent-messages{max-height:calc(100% - var(--agent-dialogue-height) - 115px)}
+.agent-wallpaper-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}.agent-wallpaper-particles i{position:absolute;left:12%;top:22%;width:18px;height:20px;background:#35313f;clip-path:polygon(50% 0,100% 100%,0 100%);opacity:.4}
+.agent-wallpaper-particles i:nth-child(2){left:24%;top:66%;width:12px}.agent-wallpaper-particles i:nth-child(3){left:76%;top:36%;width:30px}.agent-wallpaper-particles i:nth-child(4){left:87%;top:62%;width:12px}.agent-wallpaper-particles i:nth-child(5){left:7%;top:80%;width:25px}.agent-wallpaper-particles i:nth-child(6){left:65%;top:12%;width:14px}.agent-wallpaper-particles i:nth-child(7){left:32%;top:5%;width:9px}.agent-wallpaper-particles i:nth-child(8){left:94%;top:16%;width:20px}
+.agent-motion .agent-wallpaper-particles i{animation:agent-triangles 12s ease-in-out infinite alternate}.agent-motion .agent-wallpaper-particles i:nth-child(even){animation-delay:-6s;animation-duration:17s}
+@keyframes agent-triangles{to{transform:translate(30px,-45px) rotate(100deg);opacity:.15}}
+@media(prefers-reduced-motion:reduce){.agent-wallpaper-particles i{animation:none!important}}
+@media(max-width:760px){.agent-character-tools{left:auto;right:10px;bottom:12px;width:138px;gap:3px}.agent-character-tools button{height:46px;padding:2px!important}.agent-character-tools button svg{width:17px;height:17px}.agent-character-tools button span{font-size:8px}.agent-character-tools button small{font-size:6px}.agent-dialogue{padding:14px 163px 12px 18px}.agent-dialogue>small{font-size:14px}.agent-stage-answer{font-size:13px}.agent-dialogue .agent-composer{flex-wrap:wrap}.agent-dialogue .agent-composer textarea{flex-basis:100%;height:38px;min-height:38px}.agent-dialogue .agent-composer>div{margin-left:auto}.agent-stage .agent-portrait,.agent-effect-canvas{height:110%;top:6%}}
+/* The assistant is a self-contained scene with its own fixed visual system. */
+#ai-agent-panel{inset:0;width:100vw;height:100dvh;border:0;border-radius:0;box-shadow:none;isolation:isolate;color-scheme:light;--surface:#f8f7fa;--paper:#efedf3;--ink:#322c3d;--muted:#797280;--line:#d9d4df;--teal:#6b5b7d;--teal-light:#ece6f2;--canvas:#f5f2f8;--shadow:#21162d24;--button-radius:5px;--card-radius:10px;--glass-field:#f5f2f8;font-family:Arial,'Microsoft YaHei',sans-serif;font-size:13px;letter-spacing:normal;background:#f8f8f8}
+#ai-agent-panel .agent-header{border-radius:0;background:linear-gradient(#ffffff9c,transparent)}
+#ai-agent-panel .agent-header small{display:none}#ai-agent-panel .agent-header h2{color:#39333e;font-size:15px;letter-spacing:1px}
+#ai-agent-panel .agent-dialogue{background:linear-gradient(100deg,#443c5270,#64586d5c);backdrop-filter:blur(12px);border-top:1px solid #ffffff80;border-radius:0;color:#fff}
+#ai-agent-panel .agent-composer,#ai-agent-panel .agent-composer>div{background:transparent!important;backdrop-filter:none!important;box-shadow:none!important;border-radius:0!important}
+#ai-agent-panel .agent-composer{border:0;padding:8px 0 0;margin:0}
+#ai-agent-panel .agent-composer>div{border:0;padding:0;margin:0}
+#ai-agent-panel .agent-composer textarea{border:0!important;border-bottom:1px solid #ffffff65!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;color:#fff!important;outline:none;padding:9px 2px;font:13px/1.6 Arial,'Microsoft YaHei',sans-serif;transition:border-color .15s}
+#ai-agent-panel .agent-composer textarea:focus{border-bottom-color:#fff!important;box-shadow:0 1px 0 #ffffff80!important}
+#ai-agent-panel .agent-composer textarea::placeholder{color:#ffffffb0!important;opacity:1}
+#ai-agent-panel .agent-composer .primary{color:#fff;background:#ffffff12;border:1px solid #ffffff60;border-radius:5px;box-shadow:none;font:12px Arial,'Microsoft YaHei',sans-serif;padding:9px 18px}
+#ai-agent-panel .agent-composer .primary:hover{background:#ffffff28}
+#ai-agent-panel .agent-character-tools button{box-shadow:none!important;border-radius:4px!important;background:#ffffff18!important;color:#fff!important}
+#ai-agent-panel .agent-character-tools button:hover,#ai-agent-panel .agent-character-tools button[aria-pressed=true]{background:#ffffff38!important}
+#ai-agent-panel .agent-character-tools button :is(svg,span,small){color:inherit!important}
+#ai-agent-panel .agent-stage-answer{color:#fff;text-shadow:0 1px 2px #33263f30}
+#ai-agent-panel .agent-settings,#ai-agent-panel .agent-character-editor,#ai-agent-panel .agent-context,#ai-agent-panel .agent-history,#ai-agent-panel .agent-messages{background:#f8f7fa;color:#322c3d;border-color:#d9d4df;border-radius:10px;box-shadow:0 12px 40px #21162d30;font-family:Arial,'Microsoft YaHei',sans-serif}
+#ai-agent-panel .agent-settings input,#ai-agent-panel .agent-settings select,#ai-agent-panel .agent-character-editor input,#ai-agent-panel .agent-character-editor textarea{background:#fff;color:#322c3d;border:1px solid #d9d4df;box-shadow:none}
+#agent-api-settings,#agent-antigravity-settings{display:grid;gap:10px}
+#agent-api-settings[hidden],#agent-antigravity-settings[hidden]{display:none}
+.agent-local-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px}
+#ai-agent-panel .agent-composer .outline-button{color:#fff;background:transparent;border:1px solid #ffffff60;border-radius:5px;box-shadow:none}
+#ai-agent-panel .agent-composer button:disabled{opacity:.5}
+.agent-actor-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#172745}
+.agent-actor-video[hidden]{display:none!important}
+.agent-stage[data-actor=deepseek]{background:#172745 url('./assets/actors/deepseek/preview.jpg') center/cover no-repeat}
+.agent-stage[data-actor=deepseek] :is(.agent-portrait,.agent-effect-canvas,.agent-stage-grid,.agent-wallpaper-particles){display:none!important}
+.agent-stage[data-actor=deepseek].agent-custom-art .agent-portrait{display:block!important;visibility:visible!important}
+.agent-stage[data-actor=deepseek] .agent-stage-signal,.agent-stage[data-actor=deepseek] .agent-art-credit{color:#e1ebff}
+#ai-agent-panel:has(.agent-stage[data-actor=deepseek]) .agent-header{background:linear-gradient(#08132870,transparent)}
+#ai-agent-panel:has(.agent-stage[data-actor=deepseek]) .agent-header h2{color:#e1ebff}
+#ai-agent-panel .agent-actor-switch{position:absolute;z-index:6;left:26px;top:52px;width:165px;padding:5px 9px;border:1px solid #a5a0b970;border-radius:5px;background:#f8f7fae0;color:#322c3d;font:12px Arial,'Microsoft YaHei',sans-serif;box-shadow:none}
+.agent-action-notice{position:absolute;z-index:3;top:85px;left:26px;color:#f6dcdd;font-size:12px;max-width:70%;pointer-events:none}
+.agent-action-notice:empty{display:none}
+@media(max-width:760px){#ai-agent-panel .agent-actor-switch{left:15px;top:51px;width:150px;font-size:11px}.agent-stage-signal{top:92px}}
+.agent-background-pulse{display:none;position:absolute;inset:-3%;background:url('./assets/amadeus/workshop-2950669609/background-pulse.png') center/cover no-repeat;mix-blend-mode:multiply;filter:blur(4px);pointer-events:none}
+.agent-motion .agent-stage:not([data-actor=deepseek]) .agent-background-pulse{display:block;animation:agent-background-flow 5s ease-in-out infinite alternate}
+@keyframes agent-background-flow{0%{opacity:.12;transform:translate(-.7%,-.5%) scale(1.01)}100%{opacity:.36;transform:translate(.7%,.5%) scale(1.035)}}
+.agent-motion .agent-wallpaper-particles i{animation-duration:4.4s}.agent-motion .agent-wallpaper-particles i:nth-child(even){animation-duration:5.2s;animation-delay:-2.6s}
+@media(prefers-reduced-motion:reduce){.agent-background-pulse{display:none!important}}
+.agent-stage[data-actor=deepseek]{background-image:url('./assets/actors/deepseek/idle-poster.png')}
+.agent-actor-video{opacity:0}
+.agent-stage.agent-video-ready .agent-actor-video{opacity:1;transition:opacity .12s linear}
+#ai-agent-panel{--scene-overlay:linear-gradient(100deg,#443c5270,#64586d5c)}
+#ai-agent-panel .agent-dialogue{background:var(--scene-overlay)}
+.agent-scene-choices{position:absolute;z-index:3;top:43%;left:50%;transform:translate(-50%,-50%);width:min(900px,74%);display:grid;gap:15px;max-height:calc(100% - var(--agent-dialogue-height) - 90px);overflow:auto;overscroll-behavior:contain}
+.agent-scene-choices[hidden]{display:none}
+#ai-agent-panel .agent-scene-choices button{display:block;width:100%;min-height:60px;padding:14px 34px;border:0;border-top:1px solid #ffffffa0;border-bottom:1px solid #ffffff90;border-radius:0;box-shadow:none;background:linear-gradient(100deg,#443c524c,#64586d38);color:#fff;text-align:left;font:600 clamp(17px,1.4vw,21px)/1.45 Arial,'Microsoft YaHei',sans-serif;letter-spacing:.5px;text-shadow:0 1px 3px #22172e,0 0 5px #22172ea0;backdrop-filter:blur(3px);cursor:pointer;transition:background .13s,color .13s,box-shadow .13s}
+#ai-agent-panel .agent-scene-choices button:is(:hover,:focus-visible,.is-selected){background:linear-gradient(100deg,#ffffff48,#e7def53e);color:#fff7e4;box-shadow:inset 0 0 16px #ffffff18;outline:none}
+#ai-agent-panel .agent-scene-choices button:disabled{cursor:default;opacity:1}
+.agent-past-choices{font-size:12px;color:var(--muted);line-height:1.8;margin:10px 0 0;padding-left:22px}
+@media(max-width:760px){.agent-scene-choices{width:88%;top:42%;gap:10px}#ai-agent-panel .agent-scene-choices button{font-size:15px;min-height:48px;padding:11px 18px}}
+@media(prefers-reduced-motion:reduce){.agent-scene-choices button{transition:none!important}}

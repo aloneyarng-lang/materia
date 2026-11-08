@@ -18,6 +18,7 @@ export function workspaceHTML(native) {
         <div class="figura-project-bar">
           <input data-fig="name" type="text" maxlength="250" placeholder="绘图项目名称" aria-label="绘图项目名称">
           <button type="button" class="outline-button" data-fig-action="projects">${icon('folder')}项目</button>
+          <button type="button" class="outline-button" data-fig-action="quick-import">${icon('upload')}一键导入</button>
           <button type="button" class="primary" data-fig-action="save">保存项目</button>
           <span data-fig="save-status" class="figura-help" role="status"></span>
         </div>
@@ -29,6 +30,7 @@ export function workspaceHTML(native) {
           <span class="figura-spacer"></span>
           <label class="figura-theme-select"><span>主题</span><select data-fig="theme" aria-label="绘图主题"><option value="">方案原色</option>${FIGURE_THEMES.map(({id,label})=>t(`<option value="${id}">${label}</option>`)).join('')}</select><span class="figura-theme-swatches" data-fig="theme-swatches" aria-hidden="true" hidden></span></label>
           <button type="button" class="outline-button" data-fig-action="parameters">${icon('sliders')}参数</button>
+          <button type="button" class="outline-button" data-fig-action="montage">${icon('overview')}拼版</button>
           <button type="button" class="outline-button" data-fig-action="export">${icon('download')}导出</button>
         </div>
         <p class="figura-status" data-fig="notice" role="status"></p>
@@ -104,6 +106,14 @@ export function workspaceHTML(native) {
         <label class="figura-field">替换封面 PNG／JPEG<input data-fig="cover" type="file" accept="image/png,image/jpeg"></label>
         <div class="figura-dialog-footer"><button type="button" class="outline-button" data-fig-action="metadata">保存方案资料</button><button type="button" class="text-button" data-fig-action="reset-metadata">恢复原资料</button></div>
       </details>
+    </dialog>
+    <dialog class="modal figura-dialog" data-fig="markdown-import" aria-label="Markdown 一键导入">
+      ${dialogHeading('Markdown 一键导入')}
+      <p class="figura-help">填写图型或项目编号与数据表，导入后直接绘图。</p>
+      <div class="figura-dialog-footer"><button type="button" class="primary" data-fig-action="choose-markdown">${icon('upload')}选择 Markdown 文件</button>
+      <input type="file" data-fig="markdown-file" accept=".md,.markdown" hidden></div>
+      <label class="figura-field">参考文档使用的图型或项目<select data-fig="markdown-template"></select></label>
+      <div class="figura-dialog-footer"><button type="button" class="outline-button" data-fig-action="markdown-template">${icon('download')}下载参考文档</button></div>
     </dialog>
     <dialog class="modal figura-dialog" data-fig="export-dialog" aria-label="导出绘图">
       ${dialogHeading('导出绘图')}

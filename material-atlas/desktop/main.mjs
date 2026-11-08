@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { prepareLibraryLocation,portableLibraryRoot } from './library-location.mjs';
 import { LocalLibrary } from './library.mjs';
 import { AgentSettings, completeWithProvider,testAgentConnection,listAgentModels } from './agent.mjs';
+import {AntigravityChatLinks,inspectAntigravity,findAntigravity,createAntigravityCompletion} from './agent-antigravity.mjs';
 import { runResearchAgent } from '../dist/ai-agent-core.js';
 import { AgentHistoryFile } from './agent-history.mjs';
 import { translateText } from './translation.mjs';
@@ -46,6 +47,7 @@ async function start() {
   startup = await createStartup(appRoot);
   await mkdir(profile, { recursive: true });
   const agentSettings = new AgentSettings(profile, safeStorage);
+  const antigravityChats = new AntigravityChatLinks(profile);
   await agentSettings.load().catch(() => {});
   let config = {};
   try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -89,7 +91,9 @@ async function start() {
   moduleServices.register(handle);
   let figura;
   handle('figura:call', async ({action, payload, libraryKey}) => {
-    figura ??= import('./figura/service.mjs').then(({createFigureService}) => createFigureService({appRoot, getRoot:()=>library.root, window:mainWindow}));
+    figura ??= import('./figura/service.mjs').then(({createFigureService}) => createFigureService({
+      appRoot,getRoot:()=>library.root,imageRoot:path.join(path.dirname(defaultRoot),'图片库'),window:mainWindow,
+    }));
     return (await figura)(action, payload, libraryKey);
   });
   handle('ml:status',()=>mlEngine.run('status'));
@@ -131,7 +135,7 @@ async function start() {
   handle('translation:run',async payload=>{
     if(!payload||typeof payload.id!=='string'||!/^[a-z\d_-]{1,120}$/i.test(payload.id)||translationRuns.has(payload.id))throw new Error('翻译请求标识无效。');
     if(translationRuns.size>=3)throw new Error('翻译请求过多，请等待或停止当前翻译。');
-    if(!agentSettings.config?.model)throw new Error('请先在 AI 研究助手中保存服务地址和模型。');
+    if(!agentSettings.config?.model&&agentSettings.config?.connection!=='antigravity')throw new Error('请先在 AI 研究助手中保存服务地址和模型。');
     const controller=new AbortController();translationRuns.set(payload.id,controller);
     try{return await translateText({...agentSettings.config},payload.request,{signal:controller.signal});}
     catch(error){return{error:controller.signal.aborted?'翻译已停止。':error.message,canceled:controller.signal.aborted};}
@@ -150,13 +154,28 @@ async function start() {
     if (!['https:','http:'].includes(url.protocol)) throw new Error('只支持网页链接。');
     await shell.openExternal(url.href);
   });
-  handle('agent:save-config', async value => {await agentSettings.save(value);return publicAgentConfig();});
+  handle('agent:save-config', async value => {if(value?.connection==='antigravity'){const checked=await inspectAntigravity(value);if(value.model&&!checked.models.some(model=>model.id===value.model))throw Error('所选反重力模型已不可用，请重新检测并选择。');value={...value,clientPath:checked.clientPath};}await agentSettings.save(value);return publicAgentConfig();});
+  handle('agent:detect-antigravity',async value=>{
+    modelDiscovery?.abort();const controller=new AbortController();modelDiscovery=controller;
+    try{return await inspectAntigravity(value||{},{signal:controller.signal});}
+    finally{if(modelDiscovery===controller)modelDiscovery=null;}
+  });
+  handle('agent:choose-antigravity',async()=>{
+    const chosen=await dialog.showOpenDialog(mainWindow,{title:'选择反重力桌面客户端',properties:['openFile'],filters:[{name:'Antigravity.exe',extensions:['exe']}]});
+    return chosen.canceled?null:{clientPath:await findAntigravity(chosen.filePaths[0]),message:'程序已选择，请启动反重力并登录，然后检测客户端。'};
+  });
+  handle('agent:open-antigravity',async value=>{const clientPath=await findAntigravity(value?.clientPath);const error=await shell.openPath(clientPath);if(error)throw Error('反重力未能启动，请手动打开。');return{clientPath,message:'已启动反重力，请完成登录后点击“检测客户端”。'};});
+  handle('agent:test-antigravity',async value=>{
+    if(connectionTest)throw Error('正在检测连接，请稍候。');const controller=new AbortController();connectionTest=controller;
+    try{const result=await completeWithProvider({...value,connection:'antigravity'},{messages:[{role:'system',content:'仅回答“连接成功”，不使用工具。'},{role:'user',content:'测试连接'}],signal:controller.signal});return{ok:true,message:result.content};}
+    finally{if(connectionTest===controller)connectionTest=null;}
+  });
   handle('agent:test-connection',async value=>{
     if(connectionTest)throw new Error('正在检测连接，请稍候。');const controller=new AbortController();connectionTest=controller;
     try{await agentSettings.queue;return await testAgentConnection(value?agentSettings.resolve(value):agentSettings.config||{},{signal:controller.signal});}
     finally{if(connectionTest===controller)connectionTest=null;}
   });
-  handle('agent:cancel-models',()=>modelDiscovery?.abort());
+  handle('agent:cancel-models',()=>{modelDiscovery?.abort();connectionTest?.abort();});
   handle('agent:list-models',async value=>{
     modelDiscovery?.abort();const controller=new AbortController();modelDiscovery=controller;
     try{await agentSettings.queue;return await listAgentModels(agentSettings.resolve(value||{},{requireModel:false}),{signal:controller.signal});}
@@ -172,9 +191,12 @@ async function start() {
     const current = { id: payload.id, controller }; agentRun = current;
     try {
       const context = { papers: structuredClone(library.getPapers()), notes: structuredClone(library.getSetting('notes') || {}), scopeIds: payload.scopeIds ?? null };
-      return await runResearchAgent({ question: payload.question, history: payload.history, context,
+      const complete=config.connection==='antigravity'
+        ? createAntigravityCompletion(config,await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds))
+        : input=>completeWithProvider(config,input);
+      return await runResearchAgent({ question: payload.question, character:payload.character, history: payload.history, context,
         signal: runSignal,
-        complete: input => completeWithProvider(config, input),
+        complete,
         onProgress: progress => { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('agent:progress', { id: payload.id, ...progress }); },
       });
     } catch (error) {

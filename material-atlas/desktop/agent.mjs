@@ -4,8 +4,10 @@ import { randomUUID } from 'node:crypto';
 import {cleanAgentKey,agentCredentialIssue,agentHTTPError,isGeminiCompatible,normalizeAgentModel} from '../dist/agent-auth.js';
 import {providerEndpoint} from '../dist/agent-providers.js';
 import {discoverAgentModels,agentHeaders} from './agent-models.mjs';
+import {cleanAntigravityConfig,completeWithAntigravity} from './agent-antigravity.mjs';
 
 export function normalizeAgentConfig(value = {}, {requireModel=true}={}) {
+  if(value.connection==='antigravity')return cleanAntigravityConfig(value);
   const {baseUrl,provider,protocol}=providerEndpoint(value);
   const model=normalizeAgentModel(value.model,baseUrl);
   if ((requireModel&&!model)||model.length>200) throw new Error('请填写服务支持的模型名称。');
@@ -15,37 +17,47 @@ export function normalizeAgentConfig(value = {}, {requireModel=true}={}) {
 
 // Kept in the desktop profile, outside library.json and library backups.
 export class AgentSettings {
-  constructor(profile, encryption) { this.file = path.join(profile, 'ai-agent.json'); this.encryption = encryption; this.config = null; this.queue = Promise.resolve(); this.canRememberKey = false; }
+  constructor(profile, encryption) { this.file = path.join(profile, 'ai-agent.json'); this.encryption = encryption; this.config = null; this.profiles={}; this.queue = Promise.resolve(); this.canRememberKey = false; }
   async encryptionAvailable() { this.canRememberKey = Boolean(await (this.encryption?.isAsyncEncryptionAvailable?.() ?? this.encryption?.isEncryptionAvailable?.())); return this.canRememberKey; }
   async load() {
     await this.encryptionAvailable();
     let saved;
     try { saved = JSON.parse(await readFile(this.file, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw new Error('AI 配置文件无法读取，请检查桌面配置目录。'); }
-    if (saved?.model) {
-      this.config = normalizeAgentConfig({ ...saved, apiKey: '' });
-      if (saved.encryptedKey && this.canRememberKey) {
-        try { const encrypted=Buffer.from(saved.encryptedKey,'base64'); const decoded=await (this.encryption.decryptStringAsync ? this.encryption.decryptStringAsync(encrypted) : this.encryption.decryptString(encrypted)); this.config.apiKey=typeof decoded==='string'?decoded:decoded.result; } catch { this.config.rememberKey = false; }
+    if (saved?.model||saved?.connection==='antigravity') {
+      for(const source of [saved.profiles?.api,saved.profiles?.antigravity,saved].filter(Boolean)){
+      const config = normalizeAgentConfig({ ...source, apiKey: '' });
+      if (source.encryptedKey && this.canRememberKey && config.connection!=='antigravity') {
+        try { const encrypted=Buffer.from(source.encryptedKey,'base64'); const decoded=await (this.encryption.decryptStringAsync ? this.encryption.decryptStringAsync(encrypted) : this.encryption.decryptString(encrypted)); config.apiKey=typeof decoded==='string'?decoded:decoded.result; } catch { config.rememberKey = false; }
       }
-      if (!this.config.apiKey) this.config.rememberKey = false;
+      if (!config.apiKey) config.rememberKey = false;
+      this.profiles[config.connection==='antigravity'?'antigravity':'api']=config;
+      this.config=config;
+      }
     }
     return this.publicConfig();
   }
   publicConfig() {
     const { apiKey, ...config } = this.config || { baseUrl: 'https://api.openai.com/v1', model: '', protocol: 'chat', apiKey: '', rememberKey: false };
-    return { ...config, hasKey: Boolean(apiKey), canRememberKey: this.canRememberKey };
+    const profiles=Object.fromEntries(Object.entries(this.profiles).map(([name,{apiKey,...profile}])=>[name,{...profile,hasKey:Boolean(apiKey)}]));
+    return { ...config, hasKey: Boolean(apiKey), canRememberKey: this.canRememberKey,profiles };
   }
-  resolve(value,options){const clean=normalizeAgentConfig(value,options);return{...clean,apiKey:value.clearKey?'':(clean.apiKey||(this.config?.baseUrl===clean.baseUrl?this.config.apiKey:''))};}
+  resolve(value,options){const clean=normalizeAgentConfig(value,options);if(clean.connection==='antigravity')return clean;const previous=this.profiles.api||this.config;return{...clean,apiKey:value.clearKey?'':(clean.apiKey||(previous?.baseUrl===clean.baseUrl?previous.apiKey:''))};}
   save(value) {
     const operation = this.queue.then(async () => {
       const next = this.resolve(value);
       if (next.rememberKey && !await this.encryptionAvailable()) throw new Error('系统加密不可用。请取消“记住密钥”，仅在本次运行使用。');
-      const { apiKey, ...stored } = next;
-      if (apiKey && next.rememberKey) stored.encryptedKey = (await (this.encryption.encryptStringAsync ? this.encryption.encryptStringAsync(apiKey) : this.encryption.encryptString(apiKey))).toString('base64');
+      const profiles={...this.profiles,[next.connection==='antigravity'?'antigravity':'api']:next},serialized={};
+      for(const [name,{apiKey,...profile}] of Object.entries(profiles)){
+        if(apiKey&&profile.rememberKey)profile.encryptedKey=(await(this.encryption.encryptStringAsync?this.encryption.encryptStringAsync(apiKey):this.encryption.encryptString(apiKey))).toString('base64');
+        serialized[name]=profile;
+      }
+      const stored={...serialized[next.connection==='antigravity'?'antigravity':'api'],profiles:serialized};
       await mkdir(path.dirname(this.file), { recursive: true });
       const temp = `${this.file}.${randomUUID()}.tmp`;
       await writeFile(temp, JSON.stringify(stored, null, 2), { mode: 0o600 });
       await rename(temp, this.file);
       this.config = next;
+      this.profiles=profiles;
       return this.publicConfig();
     });
     this.queue = operation.catch(() => {});
@@ -54,6 +66,7 @@ export class AgentSettings {
 }
 
 export async function listAgentModels(value,options={},fetcher=fetch){
+  if(value?.connection==='antigravity')return{ok:false,message:'本地反重力请使用“检测客户端”，模型可留空使用客户端默认设置。'};
   let config;try{config=normalizeAgentConfig(value,{requireModel:false});}catch(error){return{ok:false,stage:'configuration',message:error.message};}
   return discoverAgentModels(config,options,fetcher);
 }
@@ -98,6 +111,7 @@ function providerBody(config, messages, tools) {
 }
 
 export async function completeWithProvider(configValue, { messages, tools = [], signal }, fetcher = fetch) {
+  if(configValue?.connection==='antigravity')return completeWithAntigravity(configValue,{messages,tools,signal});
   const config = normalizeAgentConfig(configValue);
   const issue=agentCredentialIssue(config);if(issue)throw new Error(issue);
   const abort = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(90000)]);

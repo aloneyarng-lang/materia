@@ -55,36 +55,36 @@ async function main(){
   });
   await check('real UI performs search, read and comparison tool rounds and renders safe citations',async()=>{
     await ask('**比较高熵合金**的屈服强度');await completed();assert.equal(requests.length,4);assert.ok(requests.every(r=>r.authorization==='Bearer synthetic-test-key'));
-    assert.equal(await page.locator('.agent-assistant').count(),1);assert.equal(await page.locator('.agent-citation').count(),2);assert.equal(await page.locator('.agent-message img').count(),0);assert.equal(await page.evaluate(()=>Boolean(window.agentUnsafe)),false);
+    assert.equal(await page.locator('.agent-assistant').count(),1);assert.equal(await page.locator('.agent-assistant .agent-citation').count(),2);assert.equal(await page.locator('.agent-message img').count(),0);assert.equal(await page.evaluate(()=>Boolean(window.agentUnsafe)),false);
     assert.equal(await page.locator('.agent-assistant h2').innerText(),'研究结论');assert.equal(await page.locator('.agent-assistant table tbody tr').count(),2);assert.equal(await page.locator('.agent-assistant pre code.language-js').count(),1);assert.equal(await page.locator('.agent-assistant pre .agent-citation').count(),0);assert.equal(await page.locator('.agent-user strong').innerText(),'比较高熵合金');assert.equal(await page.locator('.agent-assistant a').getAttribute('rel'),'noopener noreferrer');
     const output=requests.at(-1).body.messages.filter(m=>m.role==='tool').at(-1).content;assert.ok(output.includes('MPa')&&output.includes('GPa')&&output.includes('室温')&&output.includes('高温'));
     await page.screenshot({path:path.join(outputDir(),'agent-research.png')});
   });
   await check('citation opens the actual document detail and conversation remains available',async()=>{
-    await page.locator('#search').fill('no matching literature');await page.waitForTimeout(180);await page.locator('.agent-citation').first().click();assert.equal(await page.locator('#search').inputValue(),'');assert.equal(await page.locator('#ai-agent-panel').isHidden(),true);await page.locator('#detail-panel').filter({hasText:'高熵合金 A'}).waitFor();
+    await page.locator('#search').fill('no matching literature');await page.waitForTimeout(180);await page.locator('.agent-stage-answer .agent-citation').first().click();assert.equal(await page.locator('#search').inputValue(),'');assert.equal(await page.locator('#ai-agent-panel').isHidden(),true);await page.locator('#detail-panel').filter({hasText:'高熵合金 A'}).waitFor();
     await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();assert.equal(await page.locator('.agent-assistant').count(),1);
   });
   await check('empty selected scope blocks network requests and keeps the question',async()=>{
     // Citation opened p1, so clear it by navigating to the library before selecting scope.
-    await page.locator('[data-agent-action="close"]').click();await page.locator('.workspace-ribbon [data-nav="library"]').click();await page.locator('#search').fill('no-matching-fixture');await page.locator('#detail-panel.detail-empty').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
+    await page.locator('[data-agent-action="close"]').click();await page.locator('.view-tabs [data-view="list"]').click();await page.locator('#search').fill('no-matching-fixture');await page.locator('#detail-panel.detail-empty').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
     await page.locator('#agent-scope').selectOption('selected');const before=requests.length;await ask('仅比较选中');await page.locator('#agent-status').filter({hasText:'请先在文献列表'}).waitFor();assert.equal(requests.length,before);
   });
   await check('selected-scope tool results contain only checked literature',async()=>{
-    await page.locator('[data-agent-action="close"]').click();await page.locator('#search').fill('');await page.locator('[data-compare-id="p1"]').check();await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();const before=requests.length;
+    await page.locator('[data-agent-action="close"]').click();await page.locator('#search').fill('');await page.locator('[data-select="p1"]').click();await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();const before=requests.length;
     await ask('比较所选高熵合金');await completed();const latest=requests.slice(before);assert.equal(latest.length,4);
-    const search=JSON.parse(latest[1].body.messages.at(-1).content);assert.deepEqual(search.papers.map(p=>p.id),['p1']);assert.equal(await page.locator('.agent-citation').count(),1);
+    const search=JSON.parse(latest[1].body.messages.at(-1).content);assert.deepEqual(search.papers.map(p=>p.id),['p1']);assert.equal(await page.locator('.agent-assistant .agent-citation').count(),1);
   });
   await check('follow-up keeps conversation and stopping re-enables the composer',async()=>{
     await ask('慢请求，请继续');await page.locator('[data-agent-action="stop"]').waitFor();assert.ok((await page.locator('.agent-user').count())>=2);
     await page.locator('[data-agent-action="stop"]').click();await page.locator('#agent-status').filter({hasText:'已停止'}).waitFor();await page.locator('#agent-send:not([disabled])').waitFor();assert.equal(await page.locator('#agent-send').isEnabled(),true);
   });
   await check('service failures are actionable and do not display API secrets',async()=>{
-    await ask('鉴权错误');await page.locator('.agent-error').filter({hasText:'HTTP 401'}).waitFor();await page.locator('#agent-send:not([disabled])').waitFor();assert.ok(!(await page.locator('.agent-messages').innerText()).includes('synthetic-test-key'));
+    await ask('鉴权错误');await page.locator('.agent-error').filter({hasText:'HTTP 401'}).waitFor({state:'attached'});await page.locator('#agent-send:not([disabled])').waitFor();assert.ok(!(await page.locator('.agent-messages').innerText()).includes('synthetic-test-key'));
   });
   await check('reload restores Markdown history, references and original selected scope; follow-up uses that conversation',async()=>{
     await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
-    await page.locator('.agent-assistant table').waitFor();assert.equal(await page.locator('#agent-scope').inputValue(),'selected');assert.equal(await page.locator('.agent-citation').count(),1);assert.equal(await page.locator('.agent-user').count(),3);
-    await page.locator('[data-agent-action="close"]').click();await page.locator('.workspace-ribbon [data-nav="library"]').click();await page.locator('[data-compare-id="p1"]').uncheck();await page.locator('[data-compare-id="p2"]').check();await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
+    await page.locator('.agent-assistant table').waitFor({state:'attached'});assert.equal(await page.locator('#agent-scope').inputValue(),'selected');assert.equal(await page.locator('.agent-assistant .agent-citation').count(),1);assert.equal(await page.locator('.agent-user').count(),3);
+    await page.locator('[data-agent-action="close"]').click();await page.locator('.view-tabs [data-view="list"]').click();await page.locator('[data-select="p2"]').click();await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
     const before=requests.length;await ask('继续历史对话，解释测试条件');await completed();
     const first=requests[before].body.messages;assert.ok(first.some(m=>m.role==='user'&&m.content==='比较所选高熵合金'));assert.ok(first.some(m=>m.role==='assistant'));
     const results=JSON.parse(requests[before+1].body.messages.at(-1).content);assert.deepEqual(results.papers.map(p=>p.id),['p1']);
@@ -107,7 +107,7 @@ async function main(){
   await check('confirmed deletion persists across refresh and keeps the other conversation intact',async()=>{
     const remove=page.getByRole('button',{name:'删除聊天：比较高熵合金的屈服强度',exact:true});await remove.click();await remove.click();await page.locator('#agent-status').filter({hasText:'已删除'}).waitFor();assert.equal(await page.locator('[data-history-open]').count(),1);
     await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();await agentAction('history');assert.equal(await page.locator('[data-history-open]').count(),1);
-    await page.locator('[data-history-open]').click();await page.locator('.agent-assistant table').first().waitFor();assert.equal(await page.locator('.agent-assistant').count(),2);
+    await page.locator('[data-history-open]').click();await page.locator('.agent-assistant table').first().waitFor({state:'attached'});assert.equal(await page.locator('.agent-assistant').count(),2);
   });
   assert.deepEqual(errors,[]);await fs.writeFile(path.join(output,'report.json'),JSON.stringify({passed:checks.length,checks,pageErrors:errors,mockRequests:requests.length},null,2));
 }

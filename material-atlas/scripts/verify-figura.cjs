@@ -15,6 +15,8 @@ const errors = [];
 const ui = key => page.locator('#figura-workspace [data-fig="'+key+'"]');
 const action = key => page.locator('#figura-workspace [data-fig-action="'+key+'"]:visible').click();
 const template = id => page.locator('#figura-workspace [data-id="'+id+'"]');
+const montage = key => page.locator('[data-fig=montage] [data-montage="'+key+'"]');
+const montageAction = key => page.locator('[data-fig=montage] [data-montage-action="'+key+'"]:visible').click();
 const waitText = (selector, text) => page.waitForFunction(({selector,text})=>document.querySelector(selector)?.textContent.includes(text),{selector,text});
 const ready = () => page.locator('.import-main:not([disabled])').waitFor({state:'attached'});
 const updated = () => waitText('[data-fig=plot-status]', '预览已更新');
@@ -62,6 +64,14 @@ async function desktop(testRoot) {
     await ready();
     await page.locator('[data-view=figura]').click();
     await ui('schemes').waitFor();
+    await app.evaluate(({dialog}, {install,testRoot}) => {
+      dialog.showOpenDialog = async (_window,options) => ({canceled:false,filePaths:options.title==='导入到图片库'
+        ? [testRoot+'/Fixture project.png',testRoot+'/导入乙.svg'] : [install]});
+      dialog.showSaveDialog = async (_window, options) => {
+        globalThis.fixtureSaveDefault=options.defaultPath;
+        return {canceled:false,filePath:testRoot+'/'+options.defaultPath.split(/[\\/]/).at(-1)};
+      };
+    },{install,testRoot});
   };
   await fs.cp(path.join(root,'dist/figura/schemes/grouped-line'),install,{recursive:true});
   const manifestPath = path.join(install,'manifest.json'), manifest = JSON.parse(await fs.readFile(manifestPath,'utf8'));
@@ -77,10 +87,6 @@ export async function render({params}) {
   return '<svg xmlns="http://www.w3.org/2000/svg" width="'+params.width+'" height="'+params.height+'" viewBox="0 0 '+params.width+' '+params.height+'"><text x="30" y="40" fill="'+params.color+'">'+esc('Fixture plot')+'</text></svg>';
 }`);
   await start();
-  await app.evaluate(({dialog}, {install,testRoot}) => {
-    dialog.showOpenDialog = async () => ({canceled:false, filePaths:[install]});
-    dialog.showSaveDialog = async (_window, options) => ({canceled:false, filePath:testRoot + '/' + options.defaultPath});
-  }, {install,testRoot});
   assert.deepEqual(await page.locator('.view-tabs .view-tab').evaluateAll(nodes=>nodes.map(node=>node.dataset.view)),['graph','list','materials','notes','figura']);
   assert.equal(await page.locator('.figura-scheme').count(),16);
   await template('grouped-line').click();
@@ -120,6 +126,7 @@ export async function render({params}) {
   const size = pdf.getPage(0).getSize();
   assert.ok(Math.abs(size.width-675)<1 && Math.abs(size.height-420)<1,JSON.stringify(size));
   assert.match((await fs.readFile(path.join(testRoot,'Fixture project.pdf'))).toString('latin1'), /\/Subtype \/Type0/);
+  assert.equal(path.dirname(await app.evaluate(()=>globalThis.fixtureSaveDefault)),path.join(testRoot,'图片库'));
   await action('done');
   console.log('PASS SVG, 300 DPI PNG metadata and vector PDF with matching physical size');
 
@@ -154,6 +161,113 @@ export async function render({params}) {
   await page.waitForFunction(()=>document.querySelector('[data-fig=name]').value==='Fixture project');
   assert.equal(await ui('theme').inputValue(),'ocean-copper');
   console.log('PASS custom scheme installation, isolated execution, legacy import and desktop restart');
+
+  await action('quick-import');
+  const projectOption=await ui('markdown-template').locator('option[value^="project:"]').first().getAttribute('value');
+  await ui('markdown-template').selectOption(projectOption);
+  await action('markdown-template');
+  const reference=path.join(testRoot,'Materia-Fixture project-绘图参考.md');
+  let markdown;
+  for(let i=0;i<50&&!markdown;i++){
+    markdown=await fs.readFile(reference,'utf8').catch(()=>null);
+    if(!markdown)await new Promise(resolve=>setTimeout(resolve,80));
+  }
+  assert.ok(markdown?.includes('project: '+projectOption.slice(8)));
+  const imported=markdown.replace(/name: [^\r\n]+/,'name: Imported Markdown')
+    .replace(/~~~csv[\s\S]*?~~~/,'~~~csv\nx,y,group\n1,9,Test\n2,13,Test\n~~~');
+  await ui('markdown-file').setInputFiles({name:'fixture.md',mimeType:'text/markdown',buffer:Buffer.from(imported)});
+  await waitText('[data-fig=notice]','Markdown 已导入');
+  assert.equal(await ui('name').inputValue(),'Imported Markdown');
+  assert.equal(await ui('theme').inputValue(),'ocean-copper');
+  await action('data-tab');
+  assert.equal(await page.locator('[data-fig-row="1"][data-fig-column="1"]').inputValue(),'9');
+  console.log('PASS downloadable project-specific Markdown and one-step rendering with the saved theme');
+
+  const imageRoot=path.join(testRoot,'图片库');
+  await fs.mkdir(imageRoot,{recursive:true});
+  const gradient=name=>`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="420" viewBox="0 0 600 420"><defs><linearGradient id="same"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="blue"/></linearGradient></defs><rect width="600" height="420" fill="url(#same)"/><text x="30" y="50">${name}</text></svg>`;
+  for(const name of ['矢量甲','矢量乙'])await fs.writeFile(path.join(imageRoot,name+'.svg'),gradient(name));
+  await fs.writeFile(path.join(testRoot,'导入乙.svg'),gradient('导入乙'));
+  await action('montage');
+  await montage('name').fill('Test montage');
+  await montageAction('import-images');
+  const cards=page.locator('[data-montage-card]');
+  await cards.nth(1).waitFor();
+  assert.deepEqual(await cards.locator('img').evaluateAll(nodes=>nodes.map(node=>node.alt)),['Fixture project','导入乙']);
+  await montage('images').selectOption(['矢量甲.svg','矢量乙.svg']);
+  await montageAction('image');
+  await cards.nth(3).waitFor();
+  assert.equal(await cards.count(),4);
+  await montage('columns').selectOption('4');
+  await montageAction('arrange');
+  assert.ok(await cards.evaluateAll(nodes=>nodes.slice(1).every((node,i)=>node.offsetLeft>=nodes[i].offsetLeft+nodes[i].offsetWidth)));
+
+  const readMontage=async ready=>{
+    for(let attempt=0;attempt<50;attempt++){
+      const state=JSON.parse(await fs.readFile(path.join(library,'figura-workspace.json'),'utf8')).montage;
+      if(!ready||ready(state))return state;
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    throw Error('Montage save timed out');
+  };
+  const before=await readMontage(state=>state.panels.length===4&&state.columns===4&&state.panels[1].y===state.panels[3].y);
+  const first=await cards.first().boundingBox();
+  await page.mouse.move(first.x+first.width*.4,first.y+first.height*.5);
+  await page.mouse.down();
+  await page.mouse.move(first.x+first.width*.4+96,first.y+first.height*.5+78,{steps:6});
+  await page.mouse.up();
+
+  await page.evaluate(files=>{
+    const dataTransfer=new DataTransfer();
+    for(const [name,contents] of files)dataTransfer.items.add(new File([contents],name+'.svg',{type:'image/svg+xml'}));
+    document.querySelector('[data-montage=board]').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer}));
+  },['拖入甲','拖入乙'].map(name=>[name,gradient(name)]));
+  await cards.nth(5).waitFor();
+  assert.equal(await cards.count(),6);
+  for(const file of ['拖入甲.svg','拖入乙.svg'])assert.ok((await fs.stat(path.join(imageRoot,file))).isFile());
+  const handle=cards.first().locator('[data-montage-resize]'), point=await handle.boundingBox();
+  await page.mouse.move(point.x+point.width/2,point.y+point.height/2);
+  await page.mouse.down();
+  await page.mouse.move(point.x+62,point.y+38,{steps:6});
+  await page.mouse.up();
+  await montageAction('generate');
+  await waitText('[data-fig=montage] [data-fig-dialog-status]','已保存到图片库');
+  const composed=await fs.readFile(path.join(imageRoot,'Test montage.svg'),'utf8');
+  assert.match(composed,/<image href="data:image\/png;base64,/);
+  const ids=[...composed.matchAll(/id="(panel-[^"]+)"/g)].map(match=>match[1]);
+  assert.ok(ids.length>=5);
+  assert.equal(new Set(ids).size,ids.length);
+  assert.doesNotMatch(composed,/url\(#same\)/);
+  await montageAction('pdf');
+  await waitText('[data-fig=montage] [data-fig-dialog-status]','PDF 已导出').catch(async error=>{
+    throw Error(await page.locator('[data-fig=montage] [data-fig-dialog-status]').textContent(),{cause:error});
+  });
+  assert.match((await fs.readFile(path.join(testRoot,'Test montage.pdf'))).toString('latin1'),/\/Subtype \/Image/);
+  const after=await readMontage(state=>state.panels.length===6&&state.panels[0].weight>1);
+  assert.equal(after.panels.length,6);
+  assert.ok(after.panels[0].weight>1);
+  assert.ok(after.panels[0].x>before.panels[0].x&&after.panels[0].y>before.panels[0].y);
+  assert.deepEqual(after.panels.slice(1,4),before.panels.slice(1,4));
+  const exported=await page.evaluate(svg=>[...new DOMParser().parseFromString(svg,'image/svg+xml').documentElement.children]
+    .filter(node=>node.localName==='svg').map(node=>['x','y','width','height'].map(attr=>Number(node.getAttribute(attr)))),composed);
+  assert.equal(exported.length,6);
+  const scale=exported[0][2]/(after.panels[0].width*Math.min(968/after.panels[0].width,440/after.panels[0].height)*after.panels[0].weight);
+  assert.ok(Math.abs(exported[0][0]-exported[1][0]-(after.panels[0].x-after.panels[1].x)*scale)<.01);
+  assert.ok(Math.abs(exported[0][1]-exported[1][1]-(after.panels[0].y-after.panels[1].y)*scale)<.01);
+  await montageAction('edit');
+  await montageAction('auto-size');
+  await waitText('[data-fig=montage] [data-fig-dialog-status]','已等比例调整大小');
+  const resized=await readMontage(state=>state.panels.some((panel,i)=>panel.weight!==after.panels[i].weight));
+  assert.equal(resized.panels.length,6);
+  assert.deepEqual(resized.panels.map(panel=>panel.svg),after.panels.map(panel=>panel.svg));
+  assert.ok(await cards.evaluateAll(nodes=>nodes.every((node,i)=>nodes.slice(i+1).every(other=>
+    node.offsetLeft+node.offsetWidth<=other.offsetLeft+1||other.offsetLeft+other.offsetWidth<=node.offsetLeft+1||
+    node.offsetTop+node.offsetHeight<=other.offsetTop+1||other.offsetTop+other.offsetHeight<=node.offsetTop+1))));
+  await montageAction('generate');
+  await waitText('[data-fig=montage] [data-fig-dialog-status]','Test montage (2).svg');
+  assert.match(await fs.readFile(path.join(imageRoot,'Test montage (2).svg'),'utf8'),/<image href="data:image\/png;base64,/);
+  await montageAction('close');
+  console.log('PASS bulk imports, free positioning, automatic sizing, vector composition and mixed PDF');
   await app.close();
   app = null;
 }

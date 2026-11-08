@@ -1,16 +1,18 @@
 import path from 'node:path';
-import {mkdir, writeFile} from 'node:fs/promises';
+import {mkdir} from 'node:fs/promises';
 import {dialog, shell} from 'electron';
 import {dimensions, preparePlot, readDraft} from '../../dist/figura/model.js';
-import {svgLimit} from '../../dist/figura/svg.js';
+import {montageSvgLimit,svgLimit} from '../../dist/figura/svg.js';
 import {customFolder, installScheme, loadScheme, plotAssets, schemeCatalog} from './catalog.mjs';
 import {createFigureRuntime} from './runtime.mjs';
+import {createImageLibrary} from './image-library.mjs';
 
-export function createFigureService({appRoot, getRoot, window}) {
+export function createFigureService({appRoot, getRoot, imageRoot, window}) {
   const dist = path.join(appRoot, 'dist', 'figura'), bundled = path.join(dist, 'schemes');
   let runtime;
   const engine = () => runtime ??= createFigureRuntime(dist);
   const handlers = {
+    ...createImageLibrary(imageRoot,window),
     catalog: (_, root) => schemeCatalog(bundled, customFolder(root)),
     async sample({id, version, name}, root) {
       const {files} = await loadScheme(bundled, customFolder(root), id, version);
@@ -38,16 +40,10 @@ export function createFigureService({appRoot, getRoot, window}) {
       const assets = await plotAssets(bundled, scheme.id, files);
       return engine().render(assets, scheme, input);
     },
-    async pdf({svg, width, height}) {
+    async pdf({svg, width, height, montage=false}) {
       const size = dimensions(width, height);
-      if (typeof svg !== 'string' || svg.length > svgLimit) throw Error('SVG 无效或过大。');
-      return new Uint8Array(await engine().pdf(svg, size));
-    },
-    async savePDF({filename, bytes}) {
-      if (!(bytes instanceof Uint8Array) || bytes.length > 32 * 1024 * 1024 || Buffer.from(bytes.subarray(0, 5)).toString() !== '%PDF-') throw Error('导出的 PDF 格式无效或过大。');
-      const choice = await dialog.showSaveDialog(window, {title:'保存绘图 PDF', defaultPath:path.basename(filename), filters:[{name:'PDF', extensions:['pdf']}]});
-      if (!choice.canceled) await writeFile(choice.filePath, bytes);
-      return {canceled:choice.canceled};
+      if (typeof svg !== 'string' || svg.length > (montage?montageSvgLimit:svgLimit)) throw Error('SVG 无效或过大。');
+      return new Uint8Array(await engine().pdf(svg,size,montage===true));
     },
   };
   return (action, payload, libraryKey) => {

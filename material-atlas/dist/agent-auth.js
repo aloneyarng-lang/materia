@@ -17,6 +17,7 @@ export function normalizeAgentModel(model,baseUrl){
   const value=String(model||'').trim();return isGeminiCompatible(baseUrl)?value.replace(/^models\//,''):value;
 }
 export function agentCredentialIssue(config={}){
+  if(config.connection==='antigravity')return config.clientPath?'':tr('请先在服务设置中检测并保存本地反重力客户端。');
   if(!config.model)return tr('请先在 AI 服务设置中填写地址和模型。');
   let host;try{host=new URL(config.baseUrl).hostname;}catch{return tr('请在 AI 服务设置中填写有效的 API 地址。');}
   if(host==='generativelanguage.googleapis.com'){

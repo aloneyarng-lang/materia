@@ -1,4 +1,5 @@
 import {resolveFigureTheme,themeColorParameter} from './schemes/figure-themes.js';
+import {readMontage} from './montage-layout.js';
 
 export const schemeID = /^[a-z][a-z0-9-]{0,79}$/;
 export const maxRows = 30000;
@@ -149,5 +150,8 @@ export function readWorkspace(value) {
     }
     return [id, {name:item.name, description:item.description, ...(item.cover ? {cover:item.cover} : {})}];
   }));
-  return {schemaVersion: 1, projects: value.projects.map(readDraft), metadata, draft: value.draft == null ? null : readDraft(value.draft)};
+  return {
+    schemaVersion: 1, projects: value.projects.map(readDraft), metadata, draft: value.draft == null ? null : readDraft(value.draft),
+    ...(value.montage == null ? {} : {montage:readMontage(value.montage)}),
+  };
 }

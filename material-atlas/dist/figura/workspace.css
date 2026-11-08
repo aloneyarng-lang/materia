@@ -125,6 +125,56 @@
 #figura-workspace .figura-dialog-footer {margin-top:14px;}
 #figura-workspace .figura-dialog p {font-size:.75rem;line-height:1.65;}
 
+#figura-workspace .figura-montage.modal {
+  width:min(1140px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;
+}
+#figura-workspace .montage-layout {display:grid;grid-template-columns:minmax(175px,225px) minmax(0,1fr);gap:18px;margin-top:14px;}
+#figura-workspace .montage-controls {display:flex;flex-direction:column;gap:10px;min-width:0;}
+#figura-workspace .montage-controls .outline-button {display:flex;align-items:center;justify-content:center;gap:6px;font-size:.75rem;min-height:31px;}
+#figura-workspace .montage-controls .outline-button svg {width:14px;height:14px;}
+#figura-workspace .montage-controls select[multiple] {height:auto;min-width:0;padding:4px;}
+#figura-workspace .montage-controls select[multiple] option {padding:3px 5px;}
+#figura-workspace .montage-fields {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+#figura-workspace .montage-checkbox {display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted);}
+#figura-workspace .montage-library {display:grid;gap:7px;padding:9px;border:1px solid var(--line);border-radius:var(--button-radius);}
+#figura-workspace .montage-library-actions {display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;}
+#figura-workspace .montage-library-actions .text-button {font-size:.6875rem;padding:4px 2px;}
+#figura-workspace .montage-library-actions .icon-button {width:25px;height:25px;padding:4px;}
+#figura-workspace .montage-main {min-width:0;}
+#figura-workspace .montage-summary {display:flex;align-items:center;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;margin:0 0 8px;}
+#figura-workspace .montage-summary p {margin:0;}
+#figura-workspace .montage-viewport {
+  display:grid;justify-items:center;align-items:start;min-height:235px;max-height:57dvh;overflow:auto;
+  padding:13px;border:1px solid var(--line);border-radius:var(--card-radius);background:var(--glass-field,var(--canvas));
+}
+#figura-workspace .montage-board {
+  position:relative;aspect-ratio:var(--montage-ratio);width:min(100%,max(390px,calc(var(--montage-ratio) * 48dvh)));
+  background:#fff radial-gradient(circle,#dce1e4 1px,transparent 1px) 0 0 / 16px 16px;
+  box-shadow:0 4px 16px var(--shadow);color:#202124;
+}
+#figura-workspace .montage-output {display:block;max-width:100%;max-height:52dvh;height:auto;background:white;box-shadow:0 4px 16px var(--shadow);}
+#figura-workspace .montage-card {position:absolute;cursor:grab;border:1px dashed #a6adb2;border-radius:3px;touch-action:none;user-select:none;}
+#figura-workspace .montage-card img {position:absolute;left:0;top:var(--label-space);width:100%;height:calc(100% - var(--label-space));object-fit:contain;pointer-events:none;}
+#figura-workspace .montage-letter {position:absolute;inset-inline-start:4px;top:0;font:700 .7rem Arial,sans-serif;z-index:1;}
+#figura-workspace .montage-card.is-dragging {cursor:grabbing;}
+#figura-workspace .montage-card:is(.is-dragging,.is-resizing) {z-index:3;}
+#figura-workspace .montage-card:is(.is-dragging,.is-resizing,:focus-visible) {outline:2px solid var(--teal);border-color:transparent;}
+#figura-workspace .montage-card-actions {
+  position:absolute;top:2px;right:2px;display:flex;align-items:center;gap:2px;z-index:2;
+  opacity:0;background:var(--surface);color:var(--ink);border-radius:5px;box-shadow:0 2px 6px var(--shadow);
+}
+#figura-workspace .montage-card:is(:hover,:focus-within) .montage-card-actions {opacity:1;}
+#figura-workspace .montage-card-actions .icon-button {width:24px;height:24px;min-height:24px;padding:4px;}
+#figura-workspace .montage-resize {
+  position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;touch-action:none;z-index:2;
+}
+#figura-workspace .montage-resize::after {
+  content:"";display:block;position:absolute;right:2px;bottom:2px;width:9px;height:9px;
+  border:solid #667781;border-width:0 2px 2px 0;
+}
+#figura-workspace .montage-resize:hover::after {border-color:var(--teal);}
+#figura-workspace .montage-footer .figura-field {display:flex;align-items:center;gap:6px;}
+
 @media(max-width:1150px) {
   #figura-workspace .figura-layout {grid-template-columns:minmax(168px,192px) minmax(0,1fr);}
   #figura-workspace :is(.figura-gallery,.figura-main) {padding:12px;}
@@ -133,4 +183,6 @@
   #figura-workspace .figura-layout {grid-template-columns:minmax(0,1fr);}
   #figura-workspace .figura-gallery {border-right:0;border-bottom:1px solid var(--line);}
   #figura-workspace .figura-schemes {grid-template-columns:repeat(auto-fit,minmax(155px,1fr));max-height:195px;min-height:0;}
+  #figura-workspace .montage-layout {grid-template-columns:1fr;}
+  #figura-workspace .montage-controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
 }

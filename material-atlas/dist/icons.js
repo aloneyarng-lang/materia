@@ -17,6 +17,8 @@ const icons = {
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 8.5a2.6 2.6 0 1 1 4.1 2.1c-1.5.8-1.7 1.4-1.7 2.4M12 17h.01"/>',
   download: '<path d="M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5"/>',
   upload: '<path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"/>',
+  refresh: '<path d="M20 7v5h-5M4 17v-5h5M5.2 8a7.5 7.5 0 0 1 12.7-2L20 9M4 15l2.1 3A7.5 7.5 0 0 0 18.8 16"/>',
+  save: '<path d="M4 4h13l3 3v13H4zM8 4v6h8V4M8 20v-6h8v6"/>',
   files: '<path d="M7 3h8l4 4v14H7zM15 3v5h4M3 7v13M10 12h6M10 16h6"/>',
   tag: '<path d="M3 3h8l10 10-8 8L3 11z"/><circle cx="7.5" cy="7.5" r="1"/>',
   network: '<circle cx="5" cy="5" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="8" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><path d="m7 5 9 1M6 7l2 9m2 2h8M17 8l-7 8m9-8 1 8"/>',
@@ -29,6 +31,8 @@ const icons = {
   edit: '<path d="m15 4 5 5M3 21l5-1L21 7l-5-5L3 15z"/>',
   trash: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>',
   close: '<path d="m6 6 12 12M6 18 18 6"/>', check: '<path d="m5 12 4 4L19 6"/>',
+  play: '<path d="m8 5 12 7-12 7z"/>', pause: '<path d="M9 5v14m6-14v14"/>',
+  speaker: '<path d="M11 5 6 9H3v6h3l5 4zM15 9a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>', arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
 };
 Object.assign(icons, {'panel-left':'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>','panel-right':'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>',chart:'<path d="M4 3v17h17M7 15l4-5 4 2 5-7"/>',table:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',ruler:'<path d="m3 16 13-13 5 5L8 21zM7 12l2 2m2-6 2 2m2-6 2 2"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>','eye-off':'<path d="m3 3 18 18M8 6a12 12 0 0 1 4-1c6 0 10 7 10 7a18 18 0 0 1-4 4M6 8a20 20 0 0 0-4 4s4 7 10 7a12 12 0 0 0 4-1"/>',overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',undo:'<path d="M4 10h10a6 6 0 1 1 0 12M4 10l5-5m-5 5 5 5"/>',local:'<circle cx="12" cy="12" r="3"/><circle cx="4" cy="5" r="2"/><circle cx="20" cy="5" r="2"/><circle cx="20" cy="19" r="2"/><path d="m6 6 4 4m4 0 4-4m-4 8 4 4"/>'});

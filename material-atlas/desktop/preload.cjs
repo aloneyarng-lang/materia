@@ -1,5 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  notesVaultList: () => ipcRenderer.invoke('notes-vault:list'),
+  notesVaultSave: payload => ipcRenderer.invoke('notes-vault:save',payload),
+  notesVaultImage: payload => ipcRenderer.invoke('notes-vault:image',payload),
+  notesVaultFolder: () => ipcRenderer.invoke('notes-vault:folder'),
   startupReady: () => ipcRenderer.invoke('startup:ready'),
   mlStatus: () => ipcRenderer.invoke('ml:status'),
   mlRun: payload => ipcRenderer.invoke('ml:run',payload),
@@ -17,6 +21,11 @@ contextBridge.exposeInMainWorld('materiaDesktop', {
   studyRead: () => ipcRenderer.invoke('study:read'),
   studyUpdate: payload => ipcRenderer.invoke('study:update',payload),
   agentGetConfig: () => ipcRenderer.invoke('agent:get-config'),
+  agentVoiceStatus: characterId => ipcRenderer.invoke('agent:voice-status',characterId),
+  agentVoiceSetEnabled: value => ipcRenderer.invoke('agent:voice-enabled',value),
+  agentVoiceSetLanguage: value => ipcRenderer.invoke('agent:voice-language',value),
+  agentVoicePrepare: (characterId,language) => ipcRenderer.invoke('agent:voice-prepare',characterId,language),
+  agentVoiceSynthesize: request => ipcRenderer.invoke('agent:voice-synthesize',request),
   agentSaveConfig: value => ipcRenderer.invoke('agent:save-config', value),
   agentDetectAntigravity: value => ipcRenderer.invoke('agent:detect-antigravity',value),
   agentChooseAntigravity: () => ipcRenderer.invoke('agent:choose-antigravity'),
@@ -28,6 +37,9 @@ contextBridge.exposeInMainWorld('materiaDesktop', {
   agentRun: payload => ipcRenderer.invoke('agent:run', payload),
   agentCancel: id => ipcRenderer.invoke('agent:cancel', id),
   agentOpenLink: url => ipcRenderer.invoke('agent:open-link', url),
+  agentMemoryCorpus: request => ipcRenderer.invoke('agent:memory-corpus',request),
+  agentMemoryCorpusUpdate: request => ipcRenderer.invoke('agent:memory-corpus-update',request),
+  agentCharacterCorpus: request => ipcRenderer.invoke('agent:character-corpus',request),
   agentGetHistory: () => ipcRenderer.invoke('agent:get-history'),
   agentSaveHistory: payload => ipcRenderer.invoke('agent:save-history', payload),
   onAgentProgress: callback => {

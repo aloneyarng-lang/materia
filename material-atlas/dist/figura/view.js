@@ -1,37 +1,42 @@
 import {icon} from '../icons.js';
 import {html, t} from '../i18n.js';
+import {actionMenu} from '../action-menus.js';
 import {FIGURE_THEMES,resolveFigureTheme,themeColorParameter} from './schemes/figure-themes.js';
 
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'})[char]);
+
+export function figuraIcon(action,label,glyph,attributes='',group='fig'){
+  return `<button type="button" class="icon-button" data-${group}-action="${action}" aria-label="${escape(t(label))}" title="${escape(t(label))}" data-i18n-aria-label="${escape(label)}" data-i18n-title="${escape(label)}" ${attributes}>${icon(glyph)}</button>`;
+}
 
 export function workspaceHTML(native) {
   const desktopOnly = native ? '' : 'disabled';
   return html`
     <div class="figura-layout">
       <aside class="figura-gallery" aria-label="绘图方案">
-        <div class="figura-gallery-heading"><h3>绘图方案</h3><button type="button" class="icon-button" data-fig-action="schemes" aria-label="管理方案" title="管理方案">${icon('plus')}</button></div>
+        <div class="figura-gallery-heading"><h3>绘图方案</h3>${figuraIcon('schemes','管理方案','settings')}</div>
         <label class="figura-search">${icon('search')}<input data-fig="query" type="search" aria-label="搜索方案" placeholder="搜索方案"></label>
         <select data-fig="category" aria-label="方案分类"></select>
         <div data-fig="schemes" class="figura-schemes"></div>
       </aside>
       <section class="figura-main" aria-label="绘图工作区">
+        <div class="figura-workbar">
         <div class="figura-project-bar">
           <input data-fig="name" type="text" maxlength="250" placeholder="绘图项目名称" aria-label="绘图项目名称">
-          <button type="button" class="outline-button" data-fig-action="projects">${icon('folder')}项目</button>
-          <button type="button" class="outline-button" data-fig-action="quick-import">${icon('upload')}一键导入</button>
-          <button type="button" class="primary" data-fig-action="save">保存项目</button>
-          <span data-fig="save-status" class="figura-help" role="status"></span>
+          ${figuraIcon('save','保存项目','save')}
+          ${figuraIcon('projects','绘图项目','folder')}
+          ${figuraIcon('quick-import','Markdown 一键导入','upload')}
         </div>
         <div class="figura-toolbar">
           <div class="figura-mode" role="group" aria-label="绘图视图">
-            <button type="button" data-fig-action="preview-tab" aria-pressed="true">预览</button>
-            <button type="button" data-fig-action="data-tab" aria-pressed="false">数据</button>
+            ${figuraIcon('preview-tab','预览','eye','aria-pressed="true"')}
+            ${figuraIcon('data-tab','数据','table','aria-pressed="false"')}
           </div>
-          <span class="figura-spacer"></span>
-          <label class="figura-theme-select"><span>主题</span><select data-fig="theme" aria-label="绘图主题"><option value="">方案原色</option>${FIGURE_THEMES.map(({id,label})=>t(`<option value="${id}">${label}</option>`)).join('')}</select><span class="figura-theme-swatches" data-fig="theme-swatches" aria-hidden="true" hidden></span></label>
-          <button type="button" class="outline-button" data-fig-action="parameters">${icon('sliders')}参数</button>
-          <button type="button" class="outline-button" data-fig-action="montage">${icon('overview')}拼版</button>
-          <button type="button" class="outline-button" data-fig-action="export">${icon('download')}导出</button>
+          <label class="figura-theme-select" title="绘图主题">${icon('palette')}<select data-fig="theme" aria-label="绘图主题"><option value="">方案原色</option>${FIGURE_THEMES.map(({id,label})=>t(`<option value="${id}">${label}</option>`)).join('')}</select><span class="figura-theme-swatches" data-fig="theme-swatches" aria-hidden="true" hidden></span></label>
+          ${figuraIcon('parameters','绘图参数','sliders')}
+          ${figuraIcon('montage','论文拼版','overview')}
+          ${figuraIcon('export','导出绘图','download')}
+        </div>
         </div>
         <p class="figura-status" data-fig="notice" role="status"></p>
         <section data-fig="preview-page" class="figura-preview-page">
@@ -41,15 +46,16 @@ export function workspaceHTML(native) {
           </div>
           <div class="figura-preview-footer">
             <span data-fig="plot-status" role="status"></span>
-            <button type="button" class="text-button" data-fig-action="refresh">更新预览</button>
+            <span data-fig="save-status" class="figura-help" role="status"></span>
+            ${figuraIcon('refresh','更新预览','refresh')}
           </div>
         </section>
         <section data-fig="data-page" class="figura-data-page" hidden>
           <div class="figura-data-head">
-            <button type="button" class="outline-button" data-fig-action="choose-data">${icon('upload')}导入表格</button>
+            ${figuraIcon('choose-data','导入表格','upload')}
             <input data-fig="file" type="file" accept=".csv,.tsv,.xlsx" hidden>
-            <button type="button" class="text-button" data-fig-action="sample">载入示例</button>
-            <button type="button" class="text-button" data-fig-action="style-sample" hidden>论文样式示例</button>
+            ${actionMenu('figura-data-samples',t('载入示例'),html`<button type="button" data-fig-action="sample">${icon('table')}载入示例</button>
+            <button type="button" data-fig-action="style-sample" hidden>${icon('chart')}论文样式示例</button>`,{iconName:'files',iconOnly:true,className:'icon-button'})}
             <span data-fig="dataset" class="figura-help"></span>
           </div>
           <div data-fig="sheets" class="figura-data-head" hidden><label>工作表<select data-fig="sheet"></select></label><button type="button" class="outline-button" data-fig-action="apply-sheet">应用工作表</button></div>
@@ -57,9 +63,9 @@ export function workspaceHTML(native) {
           <p class="figura-help" data-fig="requirements"></p>
           <details class="figura-disclosure" open><summary>字段映射</summary><div data-fig="mapping" class="figura-fields"></div></details>
           <div class="figura-grid-actions">
-            <button type="button" class="text-button" data-fig-action="add-row">＋ 行</button>
-            <button type="button" class="text-button" data-fig-action="add-column">＋ 列</button>
-            <button type="button" class="text-button" data-fig-action="undo-data" hidden>撤销表格更改</button>
+            ${actionMenu('figura-add-data',t('添加'),html`<button type="button" data-fig-action="add-row">${icon('plus')}添加行</button>
+            <button type="button" data-fig-action="add-column">${icon('plus')}添加列</button>`,{iconName:'plus',iconOnly:true,className:'icon-button'})}
+            ${figuraIcon('undo-data','撤销表格更改','undo','hidden')}
             <span class="figura-spacer"></span>
             <button type="button" class="icon-button" data-fig-action="prev-page" aria-label="上一页">${icon('chevron-left')}</button>
             <span data-fig="range"></span>
@@ -81,14 +87,14 @@ export function workspaceHTML(native) {
       <label class="figura-field">已保存项目<select data-fig="projects-list"></select></label>
       <div class="figura-dialog-footer">
         <button type="button" class="outline-button" data-fig-action="open-project">打开项目</button>
-        <button type="button" class="outline-button" data-fig-action="save-copy">另存副本</button>
-        <button type="button" class="text-button" data-fig-action="delete-project">删除项目…</button>
-      </div>
-      <div class="figura-dialog-footer">
-        <button type="button" class="outline-button" data-fig-action="import-project">导入 Figura 项目／工作区</button>
         <input type="file" data-fig="project-file" accept=".json" hidden>
-        <button type="button" class="text-button" data-fig-action="backup-project">备份当前项目</button>
-        <button type="button" class="text-button" data-fig-action="backup-workspace">备份全部项目</button>
+        ${actionMenu('figura-project-actions',t('项目操作'),html`
+          <button type="button" data-fig-action="save-copy">${icon('files')}另存副本</button>
+          <button type="button" data-fig-action="import-project">${icon('upload')}导入 Figura 项目／工作区</button>
+          <button type="button" data-fig-action="backup-project">${icon('download')}备份当前项目</button>
+          <button type="button" data-fig-action="backup-workspace">${icon('library')}备份全部项目</button>
+          <hr><button type="button" class="danger" data-fig-action="delete-project">${icon('trash')}删除项目…</button>
+        `,{iconOnly:true,className:'icon-button'})}
       </div>
       <p class="figura-help">备份保存数据和参数。自定义方案请另行保留方案文件夹。</p>
     </dialog>

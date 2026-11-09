@@ -8,6 +8,7 @@ import {AntigravityChatLinks,cleanAntigravityConfig,inspectAntigravity,createAnt
 import {AgentSettings,normalizeAgentConfig} from '../desktop/agent.mjs';
 import {agentCredentialIssue} from '../dist/agent-auth.js';
 import {runResearchAgent} from '../dist/ai-agent-core.js';
+import {translateVoiceLines} from '../desktop/translation.mjs';
 
 const clientPath=path.resolve('Antigravity.exe'),connection={clientPath,port:12345,token:'ephemeral-local-token',pid:7};
 const userStatus={email:'private@example.test',cascadeModelConfigData:{clientModelConfigs:[{label:'Client model',modelId:'client-model',modelOrAlias:{model:'MODEL_PLACEHOLDER_M1'},quotaInfo:{remainingFraction:.75}},{label:'Unavailable',modelId:'disabled',modelOrAlias:{model:'MODEL_DISABLED'},disabled:true}]}};
@@ -92,6 +93,29 @@ test('local adapter rejects unauthorized tool calls and malformed arguments inst
   assert.throws(()=>readAntigravityReply('{"content":"","tool_calls":[{"id":"1","name":"run_command","arguments":"{}"}]}',[]),/无效/);
   assert.throws(()=>readAntigravityReply('{"content":"","tool_calls":[{"id":"1","name":"read_papers","arguments":"[]"}]}',[{name:'read_papers'}]),/参数无效/);
   assert.equal(readAntigravityReply('普通中文回复').content,'普通中文回复');
+});
+test('voice translation uses the Antigravity text envelope and preserves line alignment',async()=>{
+  const lines=['先确认实验条件。','再检查测量误差。'];
+  const japanese=['まず実験条件を確認する。','次に測定誤差を調べる。'];
+  const config={model:'client-model'};
+  const complete=createAntigravityCompletion(config,{discover,rpc:async(_,method,body)=>{
+    if(method==='GetUserStatus')return status();
+    if(method==='StartCascade')return{cascadeId:'voice-translation'};
+    if(method==='SendUserCascadeMessage'){
+      const prompt=body.items[0].text;
+      const payload=JSON.parse(prompt.slice(prompt.indexOf('\n')+1));
+      assert.match(payload.messages[0].content,/日语/);
+      assert.deepEqual(JSON.parse(payload.messages[1].content),{lines});
+      assert.deepEqual(payload.tools,[]);
+      return{};
+    }
+    if(method==='GetCascadeTrajectory')return{status:'CASCADE_RUN_STATUS_IDLE',trajectory:{steps:[
+      {plannerResponse:{response:JSON.stringify({content:JSON.stringify(japanese),tool_calls:[]})}},
+    ]}};
+    throw Error('Unexpected RPC '+method);
+  }});
+  assert.deepEqual(await translateVoiceLines(config,{lines,targetLanguage:'ja'},{complete:(_,input)=>complete(input)}),{lines:japanese});
+  await assert.rejects(translateVoiceLines(config,{lines,targetLanguage:'ja'},{complete:async()=>({content:'[]'})}),/完整的配音译文/);
 });
 test('API and desktop profiles survive switching and restart; encrypted API credentials never appear in public state or local profile',async t=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'materia-agy-settings-'));t.after(()=>rm(root,{recursive:true,force:true}));

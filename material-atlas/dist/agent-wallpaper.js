@@ -45,7 +45,7 @@ export function createAgentWallpaper(panel,stage) {
   }
   function draw(now=0){
     frame=0;
-    if(!loaded||lost||panel.hidden||stage.dataset.actor==='deepseek'||stage.classList.contains('agent-custom-art'))return;
+    if(!loaded||lost||panel.hidden||stage.dataset.actor!=='amadeus'||stage.classList.contains('agent-custom-art'))return;
     const animate=panel.classList.contains('agent-motion')&&!reduced.matches&&!document.hidden;
     const rect=canvas.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,1.25);
     const width=Math.max(1,Math.round(rect.width*ratio)),height=Math.max(1,Math.round(rect.height*ratio));
@@ -58,7 +58,7 @@ export function createAgentWallpaper(panel,stage) {
   }
   function sync(){
     cancelAnimationFrame(frame);frame=0;
-    canvas.hidden=!loaded||lost||stage.dataset.actor==='deepseek'||stage.classList.contains('agent-custom-art');
+    canvas.hidden=!loaded||lost||stage.dataset.actor!=='amadeus'||stage.classList.contains('agent-custom-art');
     stage.classList.toggle('agent-wallpaper-ready',!canvas.hidden);
     draw(performance.now());
   }
@@ -95,12 +95,12 @@ export function createAgentWallpaper(panel,stage) {
     }catch{loaded=false;sync();}
   }
   new MutationObserver(()=>{
-    if(!started&&!panel.hidden&&stage.dataset.actor!=='deepseek'){started=true;init();}
+    if(!started&&!panel.hidden&&stage.dataset.actor==='amadeus'){started=true;init();}
     sync();
   }).observe(panel,{attributes:true,attributeFilter:['hidden','class']});
   new MutationObserver(records=>{
     if(records.some(r=>r.attributeName==='data-actor'||r.oldValue?.includes('agent-custom-art')!==stage.classList.contains('agent-custom-art'))){
-      if(!started&&!panel.hidden&&stage.dataset.actor!=='deepseek'){started=true;init();}sync();
+      if(!started&&!panel.hidden&&stage.dataset.actor==='amadeus'){started=true;init();}sync();
     }
   }).observe(stage,{attributes:true,attributeFilter:['class','data-actor'],attributeOldValue:true});
   new ResizeObserver(sync).observe(stage);

@@ -44,3 +44,6 @@ dist/fonts/apple/
 
 # Unused early font-source copies; v2 themes reference app fonts
 /theme-examples/codex-source/fonts/
+
+# Locally built licensed character corpus; copied into local releases.
+/dist/assets/characters/*/corpus.json

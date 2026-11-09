@@ -1,0 +1,41 @@
+{
+  "format": "materia-character-source-manifest",
+  "version": 1,
+  "characterId": "genshin-ganyu",
+  "importedAt": "2026-11-08",
+  "corpusSHA256": "cc47812eae7ebe58841cd7fcd7f8b7b7fb5dc58764d04b1e5efe6e7ccc79b80e",
+  "sourceArchive": "C:\\Users\\alone\\OneDrive\\Desktop\\materia\\material-atlas\\.local\\canon-import-20261108\\sources",
+  "statistics": {
+    "datasetGroups": 463,
+    "missingTextGroups": 51,
+    "datasetUniqueRecords": 400,
+    "wikiBlocks": 82,
+    "wikiNewRecords": 0,
+    "wikiDuplicates": 77,
+    "originalRecords": 400,
+    "byMethod": {
+      "game_text_metadata": 400
+    }
+  },
+  "sources": [
+    {
+      "file": "ganyu-voice.html",
+      "url": "https://wiki.biligame.com/ys/%E7%94%98%E9%9B%A8%E8%AF%AD%E9%9F%B3",
+      "bytes": 499833,
+      "sha256": "9fb6fbe6fedb71bdbf83bfcf2c5fcc61d56867f4d048427be20b55e15fa9b849"
+    },
+    {
+      "file": "genshin-voice-README.md",
+      "url": "https://huggingface.co/datasets/simon3000/genshin-voice/raw/main/README.md",
+      "bytes": 5300,
+      "sha256": "d124f8ed29068e44c0225f318bee71fb9b114c23fd10a108c3a55a63f7a5d2c9"
+    }
+  ],
+  "gameMetadata": {
+    "url": "https://huggingface.co/datasets/simon3000/genshin-voice/resolve/68950dc52d799876d1e64c1ab6c47955502e79a1/result.json?download=true",
+    "revision": "68950dc52d799876d1e64c1ab6c47955502e79a1",
+    "sha256": "eba509c9e743c65f756c65cb4ac14080be7aa1cee3fee81800b7beeb4fd425fa",
+    "downloadBytes": 376256038,
+    "scannedEntries": 654252
+  }
+}

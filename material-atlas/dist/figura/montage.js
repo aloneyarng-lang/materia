@@ -1,54 +1,68 @@
 import {html, msg, t} from '../i18n.js';
 import {icon} from '../icons.js';
+import {actionMenu} from '../action-menus.js';
 import {svgImage} from './export.js';
-import {appendPanels,arrangePanels,autoSizePanels,clampPosition,clampWeight,emptyMontage,montageBoard,montageLayout,montageLimit,readMontage} from './montage-layout.js';
+import {appendPanels,autoSizePanels,clampPosition,clampWeight,emptyMontage,montageBoard,montageLayout,montageLimit,readMontage} from './montage-layout.js';
 import {composeMontage,figureFromImage} from './montage-svg.js';
-import {escape} from './view.js';
+import {escape,figuraIcon} from './view.js';
 
 export function montageHTML(native) {
+  const tool=(action,label,glyph,attributes)=>figuraIcon(action,label,glyph,attributes,'montage');
+  const iconMenu=(id,label,body,glyph)=>actionMenu(id,t(label),body,{iconName:glyph,iconOnly:true,className:'icon-button'});
   return html`<dialog class="modal figura-dialog figura-montage" data-fig="montage" aria-labelledby="figura-montage-title">
-    <div class="figura-dialog-heading"><h2 id="figura-montage-title">论文拼版</h2><button type="button" class="icon-button" data-montage-action="close" aria-label="关闭弹窗">${icon('close')}</button></div>
+    <header class="figura-dialog-heading montage-heading">
+      <h2 id="figura-montage-title">论文拼版</h2>
+      <input type="text" maxlength="250" data-montage="name" aria-label="拼版名称" placeholder="拼版名称">
+      <span class="figura-spacer"></span>
+      ${iconMenu('montage-add','加入图稿',html`
+        <button type="button" data-montage-action="import-images" ${native?'':'hidden'}>${icon('upload')}从电脑导入图片</button>
+        <button type="button" data-montage-action="choose-images" ${native?'':'hidden'}>${icon('image')}从图片库选择</button>
+        <button type="button" data-montage-action="choose-projects">${icon('folder')}从已保存图稿选择</button>
+        <button type="button" data-montage-action="current">${icon('chart')}加入当前图稿</button>
+      `,'plus')}
+      ${tool('options','拼版设置','sliders','aria-pressed="false"')}
+      ${tool('close','关闭弹窗','close')}
+    </header>
     <div class="montage-layout">
-      <aside class="montage-controls">
-        <label class="figura-field">拼版名称<input type="text" maxlength="250" data-montage="name" placeholder="例如：图 2"></label>
-        <div class="montage-library" ${native?'':'hidden'}>
-          <label class="figura-field">图片库 · Ctrl / Shift 多选<select data-montage="images" multiple size="4"></select></label>
-          <button type="button" class="outline-button" data-montage-action="image">${icon('plus')}加入所选图片</button>
-          <div class="montage-library-actions">
-            <button type="button" class="text-button" data-montage-action="import-images">导入并加入</button>
-            <button type="button" class="text-button" data-montage-action="open-images">打开图片库</button>
-            <button type="button" class="icon-button" data-montage-action="refresh-images" title="刷新图片库" aria-label="刷新图片库">${icon('refresh')}</button>
+      <aside class="montage-controls" data-montage="controls" hidden>
+        <section data-montage-panel="images" hidden>
+          <div class="montage-section-bar">
+            <strong>图片库</strong>
+            ${tool('open-images','打开图片库','folder')}
+            ${tool('refresh-images','刷新图片库','refresh')}
           </div>
-        </div>
-        <button type="button" class="outline-button" data-montage-action="current">${icon('plus')}加入当前图稿</button>
-        <label class="figura-field">已保存图稿 · 可多选<select data-montage="projects" multiple size="3"></select></label>
-        <button type="button" class="outline-button" data-montage-action="project">${icon('plus')}加入所选图稿</button>
-        <div class="montage-fields">
-          <label class="figura-field">排齐列数<select data-montage="columns"><option value="0">自动均衡</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
-          <label class="figura-field">留白 / 排齐间距<select data-montage="gap"><option value="12">紧凑</option><option value="20">标准</option><option value="32">宽松</option></select></label>
-        </div>
-        <button type="button" class="outline-button" data-montage-action="arrange">${icon('overview')}自动排齐</button>
-        <button type="button" class="outline-button" data-montage-action="auto-size" title="根据当前位置等比例调整各图尺寸，整理间距。">${icon('overview')}自动调整大小</button>
-        <label class="montage-checkbox"><input type="checkbox" data-montage="labels">添加 A、B、C 面板编号</label>
+          <label class="figura-field">Ctrl / Shift 多选<select data-montage="images" multiple size="7" aria-label="图片库"></select></label>
+          <button type="button" class="outline-button" data-montage-action="image">${icon('plus')}加入所选</button>
+        </section>
+        <section data-montage-panel="projects" hidden>
+          <div class="montage-section-bar"><strong>已保存图稿</strong></div>
+          <label class="figura-field">Ctrl / Shift 多选<select data-montage="projects" multiple size="7" aria-label="已保存图稿"></select></label>
+          <button type="button" class="outline-button" data-montage-action="project">${icon('plus')}加入所选</button>
+        </section>
+        <section data-montage-panel="options" hidden>
+          <div class="montage-section-bar"><strong>拼版设置</strong></div>
+          <label class="figura-field">留白间距<select data-montage="gap"><option value="12">紧凑</option><option value="20">标准</option><option value="32">宽松</option></select></label>
+          <label class="montage-checkbox"><input type="checkbox" data-montage="labels">添加 A、B、C 面板编号</label>
+          <label class="figura-field">PNG 分辨率<select data-montage="dpi"><option>300</option><option>600</option><option>150</option><option>96</option></select></label>
+        </section>
       </aside>
       <section class="montage-main" aria-label="拼版预览">
-        <div class="montage-summary"><p class="figura-help">自由拖动图稿，右下角可等比例缩放。也可一次拖入多张图片。</p><span class="figura-help" data-montage="size"></span></div>
         <div class="montage-viewport">
-          <div class="figura-empty" data-montage="empty"><strong>加入图稿开始拼版</strong><span>拖入图片，或从图片库多选加入。最多 12 张。</span></div>
+          <div class="figura-empty" data-montage="empty">${icon('image')}<strong>加入图稿开始拼版</strong><span>拖入多张图片，或用上方 ＋ 选择来源。</span></div>
           <div class="montage-board" data-montage="board" hidden></div>
           <img class="montage-output" data-montage="output" alt="拼版成图" hidden>
         </div>
-        <p class="figura-status" data-fig-dialog-status role="status"></p>
       </section>
     </div>
     <div class="figura-dialog-footer montage-footer">
-      <button type="button" class="primary" data-montage-action="generate">一键生成大图</button>
-      <button type="button" class="outline-button" data-montage-action="edit" hidden>继续调整</button>
-      <span class="figura-spacer"></span>
-      <label class="figura-field">PNG 分辨率<select data-montage="dpi"><option>300</option><option>600</option><option>150</option><option>96</option></select></label>
-      <button type="button" class="outline-button" data-montage-action="svg">SVG</button>
-      <button type="button" class="outline-button" data-montage-action="pdf" ${native?'':'hidden'}>PDF</button>
-      <button type="button" class="outline-button" data-montage-action="png">PNG</button>
+      <div class="montage-caption"><span data-montage="size"></span><p class="figura-status" data-fig-dialog-status role="status"></p></div>
+      <button type="button" class="primary" data-montage-action="generate">${icon('overview')}一键生图</button>
+      ${tool('edit','继续调整','edit','hidden')}
+      <span data-montage="export-menu" hidden>${iconMenu('montage-export','导出绘图',html`
+        <button type="button" data-montage-action="svg">${icon('download')}SVG</button>
+        <button type="button" data-montage-action="pdf" ${native?'':'hidden'}>${icon('download')}PDF</button>
+        <button type="button" data-montage-action="png">${icon('download')}PNG</button>
+      `,'download')}</span>
     </div>
   </dialog>`;
 }
@@ -58,7 +72,7 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
   const control = action => dialog.querySelector('[data-montage-action="'+action+'"]');
   const board = find('board'), image = find('output'), notice = dialog.querySelector('[data-fig-dialog-status]');
   const get = () => read() || emptyMontage();
-  let output, gesture, importing=false;
+  let output, gesture, importing=false, panel='';
   const selected=key=>[...find(key).selectedOptions].filter(option=>!option.disabled).map(option=>option.value);
 
   function report(message,error=false) {
@@ -96,9 +110,15 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
     control('current').disabled=importing||full||!getDraft();
     control('project').disabled=importing||full||!selected('projects').length;
     control('image').disabled=importing||full||!selected('images').length;
-    control('arrange').disabled=importing||!get().panels.length;
-    control('auto-size').disabled=importing||!get().panels.length;
     control('generate').disabled=importing||!get().panels.length;
+  }
+
+  function showPanel(next) {
+    panel=next===panel?'':next;
+    find('controls').hidden=!panel;
+    for(const section of find('controls').children)section.hidden=section.dataset.montagePanel!==panel;
+    control('options').setAttribute('aria-pressed',String(panel==='options'));
+    if(panel==='images'||panel==='projects')find(panel).focus();
   }
 
   function renderBoard() {
@@ -108,10 +128,13 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
     image.hidden = !output;
     if (!output) image.removeAttribute('src');
     else image.src = svgImage(output.svg);
-    find('size').textContent = layout ? msg`${value.panels.length} 张图 · ${layout.width} × ${layout.height} px` : '';
+    find('size').textContent = output
+      ? msg`${value.panels.length} 张图 · ${output.size.width} × ${output.size.height} px`
+      : layout ? msg`${value.panels.length} 张图 · 可拖动，右下角等比例缩放` : '';
     for (const action of ['svg','pdf','png']) control(action).disabled = !output;
     control('generate').hidden = Boolean(output);
     control('edit').hidden = !output;
+    find('export-menu').hidden=!output;
     syncControls();
     if (!layout) {
       board.replaceChildren();
@@ -199,6 +222,12 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
     project: () => addBatch(selected('projects').map(index=>getProjects()[Number(index)]),projectPanel),
     image: () => addBatch(selected('images'),libraryPanel),
     'refresh-images':()=>refreshImages(),
+    async 'choose-images'() {
+      if(panel!=='images')await refreshImages();
+      showPanel('images');
+    },
+    'choose-projects':()=>showPanel('projects'),
+    options:()=>showPanel('options'),
     'open-images':()=>images('imageOpen'),
     async 'import-images'() {
       const result=await images('imageImport');
@@ -206,20 +235,23 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
       await refreshImages(result.added);
       await addBatch(result.added,libraryPanel,result.errors);
     },
-    arrange: () => update({panels:arrangePanels(get())}),
-    'auto-size'() {
-      update({panels:autoSizePanels(get())});
-      report(t('已等比例调整大小并整理间距，可继续拖动微调。'));
-    },
     remove: index => update({panels:get().panels.filter((_,i)=>i!==index)}),
     async generate() {
-      output=composeMontage(get());
-      renderBoard();
+      const draft=get();
+      const composed=composeMontage({...draft,panels:autoSizePanels(draft)});
+      const label=draft.name.trim()||t('论文拼版');
+      showPanel('');
       if (images) {
-        const saved=await save(output,'svg',get().name.trim()||t('论文拼版'),96,true);
-        await refreshImages([saved.filename]);
+        const saved=await save(composed,'svg',label,96,true);
+        output=composed;
+        renderBoard();
         report(msg`已保存到图片库 · ${saved.filename}`);
-      } else report(t('矩形大图已生成'));
+      } else {
+        output=composed;
+        renderBoard();
+        report(t('矩形大图已生成'));
+      }
+      control('edit').focus();
     },
     edit() {
       output=null;
@@ -240,7 +272,7 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
   on(dialog,'change',event => {
     const {montage:key} = event.target.dataset;
     if (key==='projects'||key==='images') syncControls();
-    if (key==='columns' || key==='gap') update({[key]:Number(event.target.value)});
+    if (key==='gap') update({gap:Number(event.target.value)});
     if (key==='labels') update({labels:event.target.checked});
   });
   on(dialog,'input',event => {
@@ -309,8 +341,8 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
       output=null;
       gesture=null;
       const value=get();
+      showPanel('');
       find('name').value=value.name;
-      find('columns').value=String(value.columns);
       find('gap').value=String(value.gap);
       find('labels').checked=value.labels;
       find('projects').innerHTML=getProjects().map((item,i)=>

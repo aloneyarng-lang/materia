@@ -100,7 +100,7 @@ export function appendPanels(montage, additions) {
 
 export function autoSizePanels(montage) {
   const {panels,gap,labels}=montage;
-  if(!panels.length)return [];
+  if(panels.length<2)return [...panels];
   const tiles=panels.map((panel,index)=>{
     const box=panelBox(panel,labels),base=panelBox({...panel,weight:1},labels);
     return {index,box,base,area:box.width*(box.height-box.labelHeight)};
@@ -108,7 +108,7 @@ export function autoSizePanels(montage) {
   function partition(items) {
     if(items.length===1){
       const tile=items[0];
-      return {tile,area:tile.area,minWidth:tile.base.width*.25,
+      return {tile,area:tile.area,width:tile.box.width,height:tile.box.height,minWidth:tile.base.width*.25,
         minHeight:(tile.base.height-tile.base.labelHeight)*.25+tile.base.labelHeight};
     }
     let choice;
@@ -127,41 +127,66 @@ export function autoSizePanels(montage) {
       }
     }
     const first=partition(choice.first),second=partition(choice.second);
-    return {axis:choice.axis,first,second,area:first.area+second.area,
+    const cross=choice.axis==='x'?'y':'x',crossSize=cross==='x'?'width':'height';
+    const center=group=>(Math.min(...group.map(({box})=>box[cross]))+
+      Math.max(...group.map(({box})=>box[cross]+box[crossSize])))/2;
+    return {axis:choice.axis,first,second,area:first.area+second.area,offset:center(choice.second)-center(choice.first),
+      width:choice.axis==='x'?first.width+gap+second.width:Math.max(first.width,second.width),
+      height:choice.axis==='y'?first.height+gap+second.height:Math.max(first.height,second.height),
       minWidth:choice.axis==='x'?first.minWidth+gap+second.minWidth:Math.max(first.minWidth,second.minWidth),
       minHeight:choice.axis==='y'?first.minHeight+gap+second.minHeight:Math.max(first.minHeight,second.minHeight)};
   }
   const tree=partition(tiles);
-  const left=Math.min(...tiles.map(tile=>tile.box.x)),top=Math.min(...tiles.map(tile=>tile.box.y));
-  const naturalWidth=Math.max(...tiles.map(tile=>tile.box.x+tile.box.width))-left;
-  const naturalHeight=Math.max(...tiles.map(tile=>tile.box.y+tile.box.height))-top;
+  // The sketch determines the split directions, not the amount of blank space
+  // left between panels. Size against the compact arrangement instead.
+  const naturalWidth=tree.width,naturalHeight=tree.height;
   const scale=Math.min(1,3200/naturalWidth,3200/naturalHeight);
   const width=Math.max(tree.minWidth,naturalWidth*scale),height=Math.max(tree.minHeight,naturalHeight*scale);
-  const origin={x:Math.max(-positionLimit,Math.min(left,positionLimit-width)),
-    y:Math.max(-positionLimit,Math.min(top,positionLimit-height))};
   const result=new Array(panels.length);
-  function fit(node,rect) {
+  function fit(node,width,height) {
     if(node.tile){
-      const {index,base,box:original}=node.tile;
+      const {index,base}=node.tile;
       const imageHeight=base.height-base.labelHeight;
-      const fittedWeight=Math.min(rect.width/base.width,(rect.height-base.labelHeight)/imageHeight);
+      const fittedWeight=Math.min(width/base.width,(height-base.labelHeight)/imageHeight);
       // Round down so panels remain inside their regions even at the minimum spacing.
       const weight=clampWeight(Math.floor((fittedWeight+1e-9)*100)/100);
       const panel={...panels[index],weight},box=panelBox(panel,labels);
-      const centerX=origin.x+(original.x+original.width/2-left)*width/naturalWidth;
-      const centerY=origin.y+(original.y+original.height/2-top)*height/naturalHeight;
-      result[index]={...panel,
-        x:clampPosition(Math.max(rect.x,Math.min(rect.x+rect.width-box.width,centerX-box.width/2))),
-        y:clampPosition(Math.max(rect.y,Math.min(rect.y+rect.height-box.height,centerY-box.height/2)))};
+      return {index,panel,width:box.width,height:box.height};
+    }
+    const horizontal=node.axis==='x',extent=horizontal?'width':'height',minimum=horizontal?'minWidth':'minHeight';
+    const available=(horizontal?width:height)-gap;
+    const preferred=node.first[extent]/(node.first[extent]+node.second[extent]);
+    const fraction=.85*preferred+.15*node.first.area/node.area;
+    const firstSize=Math.max(node.first[minimum],Math.min(available-node.second[minimum],available*fraction));
+    const first=horizontal?fit(node.first,firstSize,height):fit(node.first,width,firstSize);
+    const second=horizontal?fit(node.second,available-firstSize,height):fit(node.second,width,available-firstSize);
+    const cross=horizontal?'height':'width',a=first[cross],b=second[cross];
+    // Align small deviations, but retain deliberate staggering without letting
+    // a stray drag leave a large empty band in the output.
+    const limit=Math.max(a,b)*.8;
+    const offset=Math.abs(node.offset)<Math.min(a,b)*.12?0:Math.max(-limit,Math.min(limit,node.offset));
+    const secondStart=(a-b)/2+offset;
+    const firstCross=Math.max(0,-secondStart),secondCross=Math.max(0,secondStart);
+    const span=Math.max(firstCross+a,secondCross+b);
+    return {horizontal,first,second,firstCross,secondCross,
+      width:horizontal?first.width+gap+second.width:span,
+      height:horizontal?span:first.height+gap+second.height};
+  }
+  function place(node,x,y) {
+    if(node.panel){
+      result[node.index]={...node.panel,x:clampPosition(x),y:clampPosition(y)};
       return;
     }
-    const horizontal=node.axis==='x',size=horizontal?'width':'height',minimum=horizontal?'minWidth':'minHeight';
-    const available=rect[size]-gap;
-    const firstSize=Math.max(node.first[minimum],Math.min(available-node.second[minimum],available*node.first.area/node.area));
-    fit(node.first,{...rect,[size]:firstSize});
-    fit(node.second,{...rect,[node.axis]:rect[node.axis]+firstSize+gap,[size]:available-firstSize});
+    const {first,second,firstCross,secondCross}=node;
+    if(node.horizontal){
+      place(first,x,y+firstCross);
+      place(second,x+first.width+gap,y+secondCross);
+    }else{
+      place(first,x+firstCross,y);
+      place(second,x+secondCross,y+first.height+gap);
+    }
   }
-  fit(tree,{...origin,width,height});
+  place(fit(tree,width,height),0,0);
   return result;
 }
 

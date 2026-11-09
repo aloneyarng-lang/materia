@@ -56,23 +56,32 @@ html[data-theme-mode=dark]{--activity-0:#293231;--activity-1:#0e4429;--activity-
 
 /* This flex child must own its scroll; otherwise the explorer clips later notes. */
 .notes-library{flex:1 1 0;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding:0 24px 24px;scroll-padding:112px 0 24px}
-.notes-library-toolbar{position:sticky;top:0;z-index:2;margin:0 -24px 24px;padding:16px 24px;gap:12px;background:var(--glass-reading,var(--surface));border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
-.notes-library-toolbar p{margin:0;color:var(--ink);font-size:.875rem;font-weight:600}
-.notes-library-toolbar>div{flex-wrap:wrap;align-items:center}
-.notes-library-toolbar select{width:240px;max-width:100%;min-height:36px;font-size:.75rem;padding:8px 12px;border-radius:8px}
-.notes-library-toolbar .outline-button{min-height:36px;padding:8px 12px;font-size:.75rem;white-space:nowrap}
-.notes-library-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start;gap:16px}
-.notes-library .note-card,.modal .note-card{padding:24px;border-radius:var(--card-radius,16px);border:1px solid var(--line);background:var(--glass-card,var(--surface))}
+.notes-library-toolbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;margin:0 -24px 14px;padding:9px 24px;gap:12px;background:var(--glass-reading,var(--surface));border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+.notes-library-toolbar p,.notes-library-actions{display:flex;align-items:center;gap:8px;margin:0}
+.notes-library-toolbar p{color:var(--ink);font-size:.8125rem;font-weight:600}
+.notes-library-toolbar p>svg{width:16px;height:16px;color:var(--teal)}
+.notes-library-toolbar p>small{font-size:.6875rem;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.notes-library-grid{grid-template-columns:minmax(0,1fr);align-items:start;gap:10px}
+.notes-library .note-card,.modal .note-card{padding:16px 18px;border-radius:var(--card-radius,12px);border:1px solid var(--line);background:var(--glass-card,var(--surface))}
+.modal .note-card{padding:24px}
 .notes-library .note-card:hover{border-color:color-mix(in srgb,var(--teal) 35%,var(--line))}
-.notes-library .note-card-meta{gap:8px;margin-bottom:16px;font-size:.75rem;color:var(--muted)}
-.notes-library .note-card-meta>span{padding:4px 8px;border-radius:8px;background:var(--teal-light);color:var(--teal);font-size:.75rem}
-.notes-library .note-card-meta time,.modal .note-card-meta time{font-size:.75rem;font-variant-numeric:tabular-nums}
-.notes-library .note-card-meta .text-button,.modal .note-card-meta .text-button{font-size:.75rem;min-height:32px;padding:4px 8px;border-radius:8px}
-.notes-library h3{margin:0 0 16px;font-size:1rem;font-weight:600;line-height:1.5;color:var(--ink)}
+.note-row-heading{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:10px;margin-bottom:10px}
+.note-row-type{display:grid;place-items:center;width:32px;height:32px;border-radius:var(--button-radius,8px);background:var(--teal-light);color:var(--teal)}
+.note-row-type svg{width:15px;height:15px}
+.note-row-identity{min-width:0}
+.note-row-identity time,.modal .note-card-meta time{font-size:.6875rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.modal .note-card-meta .text-button{font-size:.75rem;min-height:32px;padding:4px 8px;border-radius:8px}
+.notes-library h3{margin:0 0 2px;font:500 calc(1rem * var(--heading-scale,1))/1.5 var(--serif);color:var(--ink)}
+.notes-library h3 button{padding:0;text-align:left;overflow-wrap:anywhere}
+.notes-library h3 button:hover{color:var(--teal);text-decoration:underline}
 .notes-library .note-body{max-height:none;overflow:visible}
 .notes-library .note-body,.modal .note-body{font-size:.875rem;line-height:1.85;color:var(--ink)}
-.notes-library .note-anchor-link{display:inline-flex;margin-top:16px;font-size:.75rem;line-height:1.6;text-align:left}
-.notes-library .notes-empty{padding:48px 24px;font-size:.875rem;line-height:1.8}
+.notes-library .notes-empty{display:grid;justify-items:center;gap:8px;padding:48px 24px;font-size:.8125rem;line-height:1.8}
+.notes-library .notes-empty svg{width:30px;height:30px;color:var(--teal)}
+.notes-library .notes-empty p{margin:0}
+.notes-owner-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px 0}
+.notes-owner-picker label{grid-column:1/-1;color:var(--muted);font-size:.75rem}
+.notes-owner-picker select{min-width:0;width:100%;min-height:34px;padding:6px 9px;border:1px solid var(--line);border-radius:var(--button-radius);background:var(--glass-field,var(--surface));color:var(--ink)}
 .notes-library:focus-visible{outline:2px solid var(--teal);outline-offset:-4px}
 
 /* Keep the close control visible while scrolling a long paper's notes. */
@@ -89,9 +98,8 @@ html[data-theme-mode=dark]{--activity-0:#293231;--activity-1:#0e4429;--activity-
 @media(max-width:1100px){
  .surface-toolbar .view-tab{padding:8px;font-size:.75rem}
  .notes-library{padding:0 16px 16px}
- .notes-library-toolbar{margin:0 -16px 16px;padding:16px}
+ .notes-library-toolbar{margin:0 -16px 12px;padding:8px 16px}
  .notes-library .note-card{padding:16px}
- .notes-library-toolbar select{width:200px}
 }
 @media(prefers-reduced-motion:reduce){:is(.view-tab,.note-card,.note-card-meta .text-button){transition:none}}
 /* Language names stay readable at all supported interface text sizes. */

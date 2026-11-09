@@ -3,7 +3,7 @@
   display:grid;grid-template-columns:minmax(175px,220px) minmax(0,1fr);min-height:100%;
 }
 #figura-workspace .figura-gallery {
-  padding:16px;border-right:1px solid var(--line);min-width:0;background:var(--glass-chrome,var(--sidebar));
+  padding:12px 14px;border-right:1px solid var(--line);min-width:0;background:var(--glass-chrome,var(--sidebar));
 }
 #figura-workspace .figura-gallery-heading,
 #figura-workspace .figura-toolbar,
@@ -20,7 +20,7 @@
 #figura-workspace .figura-dialog-heading {justify-content:space-between;}
 #figura-workspace .figura-gallery-heading h3 {font-size:.875rem;margin:0;}
 #figura-workspace .figura-search {
-  display:flex;align-items:center;gap:8px;margin:10px 0 8px;padding:0 10px;
+  display:flex;align-items:center;gap:8px;margin:6px 0;padding:0 10px;
   border:1px solid var(--line);border-radius:var(--button-radius);background:var(--glass-field,var(--surface));
 }
 #figura-workspace .figura-search input {padding:7px 0;border:0;background:none;box-shadow:none!important;}
@@ -37,40 +37,44 @@
   background:var(--glass-field,var(--surface));min-height:34px;
 }
 #figura-workspace :is([data-fig=category],.figura-search input) {width:100%;}
-#figura-workspace .figura-schemes {display:grid;gap:4px;margin-top:10px;max-height:calc(100vh - 300px);min-height:180px;overflow:auto;}
+#figura-workspace .figura-schemes {display:grid;gap:3px;margin-top:8px;max-height:calc(100vh - 270px);min-height:180px;overflow:auto;}
 #figura-workspace .figura-scheme {
   display:flex;align-items:center;gap:8px;min-width:0;padding:7px;text-align:left;
   border:1px solid transparent;border-radius:var(--button-radius);
 }
 #figura-workspace .figura-scheme:hover {background:var(--glass-field,var(--panel));}
 #figura-workspace .figura-scheme[aria-pressed=true] {
-  border-color:color-mix(in srgb,var(--teal) 42%,var(--line));background:var(--teal-light);
+  border-color:color-mix(in srgb,var(--teal) 24%,var(--line));background:var(--teal-light);
 }
 #figura-workspace .figura-scheme img {width:55px;height:39px;object-fit:contain;flex-shrink:0;background:white;border-radius:4px;}
 #figura-workspace .figura-scheme span {min-width:0;display:grid;gap:3px;overflow-wrap:anywhere;}
 #figura-workspace .figura-scheme strong {font-weight:500;font-size:.75rem;}
 #figura-workspace .figura-scheme small {font-size:.625rem;color:var(--muted);}
 
-#figura-workspace .figura-main {min-width:0;padding:16px 20px 20px;}
+#figura-workspace .figura-main {min-width:0;padding:12px 18px 18px;}
+#figura-workspace .figura-workbar {display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid var(--line);}
+#figura-workspace .figura-project-bar {flex:1 1 250px;flex-wrap:nowrap;}
 #figura-workspace .figura-project-bar [data-fig=name] {flex:1;max-width:460px;font-weight:500;}
 #figura-workspace .figura-project-bar :is(.primary,.outline-button),
 #figura-workspace .figura-toolbar .outline-button,
 #figura-workspace .figura-data-head .outline-button,
 #figura-workspace .figura-dialog-footer button {display:inline-flex;align-items:center;gap:6px;min-height:34px;font-size:.75rem;}
-#figura-workspace .figura-toolbar {margin:14px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+#figura-workspace .figura-toolbar {margin-left:auto;gap:4px;}
+#figura-workspace .icon-button {flex:0 0 auto;}
 #figura-workspace .figura-mode {
-  display:flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:var(--button-radius);
+  display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:var(--button-radius);
   background:var(--glass-field,var(--panel));
 }
-#figura-workspace .figura-mode button {padding:6px 13px;border-radius:var(--button-radius);font-size:.75rem;}
+#figura-workspace .figura-mode button {width:30px;height:30px;min-height:30px;padding:6px;border-radius:var(--button-radius);}
 #figura-workspace .figura-mode button[aria-pressed=true] {background:var(--surface);color:var(--teal);box-shadow:0 1px 5px var(--shadow);}
 #figura-workspace .figura-spacer {flex:1;}
 #figura-workspace .figura-theme-select {
-  display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:34px;padding:3px 8px;
+  display:inline-flex;align-items:center;gap:4px;max-width:100%;min-height:34px;padding:3px 6px;
   border:1px solid var(--line);border-radius:var(--button-radius);background:var(--glass-field,var(--surface));
   color:var(--muted);font-size:.6875rem;
 }
 #figura-workspace .figura-theme-select select {padding:3px 2px;border:0;background:transparent;}
+#figura-workspace .figura-theme-select svg {width:15px;height:15px;}
 #figura-workspace .figura-theme-select option {background:var(--surface);color:var(--ink);}
 #figura-workspace .figura-theme-swatches {display:flex;gap:2px;}
 #figura-workspace .figura-theme-swatches i {width:8px;height:8px;border-radius:50%;}
@@ -80,7 +84,7 @@
   border-radius:var(--card-radius);background:var(--glass-field,var(--canvas));overflow:hidden;
 }
 #figura-workspace .figura-stage img {
-  display:block;width:auto;height:auto;max-width:100%;max-height:max(240px,calc(100vh - 412px));
+  display:block;width:auto;height:auto;max-width:100%;max-height:max(240px,calc(100vh - 355px));
   background:#fff;box-shadow:0 4px 18px var(--shadow);
 }
 #figura-workspace .figura-stage.is-stale img {opacity:.72;}
@@ -98,6 +102,7 @@
 #figura-workspace .is-error {color:var(--danger);}
 
 #figura-workspace .figura-data-head {margin-bottom:10px;}
+#figura-workspace .figura-preview-footer>[data-fig="plot-status"] {margin-right:auto;}
 #figura-workspace .figura-data-head label {display:flex;align-items:center;gap:8px;font-size:.75rem;}
 #figura-workspace .figura-disclosure {margin:10px 0;padding:10px 0;border-top:1px solid var(--line);}
 #figura-workspace .figura-disclosure summary {cursor:pointer;color:var(--muted);font-size:.75rem;}
@@ -128,23 +133,23 @@
 #figura-workspace .figura-montage.modal {
   width:min(1140px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;
 }
-#figura-workspace .montage-layout {display:grid;grid-template-columns:minmax(175px,225px) minmax(0,1fr);gap:18px;margin-top:14px;}
-#figura-workspace .montage-controls {display:flex;flex-direction:column;gap:10px;min-width:0;}
-#figura-workspace .montage-controls .outline-button {display:flex;align-items:center;justify-content:center;gap:6px;font-size:.75rem;min-height:31px;}
+#figura-workspace .montage-heading {justify-content:flex-start;}
+#figura-workspace .montage-heading [data-montage="name"] {flex:1 1 150px;max-width:260px;padding:7px 9px;border:1px solid var(--line);border-radius:var(--button-radius);background:var(--glass-field,var(--surface));}
+#figura-workspace .montage-layout {display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:12px;}
+#figura-workspace .montage-layout:has(.montage-controls:not([hidden])) {grid-template-columns:minmax(175px,215px) minmax(0,1fr);}
+#figura-workspace .montage-controls {min-width:0;padding:0 12px 0 0;border-right:1px solid var(--line);}
+#figura-workspace .montage-controls>section {display:grid;gap:9px;}
+#figura-workspace .montage-controls .outline-button {justify-self:start;display:inline-flex;align-items:center;gap:5px;font-size:.75rem;min-height:31px;}
 #figura-workspace .montage-controls .outline-button svg {width:14px;height:14px;}
 #figura-workspace .montage-controls select[multiple] {height:auto;min-width:0;padding:4px;}
 #figura-workspace .montage-controls select[multiple] option {padding:3px 5px;}
-#figura-workspace .montage-fields {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 #figura-workspace .montage-checkbox {display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted);}
-#figura-workspace .montage-library {display:grid;gap:7px;padding:9px;border:1px solid var(--line);border-radius:var(--button-radius);}
-#figura-workspace .montage-library-actions {display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;}
-#figura-workspace .montage-library-actions .text-button {font-size:.6875rem;padding:4px 2px;}
-#figura-workspace .montage-library-actions .icon-button {width:25px;height:25px;padding:4px;}
+#figura-workspace .montage-section-bar {display:flex;align-items:center;gap:4px;font-size:.75rem;}
+#figura-workspace .montage-section-bar strong {margin-right:auto;}
+#figura-workspace .montage-heading [aria-pressed=true] {background:var(--teal-light);color:var(--teal);}
 #figura-workspace .montage-main {min-width:0;}
-#figura-workspace .montage-summary {display:flex;align-items:center;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;margin:0 0 8px;}
-#figura-workspace .montage-summary p {margin:0;}
 #figura-workspace .montage-viewport {
-  display:grid;justify-items:center;align-items:start;min-height:235px;max-height:57dvh;overflow:auto;
+  display:grid;justify-items:center;align-items:center;min-height:min(410px,54dvh);max-height:63dvh;overflow:auto;
   padding:13px;border:1px solid var(--line);border-radius:var(--card-radius);background:var(--glass-field,var(--canvas));
 }
 #figura-workspace .montage-board {
@@ -173,7 +178,9 @@
   border:solid #667781;border-width:0 2px 2px 0;
 }
 #figura-workspace .montage-resize:hover::after {border-color:var(--teal);}
-#figura-workspace .montage-footer .figura-field {display:flex;align-items:center;gap:6px;}
+#figura-workspace .montage-footer {justify-content:flex-end;}
+#figura-workspace .montage-caption {flex:1 1 180px;min-width:0;color:var(--muted);font-size:.6875rem;line-height:1.6;}
+#figura-workspace .montage-caption p {margin:0;}
 
 @media(max-width:1150px) {
   #figura-workspace .figura-layout {grid-template-columns:minmax(168px,192px) minmax(0,1fr);}
@@ -183,6 +190,6 @@
   #figura-workspace .figura-layout {grid-template-columns:minmax(0,1fr);}
   #figura-workspace .figura-gallery {border-right:0;border-bottom:1px solid var(--line);}
   #figura-workspace .figura-schemes {grid-template-columns:repeat(auto-fit,minmax(155px,1fr));max-height:195px;min-height:0;}
-  #figura-workspace .montage-layout {grid-template-columns:1fr;}
-  #figura-workspace .montage-controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+  #figura-workspace .montage-layout:has(.montage-controls:not([hidden])) {grid-template-columns:minmax(0,1fr);}
+  #figura-workspace .montage-controls {border-right:0;border-bottom:1px solid var(--line);padding:0 0 10px;}
 }

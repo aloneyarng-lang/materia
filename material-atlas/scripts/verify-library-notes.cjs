@@ -17,13 +17,17 @@ async function waitCount(n){await page.waitForFunction(n=>document.querySelector
  let port;for(let i=0;i<150;i++){try{port=Number((await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0]);if(port)break;}catch{}if(child.exitCode!==null)throw Error('Isolated app exited '+child.exitCode);await new Promise(r=>setTimeout(r,100));}assert.ok(port);
  browser=await chromium.connectOverCDP('http://127.0.0.1:'+port);const context=browser.contexts()[0];page=context.pages()[0]||await context.waitForEvent('page');page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width:1440,height:940});await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelector('.import-main')?.disabled===false);
  await check('notes tab aggregates paper and tag notes safely',async()=>{
-  await page.locator('[data-view="notes"]').click();await waitCount(3);assert.equal(await page.locator('#notes-library img').count(),0);assert.equal(await page.locator('#graph-wrap').isVisible(),false);assert.equal(await page.locator('#paper-list').isVisible(),false);assert.equal(await page.locator('#notes-library .note-body').first().innerText(),'Shared tag note');
+  await page.locator('[data-view="notes"]').click();await page.locator('[data-notes-tab="papers"]').click();await waitCount(3);assert.equal(await page.locator('#notes-library img').count(),0);assert.equal(await page.locator('#graph-wrap').isVisible(),false);assert.equal(await page.locator('#paper-list').isVisible(),false);assert.equal(await page.locator('#notes-library .note-body').first().innerText(),'Shared tag note');
  });
  await check('reading status dropdown has five counted choices and intersects note search',async()=>{
-  assert.equal(await page.locator('#reading-status-filter option').count(),5);assert.equal(await page.locator('#reading-status-filters').count(),0);await page.locator('#reading-status-filter').selectOption('reading');await waitCount(2);await page.locator('#search').fill('Second');await waitCount(1);await page.locator('[data-action="reset-filters"]').first().click();await waitCount(3);assert.equal(await page.locator('#reading-status-filter').inputValue(),'');
+  assert.equal(await page.locator('#reading-status-filter option').count(),5);assert.equal(await page.locator('#reading-status-filters').count(),0);
+  await page.locator('#filter-button').click();await page.locator('#reading-status-filter').selectOption('reading');await page.locator('[data-action="close-filters"]').last().click();
+  await waitCount(2);await page.locator('#search').fill('Second');await waitCount(1);
+  await page.locator('#filter-button').click();await page.locator('#advanced-filter-dialog [data-action="reset-filters"]').first().click();await page.locator('[data-action="close-filters"]').last().click();
+  await waitCount(3);assert.equal(await page.locator('#reading-status-filter').inputValue(),'');
  });
  await check('notes can be created, edited and removed without leaving a stale list',async()=>{
-  await page.locator('#notes-library-owner').selectOption('n0');await page.locator('[data-note-create]').click();await page.locator('#note-body').fill('New saved note');await page.locator('[data-note-action="save"]').click();await page.waitForFunction(()=>document.querySelectorAll('#notes-library .note-card').length===4);await page.locator('#modal [data-action="close-modal"]').last().click();
+  await page.locator('[data-note-start]').click();await page.locator('#notes-library-owner').selectOption('n0');await page.locator('[data-note-create]').click();await page.locator('#note-body').fill('New saved note');await page.locator('[data-note-action="save"]').click();await page.waitForFunction(()=>document.querySelectorAll('#notes-library .note-card').length===4);await page.locator('#modal [data-action="close-modal"]').last().click();
   const card=page.locator('#notes-library .note-card').filter({hasText:'New saved note'});await card.locator('[data-note-open-id]').click();await page.locator('#note-body').fill('Updated saved note');await page.locator('[data-note-action="save"]').click();await page.waitForFunction(()=>document.querySelector('#notes-library').textContent.includes('Updated saved note'));await page.locator('#modal [data-action="close-modal"]').last().click();
   await page.locator('#notes-library .note-card').filter({hasText:'Updated saved note'}).locator('[data-note-open-id]').click();const remove=page.locator('#modal .note-card').filter({hasText:'Updated saved note'}).locator('[data-note-delete]');await remove.click();await remove.click();await page.waitForFunction(()=>document.querySelectorAll('#notes-library .note-card').length===3);await page.locator('#modal [data-action="close-modal"]').last().click();
  });
@@ -35,7 +39,7 @@ async function waitCount(n){await page.waitForFunction(n=>document.querySelector
  });
  await check('many notes remain reachable with wheel and keyboard at both window sizes',async()=>{
   await page.evaluate(()=>window.materiaDesktop.setSetting('notes',{'paper:n0':Array.from({length:18},(_,i)=>({id:'scroll-'+i,body:('研究笔记 '+i+'：对照不同测试条件，记录实验结果与后续问题。\n').repeat(4),createdAt:i+1,updatedAt:i+1}))}));
-  await page.reload();await page.waitForFunction(()=>document.querySelector('.import-main')?.disabled===false);await page.locator('[data-view="notes"]').click();await waitCount(18);
+  await page.reload();await page.waitForFunction(()=>document.querySelector('.import-main')?.disabled===false);await page.locator('[data-view="notes"]').click();await page.locator('[data-notes-tab="papers"]').click();await waitCount(18);
   for(const size of [{width:1440,height:940},{width:1024,height:768}]){
    await page.setViewportSize(size);
    const region=page.locator('#notes-library');

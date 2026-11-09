@@ -7,7 +7,7 @@ const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.resolve(__dirname,'..'),output=path.join(root,'.local','agent-verification');
 const checks=[],errors=[],requests=[],connectionRequests=[];
-let browser,page,preview,mock;
+let browser,page,preview,mock,automaticRequests=0,automaticCanceled=false;
 const call=(name,args,id)=>({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
 async function listen(server){await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));return `http://127.0.0.1:${server.address().port}`;}
 async function check(name,run){await run();checks.push(name);console.log('PASS '+name);}
@@ -20,6 +20,26 @@ async function main(){
     if(req.method==='GET'&&req.url==='/v1/models'){connectionRequests.push({url:req.url});res.setHeader('Content-Type','application/json');if(req.headers.authorization!=='Bearer synthetic-test-key'){res.writeHead(401);res.end('synthetic-test-key MUST NOT APPEAR');return;}res.end(JSON.stringify({data:[{id:'mock-model'}]}));return;}
     const chunks=[];for await(const c of req)chunks.push(c);const body=JSON.parse(Buffer.concat(chunks));requests.push({url:req.url,body,authorization:req.headers.authorization});
     const messages=body.messages||[],user=messages.findLastIndex(m=>m.role==='user'),question=messages[user]?.content||'';
+    if(messages[0]?.content.includes('Galgame 自动对话')){
+      automaticRequests++;
+      if(automaticRequests===2){res.on('close',()=>{automaticCanceled=true;});return;}
+      const extra=Array.from({length:8},(_,i)=>'她接着讲第 '+(i+3)+' 句。');
+      const result={lines:[...(automaticRequests===1?['红莉栖先聊棋局。','她又说了一句。']:['那就接着聊时间旅行。','还可以换个角度看。']),...extra],recap:'从棋局聊到时间旅行。'};
+      if(messages[0].content.includes('加入 "choices"')){
+        result.lines=['说到时间旅行，我想到一个挺麻烦的问题。',...extra,'如果能见到十年后的自己，你最想问什么？'];
+        result.choices=['先聊时间悖论。','问未来的自己过得怎么样。','先聊点轻松的。'];
+      }
+      res.end(JSON.stringify({choices:[{message:{content:JSON.stringify(result)}}]}));return;
+    }
+    if(question==='等等，聊时间旅行吧。'){
+      res.end(JSON.stringify({choices:[{message:{content:'行，那就换到时间旅行。'}}]}));return;
+    }
+    if(question==='问未来的自己过得怎么样。'){
+      res.end(JSON.stringify({choices:[{message:{content:'这个问题倒是比问彩票号码认真多了。'}}]}));return;
+    }
+    if(/测试林|环形磁芯/.test(question)){
+      res.end(JSON.stringify({choices:[{message:{content:'That fits our earlier discussion.'}}]}));return;
+    }
     if(question.includes('慢请求'))return;
     if(question.includes('鉴权错误')){res.writeHead(401);res.end('synthetic-test-key MUST NOT APPEAR');return;}
     const results=messages.slice(user+1).filter(m=>m.role==='tool').map(m=>JSON.parse(m.content));let message;
@@ -99,6 +119,22 @@ async function main(){
     const bounds=await page.locator('#ai-agent-panel').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=1000&&bounds.y+bounds.height<=720);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.screenshot({path:path.join(output,'agent-settings-1000.png')});await page.locator('#agent-model').press('Escape');assert.equal(await page.locator('#ai-agent-panel').isHidden(),true);assert.equal(await page.evaluate(()=>document.activeElement?.dataset.action),'ai-agent');
   });
+  await check('settings shares one panel for service and role controls',async()=>{
+    await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
+    const settings=page.locator('#agent-settings'),service=settings.locator('#agent-service-page'),role=settings.locator('#agent-role-page');
+    if(await settings.getAttribute('open')!==null)await settings.locator('summary').click();
+    await page.locator('[data-character="settings"]').click();
+    assert.equal(await service.isVisible(),true);assert.equal(await role.isHidden(),true);
+    await settings.locator('[data-agent-settings-tab="role"]').click();
+    assert.equal(await service.isHidden(),true);assert.equal(await role.locator('[name="personality"]').isVisible(),true);
+    assert.equal(await role.locator('[data-character="motion"]').isVisible(),true);
+    assert.equal(await page.locator('.agent-character-tools [data-character="edit"],.agent-character-tools [data-character="context"]').count(),0);
+    await page.screenshot({path:path.join(output,'agent-role-settings-1000.png')});
+    await settings.locator('[data-agent-settings-tab="service"]').click();
+    assert.equal(await service.locator('#agent-model').inputValue(),'mock-model');
+    await settings.locator('summary').click();
+    assert.equal(await settings.getAttribute('open'),null);
+  });
   await check('refresh restores model settings and history while keeping the browser key session-only',async()=>{
     await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();await agentAction('settings');
     assert.equal(await page.locator('#agent-model').inputValue(),'mock-model');assert.equal(await page.locator('#agent-key').inputValue(),'');assert.ok(!(await page.locator('#agent-key').getAttribute('placeholder')).includes('已有密钥'));assert.equal(await page.locator('.agent-message').count(),0);
@@ -108,6 +144,115 @@ async function main(){
     const remove=page.getByRole('button',{name:'删除聊天：比较高熵合金的屈服强度',exact:true});await remove.click();await remove.click();await page.locator('#agent-status').filter({hasText:'已删除'}).waitFor();assert.equal(await page.locator('[data-history-open]').count(),1);
     await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();await agentAction('history');assert.equal(await page.locator('[data-history-open]').count(),1);
     await page.locator('[data-history-open]').click();await page.locator('.agent-assistant table').first().waitFor({state:'attached'});assert.equal(await page.locator('.agent-assistant').count(),2);
+  });
+  await check('Amadeus plays one line at a time, pauses, yields to an interruption, resumes, and saves only displayed dialogue',async()=>{
+    await page.clock.install();
+    await page.evaluate(()=>{Math.random=()=>0.5;});
+    await page.locator('[data-character="new"]').click();
+    await page.locator('#agent-scope').selectOption('all');
+    const autoplay=page.locator('[data-character="autoplay"]'),stage=page.locator('.agent-stage-answer');
+    const line=text=>stage.filter({hasText:text}).waitFor({timeout:5000});
+    await autoplay.click();await line('红莉栖先聊棋局。');
+    assert.equal(automaticRequests,1);assert.equal(requests.at(-1).body.tools,undefined);
+    assert.equal(await page.locator('.agent-message').count(),1);
+    const log=page.locator('#agent-log'),logButton=page.locator('[data-character="log"]');
+    await logButton.click();
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'true');
+    assert.ok((await log.boundingBox()).x>500);
+    assert.notEqual(await log.evaluate(el=>getComputedStyle(el).backdropFilter),'none');
+    await autoplay.click();await page.clock.fastForward(13000);
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'false');assert.equal(await page.locator('.agent-message').count(),1);
+    await autoplay.click();await line('她又说了一句。');assert.equal(automaticRequests,1);
+    assert.equal(await log.isVisible(),true);
+    await log.getByRole('button',{name:'关闭记录'}).click();
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'true');
+    for(let i=3;i<=10;i++){await page.clock.fastForward(9000);await line('她接着讲第 '+i+' 句。');}
+    await page.clock.fastForward(9000);
+    await page.locator('#agent-status').filter({hasText:'她停下来等你接话'}).waitFor();
+    assert.equal(await page.locator('.agent-message').count(),10);
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'false');
+    assert.equal(automaticRequests,1);
+    const next=page.waitForRequest(req=>req.url().endsWith('/api/ai-agent/complete')&&req.postDataJSON()?.companion===true);
+    await autoplay.click();await next;
+    await page.locator('#agent-status').filter({hasText:'正在准备下一句'}).waitFor();
+    await ask('等等，聊时间旅行吧。');await line('行，那就换到时间旅行。');await completed();
+    assert.equal(automaticCanceled,true);
+    assert.ok(requests.at(-1).body.messages.some(m=>m.role==='assistant'&&m.content==='她又说了一句。'));
+    await page.clock.fastForward(9000);await line('那就接着聊时间旅行。');
+    const context=JSON.parse(requests.at(-1).body.messages.at(-1).content);
+    assert.ok(context.recent.some(m=>m.role==='user'&&m.content==='等等，聊时间旅行吧。'));
+    assert.ok(context.recap.includes('棋局'));
+    await page.locator('[data-agent-action="close"]').click();await page.clock.fastForward(18000);
+    const saved=await page.evaluate(async()=>(await import('/storage.js')).getSetting('agentChatHistory'));
+    const chat=saved.conversations.find(c=>c.id===saved.activeId);
+    assert.deepEqual(chat.entries.map(m=>[m.role,m.content,m.automatic??false]),[
+      ['assistant','红莉栖先聊棋局。',true],['assistant','她又说了一句。',true],
+      ...Array.from({length:8},(_,i)=>['assistant','她接着讲第 '+(i+3)+' 句。',true]),
+      ['user','等等，聊时间旅行吧。',false],['assistant','行，那就换到时间旅行。',false],['assistant','那就接着聊时间旅行。',true],
+    ]);
+    assert.equal(automaticRequests,3);
+    await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});
+    await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();await line('那就接着聊时间旅行。');
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'false');assert.equal(await page.locator('.agent-message').count(),13);
+  });
+  await check('an automatic choice waits without pausing and lets the chosen reply continue the scene',async()=>{
+    const autoplay=page.locator('[data-character="autoplay"]'),options=page.locator('.agent-scene-choices');
+    const before=automaticRequests;
+    await page.evaluate(()=>{Math.random=()=>0.01;});
+    await autoplay.click();
+    await page.locator('.agent-stage-answer').filter({hasText:'我想到一个挺麻烦的问题'}).waitFor();
+    await page.locator('[data-character="log"]').click();
+    for(let i=0;i<9;i++)await page.clock.fastForward(9000);
+    await options.getByRole('button').last().waitFor();
+    assert.equal(await options.getByRole('button').count(),3);
+    await page.clock.fastForward(45000);
+    assert.equal(automaticRequests,before+1);
+    assert.equal(await autoplay.getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('#agent-log .agent-past-choices li').count(),3);
+    await page.screenshot({path:path.join(output,'agent-automatic-choice-log.png')});
+    const messages=page.locator('#agent-messages');
+    assert.ok(await messages.evaluate(el=>el.scrollTop>0));
+    await messages.evaluate(el=>{el.scrollTop=0;});
+    await page.locator('#agent-question').fill('这一句我想留着');
+    await options.getByRole('button',{name:'问未来的自己过得怎么样。'}).click();
+    await page.locator('.agent-stage-answer').filter({hasText:'比问彩票号码认真多了'}).waitFor();
+    assert.equal(await page.locator('#agent-question').inputValue(),'这一句我想留着');
+    await page.evaluate(()=>{Math.random=()=>0.5;});
+    await page.clock.fastForward(9000);
+    await page.locator('.agent-stage-answer').filter({hasText:'那就接着聊时间旅行。'}).waitFor();
+    assert.equal(automaticRequests,before+2);
+    assert.equal(await messages.evaluate(el=>el.scrollTop),0);
+    await autoplay.click();
+  });
+  await check('completed chats are automatically indexed, searchable canon is separate, and reply language carries across chats',async()=>{
+    await page.locator('[data-character="new"]').click();
+    await ask('我叫测试林，最近在研究环形磁芯退火。');await completed();
+    const before=requests.length;
+    const saved=await page.evaluate(async()=>(await import('/storage.js')).getSetting('agentChatHistory'));
+    assert.ok(saved.characterMemory.roles['makise-kurisu'].episodes.some(item=>item.chatId===saved.activeId));
+    await page.locator('[data-character="settings"]').click();
+    await page.locator('[data-agent-settings-tab="memory"]').click();
+    await page.locator('#agent-memory-episodes').filter({hasText:'测试林'}).waitFor();
+    await page.locator('[data-agent-settings-tab="language"]').click();
+    await page.locator('#agent-reply-language').selectOption('en');
+    await page.locator('#agent-status').filter({hasText:'回复语言已保存'}).waitFor();
+    assert.equal(requests.length,before);
+    if(await fs.access(path.join(root,'dist/assets/characters/makise-kurisu/corpus.json')).then(()=>true,()=>false)){
+      await page.locator('[data-agent-settings-tab="memory"]').click();
+      await page.locator('#agent-corpus-status').filter({hasText:/19,?772/}).waitFor();
+      await page.locator('#agent-corpus-query').fill('プリン');
+      await page.locator('#agent-corpus-form button').click();
+      await page.locator('#agent-corpus-results li').first().waitFor();
+      assert.match(await page.locator('#agent-corpus-results').innerText(),/pudding/i);
+    }
+    await page.locator('[data-character="settings"]').click();
+    await page.locator('[data-character="new"]').click();
+    await ask('你还记得环形磁芯退火吗？');await completed();
+    assert.match(requests.at(-1).body.messages[0].content,/测试林/);
+    assert.match(requests.at(-1).body.messages[0].content,/使用 English/);
+    await page.locator('[data-character="settings"]').click();
+    await page.locator('[data-agent-settings-tab="language"]').click();
+    assert.equal(await page.locator('#agent-reply-language').inputValue(),'en');
   });
   assert.deepEqual(errors,[]);await fs.writeFile(path.join(output,'report.json'),JSON.stringify({passed:checks.length,checks,pageErrors:errors,mockRequests:requests.length},null,2));
 }

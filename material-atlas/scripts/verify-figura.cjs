@@ -17,6 +17,7 @@ const action = key => page.locator('#figura-workspace [data-fig-action="'+key+'"
 const template = id => page.locator('#figura-workspace [data-id="'+id+'"]');
 const montage = key => page.locator('[data-fig=montage] [data-montage="'+key+'"]');
 const montageAction = key => page.locator('[data-fig=montage] [data-montage-action="'+key+'"]:visible').click();
+const montageMenu = key => page.locator('[data-fig=montage] [data-menu-toggle="montage-'+key+'"]').click();
 const waitText = (selector, text) => page.waitForFunction(({selector,text})=>document.querySelector(selector)?.textContent.includes(text),{selector,text});
 const ready = () => page.locator('.import-main:not([disabled])').waitFor({state:'attached'});
 const updated = () => waitText('[data-fig=plot-status]', '预览已更新');
@@ -190,17 +191,20 @@ export async function render({params}) {
   await fs.writeFile(path.join(testRoot,'导入乙.svg'),gradient('导入乙'));
   await action('montage');
   await montage('name').fill('Test montage');
+  await montageMenu('add');
   await montageAction('import-images');
   const cards=page.locator('[data-montage-card]');
   await cards.nth(1).waitFor();
   assert.deepEqual(await cards.locator('img').evaluateAll(nodes=>nodes.map(node=>node.alt)),['Fixture project','导入乙']);
+  await montageMenu('add');
+  await montageAction('choose-images');
   await montage('images').selectOption(['矢量甲.svg','矢量乙.svg']);
   await montageAction('image');
   await cards.nth(3).waitFor();
   assert.equal(await cards.count(),4);
-  await montage('columns').selectOption('4');
-  await montageAction('arrange');
-  assert.ok(await cards.evaluateAll(nodes=>nodes.slice(1).every((node,i)=>node.offsetLeft>=nodes[i].offsetLeft+nodes[i].offsetWidth)));
+  assert.equal(await page.locator('[data-montage-action="arrange"],[data-montage-action="auto-size"]').count(),0);
+  await montageMenu('add');
+  await montageAction('choose-images');
 
   const readMontage=async ready=>{
     for(let attempt=0;attempt<50;attempt++){
@@ -210,7 +214,7 @@ export async function render({params}) {
     }
     throw Error('Montage save timed out');
   };
-  const before=await readMontage(state=>state.panels.length===4&&state.columns===4&&state.panels[1].y===state.panels[3].y);
+  const before=await readMontage(state=>state.panels.length===4);
   const first=await cards.first().boundingBox();
   await page.mouse.move(first.x+first.width*.4,first.y+first.height*.5);
   await page.mouse.down();
@@ -230,6 +234,7 @@ export async function render({params}) {
   await page.mouse.down();
   await page.mouse.move(point.x+62,point.y+38,{steps:6});
   await page.mouse.up();
+  const after=await readMontage(state=>state.panels.length===6&&state.panels[0].weight>1);
   await montageAction('generate');
   await waitText('[data-fig=montage] [data-fig-dialog-status]','已保存到图片库');
   const composed=await fs.readFile(path.join(imageRoot,'Test montage.svg'),'utf8');
@@ -238,12 +243,13 @@ export async function render({params}) {
   assert.ok(ids.length>=5);
   assert.equal(new Set(ids).size,ids.length);
   assert.doesNotMatch(composed,/url\(#same\)/);
+  await montageMenu('export');
   await montageAction('pdf');
   await waitText('[data-fig=montage] [data-fig-dialog-status]','PDF 已导出').catch(async error=>{
     throw Error(await page.locator('[data-fig=montage] [data-fig-dialog-status]').textContent(),{cause:error});
   });
   assert.match((await fs.readFile(path.join(testRoot,'Test montage.pdf'))).toString('latin1'),/\/Subtype \/Image/);
-  const after=await readMontage(state=>state.panels.length===6&&state.panels[0].weight>1);
+  assert.deepEqual(await readMontage(),after,'generation must not replace the editable draft');
   assert.equal(after.panels.length,6);
   assert.ok(after.panels[0].weight>1);
   assert.ok(after.panels[0].x>before.panels[0].x&&after.panels[0].y>before.panels[0].y);
@@ -251,21 +257,15 @@ export async function render({params}) {
   const exported=await page.evaluate(svg=>[...new DOMParser().parseFromString(svg,'image/svg+xml').documentElement.children]
     .filter(node=>node.localName==='svg').map(node=>['x','y','width','height'].map(attr=>Number(node.getAttribute(attr)))),composed);
   assert.equal(exported.length,6);
-  const scale=exported[0][2]/(after.panels[0].width*Math.min(968/after.panels[0].width,440/after.panels[0].height)*after.panels[0].weight);
-  assert.ok(Math.abs(exported[0][0]-exported[1][0]-(after.panels[0].x-after.panels[1].x)*scale)<.01);
-  assert.ok(Math.abs(exported[0][1]-exported[1][1]-(after.panels[0].y-after.panels[1].y)*scale)<.01);
+  for(const [[x,y,w,h],i] of exported.map((box,i)=>[box,i])){
+    assert.ok(Math.abs(w/h-after.panels[i].width/after.panels[i].height)<.01);
+    for(const [ox,oy,ow,oh] of exported.slice(i+1))assert.ok(x+w<=ox||ox+ow<=x||y+h<=oy||oy+oh<=y);
+  }
   await montageAction('edit');
-  await montageAction('auto-size');
-  await waitText('[data-fig=montage] [data-fig-dialog-status]','已等比例调整大小');
-  const resized=await readMontage(state=>state.panels.some((panel,i)=>panel.weight!==after.panels[i].weight));
-  assert.equal(resized.panels.length,6);
-  assert.deepEqual(resized.panels.map(panel=>panel.svg),after.panels.map(panel=>panel.svg));
-  assert.ok(await cards.evaluateAll(nodes=>nodes.every((node,i)=>nodes.slice(i+1).every(other=>
-    node.offsetLeft+node.offsetWidth<=other.offsetLeft+1||other.offsetLeft+other.offsetWidth<=node.offsetLeft+1||
-    node.offsetTop+node.offsetHeight<=other.offsetTop+1||other.offsetTop+other.offsetHeight<=node.offsetTop+1))));
+  assert.equal(await cards.count(),6);
   await montageAction('generate');
   await waitText('[data-fig=montage] [data-fig-dialog-status]','Test montage (2).svg');
-  assert.match(await fs.readFile(path.join(imageRoot,'Test montage (2).svg'),'utf8'),/<image href="data:image\/png;base64,/);
+  assert.equal(await fs.readFile(path.join(imageRoot,'Test montage (2).svg'),'utf8'),composed);
   await montageAction('close');
   console.log('PASS bulk imports, free positioning, automatic sizing, vector composition and mixed PDF');
   await app.close();

@@ -204,6 +204,13 @@ test('automatic montage sizing handles overlapping figures, extreme aspect ratio
   }
 });
 
+test('one-click arrangement removes large blank bands from a sparse draft',()=>{
+  const state=readMontage({...emptyMontage(),panels:montagePanels.slice(0,2).map((panel,i)=>({...panel,x:i*8000,y:0}))});
+  const [left,right]=autoSizePanels(state).map(panel=>panelBox(panel,state.labels));
+  assert.ok(Math.abs(right.x-left.x-left.width-state.gap)<=1);
+  assert.equal(state.panels[1].x,8000);
+});
+
 test('Markdown reference templates round-trip and support both plot scheme and project IDs', () => {
   const template=plotMarkdownExample({scheme:'grouped-line',name:'Example',csv:'x,y,group\n1,2,A\n3,4,B'});
   assert.deepEqual(readPlotMarkdown(template),{scheme:'grouped-line',name:'Example',rows:[['x','y','group'],['1','2','A'],['3','4','B']]});

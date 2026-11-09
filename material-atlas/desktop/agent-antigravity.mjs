@@ -185,7 +185,7 @@ export function createAntigravityCompletion(value,options={}){
       const protocol='只输出 JSON 对象 {"content":"回答文本","tool_calls":[]}。直接回答时 tool_calls 留空。需要检索时将工具调用写为 {"id":"唯一标识","name":"工具名","arguments":"JSON字符串"}，由 Materia 执行。不要使用客户端工具，不读写文件，不执行命令。';
       const prompt=sentCount
         ? '这是本轮 Materia 只读检索的结果。根据新结果继续，资料足够就回答。'+protocol+'\n'+JSON.stringify({messages:messages.slice(sentCount+1)})
-        : '按 messages 的角色和顺序继续对话，system 为最高优先级。'+protocol+'\n'+JSON.stringify({messages:attached?[messages[0],messages.at(-1)]:messages,tools});
+        : '按本轮 messages 的角色和顺序继续对话，system 为最高优先级。'+protocol+'\n'+JSON.stringify({messages:attached&&!options.fullContext?[messages[0],messages.at(-1)]:messages,tools});
       if(Buffer.byteLength(prompt)>800000)throw Error('上下文过大，请新建对话或缩小文献范围。');
       waiting=true;
       await session.rpc(session.connection,'SendUserCascadeMessage',{cascadeId:session.id,items:[{text:prompt}],cascadeConfig:session.cascadeConfig,blocking:false,clientType:1},combined);

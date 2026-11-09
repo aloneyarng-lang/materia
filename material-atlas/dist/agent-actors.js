@@ -1,4 +1,12 @@
+import {REZE_PERSONALITY,REZE_GREETING} from './agent-reze.js';
+import {GANYU_PERSONALITY,GANYU_GREETING} from './agent-ganyu.js';
 export const ACTORS={
+  ganyu:{id:'ganyu',label:'甘雨 · Ganyu',personality:GANYU_PERSONALITY,greeting:GANYU_GREETING,credit:'[Genshin Impact] Ganyu · Workshop 2808936045',portrait:'./assets/actors/ganyu/poster.jpg',systemLabel:'GANYU · LIYUE '},
+  reze:{
+    id:'reze',label:'蕾塞 · Reze',credit:'[Chainsaw Man] Reze · Workshop 3730489622',
+    personality:REZE_PERSONALITY,greeting:REZE_GREETING,
+    portrait:'./assets/actors/reze/portrait.png',systemLabel:'REZE · NIDO ',
+  },
   amadeus:{
     id:'amadeus',label:'Amadeus · 红莉栖',credit:'[Steins;Gate] Makise Kurisu · Workshop 2950669609',
   },

@@ -55,3 +55,7 @@ backups/
 !Materia.exe - 快捷方式.lnk
 **/theme-examples/*preview.png
 **/theme-examples/*comparison.png
+
+# Local role corpus and private relationship indexes
+/记忆库/
+/笔记库/

@@ -1,6 +1,7 @@
 ﻿import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage, protocol } from 'electron';
 import {createStartup} from './startup.mjs';
+import {NotesVault} from './notes-vault.mjs';
 import {DesktopModuleServices} from './module-services.mjs';
 import {DESKTOP_MODULES} from './modules/index.mjs';
 import {MachineLearningEngine} from './ml-engine.mjs';
@@ -12,8 +13,13 @@ import { LocalLibrary } from './library.mjs';
 import { AgentSettings, completeWithProvider,testAgentConnection,listAgentModels } from './agent.mjs';
 import {AntigravityChatLinks,inspectAntigravity,findAntigravity,createAntigravityCompletion} from './agent-antigravity.mjs';
 import { runResearchAgent } from '../dist/ai-agent-core.js';
+import { runCompanionTurn } from '../dist/agent-companion.js';
 import { AgentHistoryFile } from './agent-history.mjs';
-import { translateText } from './translation.mjs';
+import {hasCharacterMemory} from '../dist/agent-persona.js';
+import {characterIdFor,profileFor,cleanReplyLanguage} from '../dist/agent-character-memory.js';
+import {createDesktopCorpus} from './agent-character-corpus.mjs';
+import {createAgentVoice,isVoiceLanguage} from './agent-voice.mjs';
+import { translateText, translateVoiceLines } from './translation.mjs';
 import {t,setLocale,normalizeLocale} from '../dist/i18n.js';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,6 +28,7 @@ app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(appRoot, '.local', 'desktop-profile'));
 app.setPath('userData', profile);
 let mainWindow, library, agentHistory, canvasStore, moduleServices, startup;
+const agentVoice = createAgentVoice(process.env.MATERIA_VOICE_DIR || path.join(app.getPath('home'), '.materia', 'voice'));
 const mlEngine=new MachineLearningEngine({onProgress:progress=>{if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('ml:progress',progress);}});
 let preferenceQueue=Promise.resolve();
 function observeLibrary(store){store.onFolderChange=result=>{if(store===library&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('library:changed',{path:store.root,...result});};return store;}
@@ -39,7 +46,7 @@ app.on('window-all-closed', () => app.quit());
 let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
-  event.preventDefault();quitPending=true;agentRun?.controller.abort();cancelTranslations();mlEngine.cancelAll();
+  event.preventDefault();quitPending=true;agentRun?.controller.abort();agentVoice.close();cancelTranslations();mlEngine.cancelAll();
   Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,moduleServices?.flush(),preferenceQueue]).then(()=>app.quit());
 });
 
@@ -61,12 +68,15 @@ async function start() {
     preferenceQueue=operation.catch(()=>{});return operation;
   };
   const defaultRoot = process.env.MATERIA_LIBRARY_DIR || portableLibraryRoot(appRoot,path.dirname(app.getPath('exe')));
+  const memoryRoot=path.join(path.dirname(defaultRoot),'记忆库');
+  const browseDesktopCorpus=createDesktopCorpus(memoryRoot);
+  const notesVault=new NotesVault(path.join(path.dirname(defaultRoot),'笔记库'));
   const previousRoot = app.isPackaged ? path.resolve(path.dirname(app.getPath('exe')), '..', '..', 'Materia-win32-x64', '文献库') : '';
   const legacyRoots=[previousRoot,path.join(path.dirname(app.getPath('exe')),'文献库'),path.resolve(appRoot,'../../../../Materia-win32-x64/文献库'),path.join(appRoot,'.local','desktop-library')];
   const startupRoot = await prepareLibraryLocation({envRoot:process.env.MATERIA_LIBRARY_DIR,configuredRoot:config.libraryPath,legacyRoots,defaultRoot});
   library = await new LocalLibrary(startupRoot).init();
   observeLibrary(library);
-  agentHistory = new AgentHistoryFile(library.root);
+  agentHistory = new AgentHistoryFile(library.root,{memoryRoot});
   canvasStore=new CanvasFile(library.root);
   moduleServices=new DesktopModuleServices(DESKTOP_MODULES,library.root);
   await savePreferences({libraryPath:library.root});
@@ -87,6 +97,13 @@ async function start() {
     return fn(...args);
   });
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
+  handle('notes-vault:list',()=>notesVault.list());
+  handle('notes-vault:save',payload=>notesVault.save(payload));
+  handle('notes-vault:image',({note,reference})=>notesVault.image(note,reference));
+  handle('notes-vault:folder',async()=>{
+    const result=await shell.openPath(await notesVault.directory([],true));
+    if(result)throw Error(result);
+  });
   handle('startup:ready',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);return true;});
   moduleServices.register(handle);
   let figura;
@@ -137,12 +154,36 @@ async function start() {
     if(translationRuns.size>=3)throw new Error('翻译请求过多，请等待或停止当前翻译。');
     if(!agentSettings.config?.model&&agentSettings.config?.connection!=='antigravity')throw new Error('请先在 AI 研究助手中保存服务地址和模型。');
     const controller=new AbortController();translationRuns.set(payload.id,controller);
-    try{return await translateText({...agentSettings.config},payload.request,{signal:controller.signal});}
+    try {
+      const translate=payload.voice ? translateVoiceLines : translateText;
+      return await translate({...agentSettings.config},payload.voice || payload.request,{signal:controller.signal});
+    }
     catch(error){return{error:controller.signal.aborted?'翻译已停止。':error.message,canceled:controller.signal.aborted};}
     finally{translationRuns.delete(payload.id);}
   });
   const publicAgentConfig=()=>({...agentSettings.publicConfig(),appVersion:app.getVersion()});
   handle('agent:get-config', publicAgentConfig);
+  handle('agent:voice-status', async characterId => {
+    const {available,defaultLanguage}=await agentVoice.status(characterId);
+    const saved=config.agentVoiceLanguage;
+    const language=isVoiceLanguage(saved)?saved:defaultLanguage;
+    return {available,language,enabled:config.agentVoiceEnabled!==false};
+  });
+  handle('agent:voice-enabled', async enabled => {
+    if(typeof enabled!=='boolean')throw Error('配音设置无效。');
+    await savePreferences({agentVoiceEnabled:enabled});
+    return config.agentVoiceEnabled;
+  });
+  handle('agent:voice-language', async language => {
+    if(!isVoiceLanguage(language))throw Error('配音语言无效。');
+    await savePreferences({agentVoiceLanguage:language});
+    return config.agentVoiceLanguage;
+  });
+  handle('agent:voice-prepare', async (characterId,language) => {if(config.agentVoiceEnabled!==false && await agentVoice.available(characterId))await agentVoice.prepare(characterId,['zh','en','ja','auto'].includes(language)?language:'ja');});
+  handle('agent:voice-synthesize', request => {
+    if(config.agentVoiceEnabled===false)throw Error('已关闭配音。');
+    return agentVoice.synthesize(request);
+  });
   handle('agent:get-history', async () => { const store=agentHistory;await store.queue;return {libraryKey:store.root,state:await store.load()}; });
   handle('agent:save-history', payload => {
     if(!payload||payload.libraryKey!==agentHistory.root)throw new Error('文献库已切换，历史记录未写入其他文献库。');
@@ -182,6 +223,12 @@ async function start() {
     finally{if(modelDiscovery===controller)modelDiscovery=null;}
   });
   handle('agent:cancel', id => { if (agentRun?.id === id) agentRun.controller.abort(); });
+  handle('agent:memory-corpus', request => browseDesktopCorpus.list(request));
+  handle('agent:memory-corpus-update', request => browseDesktopCorpus.update(request));
+  handle('agent:character-corpus', request => browseDesktopCorpus({
+    characterId:request?.characterId,query:typeof request?.query==='string'?request.query.slice(0,140):'',
+    locale:request?.locale,browse:true,
+  }));
   handle('agent:run', async payload => {
     if (agentRun) throw new Error('请先停止当前回答。');
     if (!payload || typeof payload.id !== 'string' || payload.id.length > 100) throw new Error('请求格式无效。');
@@ -190,12 +237,19 @@ async function start() {
     const runSignal = AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]);
     const current = { id: payload.id, controller }; agentRun = current;
     try {
+      const localMemory=hasCharacterMemory(payload.character);
+      if (payload.companion) {
+        const complete = config.connection === 'antigravity'
+          ? createAntigravityCompletion(config,localMemory?{}:{...await antigravityChats.forChat(library.root,payload.chatId+'-auto',config,null),fullContext:true})
+          : input => completeWithProvider(config,input);
+        return await runCompanionTurn({...payload,complete,signal:runSignal,findCanon:browseDesktopCorpus});
+      }
       const context = { papers: structuredClone(library.getPapers()), notes: structuredClone(library.getSetting('notes') || {}), scopeIds: payload.scopeIds ?? null };
       const complete=config.connection==='antigravity'
-        ? createAntigravityCompletion(config,await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds))
+        ? createAntigravityCompletion(config,localMemory?{}:{...await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds),fullContext:payload.companionContext===true})
         : input=>completeWithProvider(config,input);
       return await runResearchAgent({ question: payload.question, character:payload.character, history: payload.history, context,
-        signal: runSignal,
+        signal: runSignal, companionContext:payload.companionContext===true, kurisuContext:payload.kurisuContext,findCanon:browseDesktopCorpus, voiceLanguage:payload.voiceLanguage,
         complete,
         onProgress: progress => { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('agent:progress', { id: payload.id, ...progress }); },
       });
@@ -203,7 +257,7 @@ async function start() {
       return { error: controller.signal.aborted ? '已停止生成。' : runSignal.aborted ? '本次研究已超时，请缩小范围后重试。' : (error.message || 'AI 请求失败，请重试。'), canceled: controller.signal.aborted };
     } finally { if (agentRun === current) agentRun = null; }
   });
-  mainWindow.on('closed', () => {agentRun?.controller.abort();cancelTranslations();});
+  mainWindow.on('closed', () => {agentRun?.controller.abort();agentVoice.close();cancelTranslations();});
   handle('library:open-pdf', async id => { const result = await shell.openPath(await library.pdfPath(id)); if (result) throw new Error(result); });
   handle('library:save-pdf', async id => {
     const p = library.data.papers.find(p => p.id === id); if (!p) throw new Error('找不到文献。');
@@ -221,7 +275,7 @@ async function start() {
     await agentHistory.queue;
     const next = await new LocalLibrary(chosen.filePaths[0]).init();
     await savePreferences({libraryPath:next.root});
-    await canvasStore.queue;mlEngine.cancelAll();await moduleServices.changeLibrary(next.root);library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root);canvasStore=new CanvasFile(library.root);return library.info();
+    await canvasStore.queue;mlEngine.cancelAll();await moduleServices.changeLibrary(next.root);library = observeLibrary(next); agentHistory = new AgentHistoryFile(library.root,{memoryRoot});canvasStore=new CanvasFile(library.root);return library.info();
   });
   handle('library:save-backup', async json => {
     if (typeof json !== 'string' || json.length > 1024 * 1024 * 1024) throw new Error('备份内容过大。');
@@ -245,5 +299,19 @@ async function start() {
   let folderSyncBusy=false;
   const syncFolders=async()=>{if(folderSyncBusy||mainWindow.isDestroyed())return;folderSyncBusy=true;try{await library.syncFolders();}catch(error){console.error('文献文件夹同步：',error.message);}finally{folderSyncBusy=false;}};
   setInterval(syncFolders,4000).unref();mainWindow.on('focus',syncFolders);
+  mainWindow.webContents.once('did-finish-load', () => {
+    if(config.agentVoiceEnabled!==false){
+      void (async()=>{
+        const history=await agentHistory.load({refresh:false});
+        const saved=library.getSetting('module:agent-character');
+        const active=history.conversations.find(chat=>chat.id===history.activeId)?.character;
+        const selected=active||(saved?.version===2?saved.cards?.[saved.active]:saved)||{actorId:'amadeus',name:'Amadeus'};
+        const id=characterIdFor(selected);if(!id)return;
+        const setting=isVoiceLanguage(config.agentVoiceLanguage)?config.agentVoiceLanguage:(await agentVoice.status(id)).defaultLanguage;
+        const locale=setting==='follow'?cleanReplyLanguage(profileFor(history,id)?.replyLanguage):setting;
+        if(await agentVoice.available(id))await agentVoice.prepare(id,locale==='zh-CN'?'zh':locale);
+      })().catch(()=>{});
+    }
+  });
   await mainWindow.loadFile(path.join(appRoot, 'dist', 'index.html'));
 }

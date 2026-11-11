@@ -24,3 +24,17 @@ export function choiceReplyForQuestion(text,question){
   return requested||decision?result:{answer:result.answer};
 }
 export const entryText=entry=>entry.content+(entry.choices?'\n\n可选回复\n'+entry.choices.map((text,i)=>(i+1)+'. '+text).join('\n'):'');
+
+export function dialogueHistory(entries){
+  const turns=[];
+  let automatic=false;
+  for(const entry of entries){
+    if(entry.role==='error'){automatic=false;continue;}
+    const line=entryText(entry);
+    const continues=entry.role==='assistant'&&entry.automatic===true;
+    if(automatic&&continues)turns.at(-1).content+='\n'+line;
+    else turns.push({role:entry.role,content:line,...(continues?{automatic:true}:{})});
+    automatic=continues;
+  }
+  return turns;
+}

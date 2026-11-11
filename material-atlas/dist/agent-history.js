@@ -28,7 +28,12 @@ export function cleanAgentHistory(value) {
       if(!['user','assistant','error'].includes(entry?.role))throw new Error('聊天消息类型无效。');
       const sources=Array.isArray(entry.sources)?entry.sources.map(source=>({id:idOf(source.id),title:bounded(source.title,1000),year:String(source.year||'').slice(0,4),journal:String(source.journal||'').slice(0,300),doi:String(source.doi||'').slice(0,1000)})):[];
       if(sources.length>500)throw new Error('单条消息来源过多。');
+      const voiceClips=entry.role==='assistant'&&Array.isArray(entry.voiceClips)?entry.voiceClips.slice(0,512)
+        .filter(clip=>typeof clip?.id==='string'&&/^[a-f0-9]{64}$/.test(clip.id)&&
+          ['zh','ja','en','auto'].includes(clip.language)&&typeof clip.text==='string'&&clip.text.trim())
+        .map(({id,language,text})=>({id,language,text:text.slice(0,1200)})):[];
       return {role:entry.role,content:bounded(entry.content,60000),...(sources.length?{sources}: {}),
+        ...(voiceClips.length?{voiceClips}:{}),
         ...(entry.role==='assistant'&&entry.automatic===true?{automatic:true}:{}),
         ...(entry.role==='assistant'&&entry.choices?{choices:cleanChoices(entry.choices)}:{})};
     });

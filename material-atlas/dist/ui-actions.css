@@ -9,6 +9,12 @@
 .ui-action-popover button:hover,.ui-action-popover a:hover{background:var(--panel);color:var(--teal)}
 .ui-action-popover button:disabled{opacity:.4;cursor:default}.ui-action-popover .danger{color:var(--danger,#ae655c)}
 .ui-action-popover .ui-icon{width:16px;height:16px}.ui-action-popover hr{border:0;border-top:1px solid var(--line);width:100%;margin:5px 0}
+.ui-control-popover:popover-open{gap:10px;padding:12px;width:min(280px,calc(100vw - 16px))}
+.ui-control-popover label{display:grid;gap:4px;color:var(--muted)}
+.ui-control-popover label>select{width:100%!important;max-width:none!important}
+.ui-control-popover label:has(>input[type=checkbox]){display:flex;align-items:center;gap:7px}
+.ui-control-popover input[type=checkbox]{width:auto}
+#selection-reading-actions [aria-checked=true]::after{content:'✓';margin-inline-start:auto;color:var(--teal)}
 .ui-menu-caption{margin:5px 10px 3px;color:var(--muted);font-size:0.625rem;letter-spacing:.06em}
 button:focus-visible,summary:focus-visible,[role=menuitem]:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .selection-actions{position:static!important;display:flex;align-items:center;gap:10px;padding:8px 14px!important;margin:0!important;flex-shrink:0;border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;box-shadow:none!important;background:var(--panel)!important;z-index:auto!important}

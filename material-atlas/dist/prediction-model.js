@@ -216,7 +216,7 @@ function featureImportance(forest,names){const counts=Array(names.length).fill(0
 export function trainingRows(workspace,{datasetIds,form,basis,target}) {
  form=normalizeForm(form);
  const rows=[],seen=new Map();
- for(const original of workspace.datasets)if(datasetIds.includes(original.id))for(const d of [scopedDataset(original,form,basis)])for(const r of d.rows){if(!Number.isFinite(r.targets[target]))continue;
+ for(const original of workspace.datasets)if(datasetIds.includes(original.id))for(const d of [scopedDataset(original,form,basis)])for(const r of d.rows){if(r.trainingExcluded||!Number.isFinite(r.targets[target]))continue;
   const key=JSON.stringify([compositionKey(r.composition),Object.entries(r.features).sort(),r.targets[target]]);
   const provenance=(Array.isArray(r.provenance)&&r.provenance.length?r.provenance:[
    {row:r.row,source:r.source,original:r.original,...(r.provenance||{})},

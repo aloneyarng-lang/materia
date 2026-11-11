@@ -55,16 +55,17 @@ async function main(){
     await page.locator('.workspace-ribbon [data-action="ai-agent"]').click();
     await page.locator('.agent-settings').evaluate(el=>el.open=false);
     await page.locator('.toast').evaluateAll(elements=>elements.forEach(el=>el.remove()));
+    await page.locator('[data-character="log"]').click();
     await page.locator('#agent-messages').evaluate(async el=>{const {renderChatMarkdown}=await import('/agent-markdown.js');el.innerHTML='<article class="agent-message agent-assistant"><div class="agent-markdown agent-message-body">'+renderChatMarkdown('## 研究记录\n\n材料的结构与性能，保留单位和测试条件。\n\n| 样品 | 性能 |\n| --- | --- |\n| A | 100 MPa |',[])+'</div></article>';});
     assert.equal(await size('.agent-message-body'),19.5);assert.ok(await size('.paper-row h3')>=await size('body'));
     for(const width of [1395,1000,600]){
       await page.setViewportSize({width,height:960});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       const box=await page.locator('#ai-agent-panel').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
-      assert.equal(await page.locator('.agent-markdown p').isVisible(),true);
+      assert.equal(await page.locator('.agent-message-body p').isVisible(),true);
       await capture('chat-150-'+width);
     }
     await page.locator('[data-agent-action="close"]').click();
-    await open();await page.locator('[data-theme-action="reset-font-scale"]').scrollIntoViewIfNeeded();await capture('settings-150-narrow');
+    await open();await page.locator('[data-menu-toggle="theme-font-menu"]').scrollIntoViewIfNeeded();await capture('settings-150-narrow');
     assert.equal(await page.locator('#modal').evaluate(el=>el.scrollWidth>el.clientWidth),false);
     await page.setViewportSize({width:1395,height:960});
   });
@@ -75,7 +76,7 @@ async function main(){
     const before=await dimensions();
     // A modal may be opened above the reader through the same appearance action.
     await page.evaluate(()=>document.querySelector('#library-location').click());await page.locator('#ribbon-theme').click();await page.locator('.theme-fonts>summary').click();
-    await page.locator('[data-theme-action="reset-font-scale"]').click();await settled();assert.equal(await size('body'),13);
+    await page.locator('[data-menu-toggle="theme-font-menu"]').click();await page.locator('[data-theme-action="reset-font-scale"]').click();await settled();assert.equal(await size('body'),13);
     assert.equal(data.settings.themePreferences.fontScale,undefined);assert.equal(data.settings.themePreferences.selected,'academic-purple');assert.equal(data.settings.themePreferences.fonts.body,'yahei');
     await close();assert.deepEqual(await dimensions(),before);await page.locator('[data-reader-action="close"]').click();
     await page.reload();await ready();assert.equal(await size('body'),13);assert.equal(JSON.stringify(data.papers),original);

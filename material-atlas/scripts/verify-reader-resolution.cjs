@@ -30,7 +30,7 @@ async function capture(name){for(let i=0;i<3;i++)try{await page.screenshot({path
   await page.evaluate(()=>window.previousPDFCanvas=document.querySelector('#reader-stage canvas'));await density(1.25);await page.waitForFunction(()=>document.querySelector('#reader-stage canvas')!==window.previousPDFCanvas,null,{polling:100});await ready();assert.ok((await metrics())[0].ratio>1.99);await capture('high-resolution-single.png');
  });
  await check('two-page zoom stays within the canvas budget and preserves note data and original PDF bytes',async()=>{
-  await page.locator('#reader-layout').selectOption('spread');await ready();assert.equal((await metrics()).length,2);await density(3);await ready();
+  await page.locator('[data-menu-toggle="reader-layout-menu"]').click();await page.locator('#reader-layout').selectOption('spread');await page.locator('[data-menu-toggle="reader-layout-menu"]').click();await ready();assert.equal((await metrics()).length,2);await density(3);await ready();
   for(let i=0;i<9;i++){await page.locator('[data-reader-action="zoom-in"]').click();await ready();}
   const pages=await metrics();assert.equal(pages.length,2);assert.ok(pages.reduce((sum,p)=>sum+p.width*p.height,0)<=32000000);assert.ok(pages.every(p=>p.width<=8192&&p.height<=8192));assert.deepEqual(await page.evaluate(()=>materiaDesktop.getSetting('notes')),originalNotes);assert.equal(hash(await fs.readFile(pdfPath)),pdfBefore);await density(1);await ready();await capture('high-resolution-spread.png');
  });

@@ -3,6 +3,7 @@ import {icon} from './icons.js';
 import {actionMenu} from './action-menus.js';
 import {getSetting,setSetting} from './storage.js';
 import {NOTE_LIMIT,notePath,noteName,noteBody} from './notes-vault-model.js';
+import {createNoteEditDialog} from './note-edit-dialog.js';
 import {renderNoteMarkdown,noteReferences,resolveNoteLink} from './notes-markdown.js';
 
 const native=globalThis.materiaDesktop;
@@ -13,7 +14,7 @@ async function readIndex(){
   if(native)return native.notesVaultList();
   return {notes:await getSetting(browserKey)||[],skipped:0};
 }
-async function saveNote(payload){
+export async function saveNote(payload){
   if(native)return native.notesVaultSave(payload);
   const {revision}=payload,id=notePath(payload.id),body=noteBody(payload.body);
   const {notes}=await readIndex(),old=notes.find(note=>note.id.toLowerCase()===id.toLowerCase());
@@ -26,7 +27,7 @@ async function saveNote(payload){
 
 const tool=(action,label,glyph)=>html`<button type="button" class="icon-button" data-vault-action="${action}" aria-label="${t(label)}" title="${t(label)}">${icon(glyph)}</button>`;
 
-export function createNotesVault(host,{saveText,escape,toast}){
+export function createNotesVault(host,{saveText,editNote,escape,toast}){
   host.innerHTML=html`
     <section class="vault-workspace" aria-label="独立笔记工作区">
       <aside class="vault-library">
@@ -52,14 +53,16 @@ export function createNotesVault(host,{saveText,escape,toast}){
               ${tool('split','分栏预览','panel-right')}
               ${tool('read','阅读预览','eye')}
             </div>
-            ${tool('details','大纲与反向链接','list')}
+            <button type="button" class="outline-button vault-ai-button" data-vault-action="ai-edit" ${editNote?'':'hidden'}>${icon('assistant')} AI 编辑</button>
+            <button type="button" class="outline-button vault-ai-button" data-vault-action="wide" aria-pressed="false">${icon('expand')} <span data-vault="enter-fullscreen">全屏编辑</span><span data-vault="exit-fullscreen" hidden>退出全屏</span></button>
+            <button type="button" class="outline-button vault-ai-button" data-vault-action="details" aria-pressed="false">${icon('list')} 大纲</button>
             ${tool('export','导出 Markdown','download')}
           </div>
           <div class="vault-content" data-vault="content" data-mode="split">
             <textarea data-vault="editor" aria-label="Markdown 源码" placeholder="支持 Markdown、[[双向链接]] 和 $$ LaTeX 公式" spellcheck="false" maxlength="${NOTE_LIMIT}"></textarea>
             <article class="vault-preview" data-vault="preview" aria-label="Markdown 预览" tabindex="0"></article>
             <aside class="vault-details" data-vault="details" hidden>
-              <strong>大纲</strong><div data-vault="outline"></div>
+              <strong>大纲</strong><nav data-vault="outline" aria-label="大纲"></nav>
               <strong>反向链接</strong><div data-vault="backlinks"></div>
             </aside>
           </div>
@@ -67,6 +70,7 @@ export function createNotesVault(host,{saveText,escape,toast}){
         <p class="vault-status" data-vault="status" role="status"></p>
       </div>
     </section>
+    <dialog class="vault-fullscreen" aria-label="全屏笔记编辑"></dialog>
     <input type="file" data-vault="files" accept=".md,text/markdown" multiple hidden>
     <dialog class="modal vault-new-dialog" data-vault="new-dialog" aria-label="新建独立笔记">
       <form data-vault="new-form">
@@ -79,10 +83,32 @@ export function createNotesVault(host,{saveText,escape,toast}){
 
   const get=key=>host.querySelector(`[data-vault="${key}"]`);
   const editor=get('editor'),list=get('list'),preview=get('preview'),dialog=get('new-dialog');
+  const workspace=host.querySelector('.vault-workspace'),fullscreen=host.querySelector('.vault-fullscreen');
   const records=new Map(),referenceCache=new Map();
   let images={urls:new Map(),size:0};
   let active=null,ready=false,loading,busy=false,timer,previewTimer,queue=Promise.resolve(),outline=[];
-  let mode='split';
+  let mode='split',syncingExternal=false,externalSyncPending=false;
+  const aiEditor=editNote&&createNoteEditDialog(host,editNote,applyAIEdit);
+
+  function toggleFullscreen(){
+    const opening=!fullscreen.open;
+    const button=host.querySelector('[data-vault-action="wide"]');
+    workspace.classList.toggle('vault-wide',opening);
+    button.setAttribute('aria-pressed',String(opening));
+    get('enter-fullscreen').hidden=opening;
+    get('exit-fullscreen').hidden=!opening;
+    if(opening){
+      fullscreen.append(workspace);
+      fullscreen.showModal();
+      if(mode==='read')setMode('split');
+      editor.focus();
+    }else{
+      host.prepend(workspace);
+      fullscreen.close();
+      button.focus();
+    }
+  }
+  fullscreen.addEventListener('cancel',event=>{event.preventDefault();toggleFullscreen();});
 
   function status(message,error=false){
     get('status').textContent=message;
@@ -98,7 +124,7 @@ export function createNotesVault(host,{saveText,escape,toast}){
   function renderDetails(){
     if(get('details').hidden||!active)return;
     const notes=[...records.values()];
-    get('outline').innerHTML=outline.map(item=>`<button type="button" data-vault-heading="${item.id}" style="--note-indent:${Math.min(4,item.depth-1)}">${escape(item.label)}</button>`).join('')||html`<p>暂无标题</p>`;
+    get('outline').innerHTML=outline.map(item=>`<button type="button" data-vault-heading="${item.id}" data-heading-level="${item.depth}" style="--note-indent:${item.depth-1}"><small>H${item.depth}</small><span>${escape(item.label)}</span></button>`).join('')||html`<p>暂无标题</p>`;
     get('backlinks').innerHTML=notes.filter(note=>{
       if(note.id===active.id)return false;
       if(!referenceCache.has(note.id))referenceCache.set(note.id,noteReferences(note.body));
@@ -149,13 +175,20 @@ export function createNotesVault(host,{saveText,escape,toast}){
     renderList();
     setMode(mode);
   }
-  async function refresh(){
-    const previous=active?.id,result=await readIndex();
+  async function refresh({preserveEditor=false}={}){
+    const result=await readIndex(),previous=active;
+    if(preserveEditor&&busy){externalSyncPending=true;return;}
+    if(preserveEditor&&host.querySelector('dialog[open]:not(.vault-fullscreen)'))return;
     records.clear();
     referenceCache.clear();
     for(const note of result.notes)records.set(note.id,note);
     ready=true;
-    select(records.get(previous)||[...records.values()].sort(compare)[0]);
+    const latest=previous&&records.get(previous.id);
+    const hasDraft=previous&&editor.value!==previous.body.replace(/\r\n?/g,'\n');
+    if(preserveEditor&&previous&&(hasDraft||latest?.revision===previous.revision)){
+      if(!hasDraft)active=latest;
+      renderList();renderDetails();
+    }else select(latest||[...records.values()].sort(compare)[0]);
     if(result.skipped)status(msg`${result.skipped} 篇笔记因路径、编码或大小限制未载入。`,true);
   }
   function show(){
@@ -163,18 +196,31 @@ export function createNotesVault(host,{saveText,escape,toast}){
     loading??=refresh().catch(error=>status(error.message,true)).finally(()=>{loading=null;});
     return loading;
   }
+  async function commit(body){
+    const id=active.id;
+    status(t('正在保存…'));
+    const saved=await saveNote({id,body,revision:active.revision});
+    records.set(id,saved);
+    referenceCache.delete(id);
+    active=saved;
+    status(t('已保存'));
+    renderList();
+  }
+  async function applyAIEdit(snapshot,replacement){
+    await flush();
+    if(active?.id!==snapshot.id||editor.value!==snapshot.body)throw Error(t('笔记内容已变化，请重新生成修改建议。'));
+    const next=noteBody(snapshot.body.slice(0,snapshot.start)+replacement+snapshot.body.slice(snapshot.end));
+    if(next!==editor.value)await commit(next);
+    editor.value=next;
+    if(mode==='read')setMode('split');
+    else renderPreview();
+    editor.setSelectionRange(snapshot.start,snapshot.start+replacement.length);
+  }
   function flush(){
     clearTimeout(timer);
     const operation=queue.then(async()=>{
       if(!active||editor.value===active.body)return;
-      const id=active.id,body=editor.value;
-      status(t('正在保存…'));
-      const saved=await saveNote({id,body,revision:active.revision});
-      records.set(id,saved);
-      referenceCache.delete(id);
-      active=saved;
-      status(t('已保存'));
-      renderList();
+      await commit(editor.value);
     });
     queue=operation.catch(()=>{});
     return operation;
@@ -184,8 +230,23 @@ export function createNotesVault(host,{saveText,escape,toast}){
     busy=true;editor.readOnly=true;
     try{await show();if(ready)await work();}
     catch(error){status(error.message,true);if(!ready)toast(error.message,true);}
-    finally{busy=false;editor.readOnly=false;}
+    finally{
+      busy=false;editor.readOnly=false;
+      finishExternalSync();
+    }
   }
+  function finishExternalSync(){
+    if(externalSyncPending&&!busy&&!syncingExternal){externalSyncPending=false;syncExternal();}
+  }
+  function syncExternal(){
+    if(!native||!ready||!host.getClientRects().length||host.querySelector('dialog[open]:not(.vault-fullscreen)'))return;
+    if(busy||syncingExternal){externalSyncPending=true;return;}
+    syncingExternal=true;
+    const operation=queue.then(()=>refresh({preserveEditor:true}));
+    queue=operation.catch(error=>status(error.message,true));
+    void queue.finally(()=>{syncingExternal=false;finishExternalSync();});
+  }
+  if(native)window.addEventListener('focus',syncExternal);
   function createDialog(suggestion=''){
     get('new-name').value=suggestion;
     get('new-error').textContent='';
@@ -209,6 +270,13 @@ export function createNotesVault(host,{saveText,escape,toast}){
       await refresh();
     },
     export:()=>active&&saveText(editor.value,active.id.split('/').at(-1),'md'),
+    'ai-edit':()=>{
+      if(!active||!aiEditor)return;
+      const body=editor.value, selected=mode!=='read'&&editor.selectionStart<editor.selectionEnd;
+      const start=selected?editor.selectionStart:0,end=selected?editor.selectionEnd:body.length;
+      aiEditor.open({id:active.id,body,start,end,selected});
+    },
+    wide:toggleFullscreen,
     edit:()=>setMode('edit'),
     split:()=>setMode('split'),
     read:()=>setMode('read'),
@@ -284,6 +352,13 @@ export function createNotesVault(host,{saveText,escape,toast}){
       status(msg`已导入 ${added} 篇笔记`+(errors.length?' · '+errors[0]:''),Boolean(errors.length));
     });
   });
+  document.addEventListener('notes-vault:created',event=>{
+    if(!ready)return;
+    const note=event.detail;
+    records.set(note.id,note);
+    if(active){renderList();renderDetails();}
+    else select(note);
+  });
   get('search').addEventListener('input',renderList);
   editor.addEventListener('input',()=>{
     clearTimeout(timer);clearTimeout(previewTimer);
@@ -292,7 +367,7 @@ export function createNotesVault(host,{saveText,escape,toast}){
     if(mode!=='edit'||!get('details').hidden)previewTimer=setTimeout(renderPreview,140);
   });
   host.addEventListener('keydown',event=>{
-    if(!(event.ctrlKey||event.metaKey)||event.isComposing)return;
+    if(event.target.closest('.vault-ai-dialog')||!(event.ctrlKey||event.metaKey)||event.isComposing)return;
     const key=event.key.toLowerCase();
     if(!['s','e','n'].includes(key))return;
     event.preventDefault();event.stopPropagation();
@@ -300,5 +375,5 @@ export function createNotesVault(host,{saveText,escape,toast}){
     if(key==='e'&&active)setMode(mode==='read'?'edit':'read');
     if(key==='n')void run(actions.create);
   });
-  return {show,flush};
+  return {show,flush,syncExternal};
 }

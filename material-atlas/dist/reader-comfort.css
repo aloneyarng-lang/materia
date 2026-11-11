@@ -11,6 +11,8 @@ html:has(.pdf-reader[open]){overflow:hidden}
 .reader-v2 .reader-mode button[data-reader-mode=read]:after{display:none}
 .reader-v2 .reader-mode{flex-wrap:wrap}
 .reader-v2 .reader-view-options{flex-wrap:wrap}
+.reader-v2 .reader-header #reader-sidebar-toggle{width:34px;height:34px;flex:none;padding:7px}
+.reader-v2 .reader-header #reader-sidebar-toggle[aria-expanded=true]{color:var(--teal);background:var(--panel)}
 .reader-v2 .reader-page{box-shadow:0 1px 3px #00000020,0 8px 28px #00000012;outline:none}
 .reader-v2 .reader-status-row{min-height:28px;background:transparent;border-bottom:0}
 .reader-v2 #reader-status{font-size:.6875rem;line-height:1.5}

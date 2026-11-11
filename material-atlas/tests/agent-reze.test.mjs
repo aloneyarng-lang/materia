@@ -72,8 +72,8 @@ test('manual and automatic Reze prompts pass role identity and selected language
 test('unknown roles cannot accidentally launch Kurisu voice',async()=>{
   const voice=createAgentVoice(path.join(os.tmpdir(),'nonexistent-materia-voice'));
   try{
-    assert.equal((await voice.status('deepseek')).available,false);
-    await assert.rejects(voice.synthesize({characterId:'deepseek',text:'hello',language:'en'}),/格式/);
+    assert.equal((await voice.status('unknown-actor')).available,false);
+    await assert.rejects(voice.synthesize({characterId:'unknown-actor',text:'hello',language:'en'}),/格式/);
     await assert.rejects(voice.prepare('../../kurisu'),/暂不可用/);
   }finally{voice.close();}
 });

@@ -16,9 +16,10 @@ import { runResearchAgent } from '../dist/ai-agent-core.js';
 import { runCompanionTurn } from '../dist/agent-companion.js';
 import { AgentHistoryFile } from './agent-history.mjs';
 import {hasCharacterMemory} from '../dist/agent-persona.js';
-import {characterIdFor,profileFor,cleanReplyLanguage} from '../dist/agent-character-memory.js';
+import {characterIdFor,voiceIdFor,profileFor,cleanReplyLanguage} from '../dist/agent-character-memory.js';
 import {createDesktopCorpus} from './agent-character-corpus.mjs';
 import {createAgentVoice,isVoiceLanguage} from './agent-voice.mjs';
+import {editNoteMarkdown,noteCatalogData} from '../dist/note-edit.js';
 import { translateText, translateVoiceLines } from './translation.mjs';
 import {t,setLocale,normalizeLocale} from '../dist/i18n.js';
 
@@ -51,13 +52,13 @@ app.on('before-quit',event=>{
 });
 
 async function start() {
-  startup = await createStartup(appRoot);
   await mkdir(profile, { recursive: true });
+  let config = {};
+  try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  startup = await createStartup(appRoot, config.minimalMode === true);
   const agentSettings = new AgentSettings(profile, safeStorage);
   const antigravityChats = new AntigravityChatLinks(profile);
   await agentSettings.load().catch(() => {});
-  let config = {};
-  try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await setLocale(config.locale,{persist:false});
   const savePreferences=patch=>{
     const operation=preferenceQueue.then(async()=>{
@@ -126,6 +127,11 @@ async function start() {
   handle('canvas:request-close',()=>{mainWindow.close();return true;});
   handle('canvas:ready',()=>{canvasCloseReady=true;return true;});
   handle('canvas:confirm-close',async()=>{await canvasStore.queue;canvasAllowClose=true;mainWindow.close();return true;});
+  handle('preferences:get-minimal-mode',()=>config.minimalMode===true);
+  handle('preferences:set-minimal-mode',async value=>{
+    if(typeof value!=='boolean')throw Error('Invalid minimal mode preference.');
+    await savePreferences({minimalMode:value});return value;
+  });
   handle('preferences:get-locale',()=>normalizeLocale(config.locale));
   handle('preferences:set-locale',async value=>{
     if(normalizeLocale(value)!==value)throw Error('Invalid interface language.');
@@ -180,9 +186,21 @@ async function start() {
     return config.agentVoiceLanguage;
   });
   handle('agent:voice-prepare', async (characterId,language) => {if(config.agentVoiceEnabled!==false && await agentVoice.available(characterId))await agentVoice.prepare(characterId,['zh','en','ja','auto'].includes(language)?language:'ja');});
-  handle('agent:voice-synthesize', request => {
-    if(config.agentVoiceEnabled===false)throw Error('已关闭配音。');
-    return agentVoice.synthesize(request);
+  handle('agent:voice-synthesize', async request => {
+    if(config.agentVoiceEnabled===false&&request?.manual!==true)throw Error('已关闭配音。');
+    const store=agentHistory,wav=await agentVoice.synthesize(request);
+    await store.storeVoice(wav);
+    return wav;
+  });
+  handle('agent:voice-save', payload=>{
+    const store=agentHistory;
+    if(payload?.libraryKey!==store.root)throw Error('文献库已切换，语音未写入其他文献库。');
+    return store.storeVoice(payload.wav);
+  });
+  handle('agent:voice-read', payload=>{
+    const store=agentHistory;
+    if(payload?.libraryKey!==store.root)throw Error('文献库已切换。');
+    return store.readVoice(payload.id);
   });
   handle('agent:get-history', async () => { const store=agentHistory;await store.queue;return {libraryKey:store.root,state:await store.load()}; });
   handle('agent:save-history', payload => {
@@ -237,6 +255,7 @@ async function start() {
     const runSignal = AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]);
     const current = { id: payload.id, controller }; agentRun = current;
     try {
+      if(payload.noteEdit!==undefined)return {body:await editNoteMarkdown(payload.noteEdit,input=>completeWithProvider(config,input),runSignal,()=>noteCatalogData(library.getPapers()))};
       const localMemory=hasCharacterMemory(payload.character);
       if (payload.companion) {
         const complete = config.connection === 'antigravity'
@@ -249,7 +268,7 @@ async function start() {
         ? createAntigravityCompletion(config,localMemory?{}:{...await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds),fullContext:payload.companionContext===true})
         : input=>completeWithProvider(config,input);
       return await runResearchAgent({ question: payload.question, character:payload.character, history: payload.history, context,
-        signal: runSignal, companionContext:payload.companionContext===true, kurisuContext:payload.kurisuContext,findCanon:browseDesktopCorpus, voiceLanguage:payload.voiceLanguage,
+        signal: runSignal, companionContext:payload.companionContext===true, kurisuContext:payload.kurisuContext,findCanon:browseDesktopCorpus, voiceLanguage:payload.voiceLanguage, draftNote:payload.draftNote===true,
         complete,
         onProgress: progress => { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('agent:progress', { id: payload.id, ...progress }); },
       });
@@ -306,9 +325,9 @@ async function start() {
         const saved=library.getSetting('module:agent-character');
         const active=history.conversations.find(chat=>chat.id===history.activeId)?.character;
         const selected=active||(saved?.version===2?saved.cards?.[saved.active]:saved)||{actorId:'amadeus',name:'Amadeus'};
-        const id=characterIdFor(selected);if(!id)return;
+        const id=voiceIdFor(selected);if(!id)return;
         const setting=isVoiceLanguage(config.agentVoiceLanguage)?config.agentVoiceLanguage:(await agentVoice.status(id)).defaultLanguage;
-        const locale=setting==='follow'?cleanReplyLanguage(profileFor(history,id)?.replyLanguage):setting;
+        const locale=setting==='follow'?cleanReplyLanguage(profileFor(history,characterIdFor(selected))?.replyLanguage):setting;
         if(await agentVoice.available(id))await agentVoice.prepare(id,locale==='zh-CN'?'zh':locale);
       })().catch(()=>{});
     }

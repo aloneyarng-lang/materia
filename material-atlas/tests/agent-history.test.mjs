@@ -34,3 +34,21 @@ test('history limits reject rather than silently discard saved messages or conve
   const duplicate=chat('same');assert.throws(()=>cleanAgentHistory(history([duplicate,duplicate])),/重复/);
   const scope=chat('invalid');scope.scopeIds='all';assert.throws(()=>cleanAgentHistory(history([scope])),/范围/);
 });
+
+test('voice files and sentence references survive reopening and reject paths outside the library',async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'materia-saved-voice-'));
+  const store=new AgentHistoryFile(root);
+  const audio=Buffer.alloc(80);
+  audio.write('RIFF');audio.writeUInt32LE(72,4);audio.write('WAVE',8);
+  const wav=audio.toString('base64');
+  const [id,same]=await Promise.all([store.storeVoice(wav),store.storeVoice(wav)]);
+  assert.equal(id,same);
+  const input=history();
+  input.conversations[0].entries[1].voiceClips=[{id,language:'ja',text:'保存的句子',wav:'must not be in history'}];
+  await store.save(input);
+  const reopened=new AgentHistoryFile(root);
+  assert.equal(await reopened.readVoice(id),wav);
+  assert.deepEqual((await reopened.load()).conversations[0].entries[1].voiceClips,[{id,language:'ja',text:'保存的句子'}]);
+  await assert.rejects(reopened.readVoice('../private'),/标识/);
+  await assert.rejects(reopened.storeVoice(Buffer.from('not wav').toString('base64')),/格式/);
+});

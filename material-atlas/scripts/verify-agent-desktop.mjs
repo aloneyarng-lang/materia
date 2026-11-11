@@ -11,6 +11,7 @@ import { AgentHistoryFile } from '../desktop/agent-history.mjs';
 const root=path.resolve(import.meta.dirname,'..'),output=path.join(root,'.local','agent-desktop-verification');
 await mkdir(output,{recursive:true});
 const isolated=await mkdtemp(path.join(output,'run-'));
+process.env.MATERIA_VOICE_DIR=path.join(isolated,'voice');
 process.env.MATERIA_PROFILE_DIR=path.join(isolated,'profile');process.env.MATERIA_LIBRARY_DIR=path.join(isolated,'library');process.env.MATERIA_HEADLESS='1';
 app.setName('MateriaAgentVerification');
 const lib=await new LocalLibrary(process.env.MATERIA_LIBRARY_DIR).init();
@@ -138,7 +139,7 @@ app.on('browser-window-created',(_event,window)=>{
         await waitForStatus('回复语言已保存');
         assert.equal((await load()).characterMemory.roles['makise-kurisu'].replyLanguage,'ja');
         assert.equal(requests.length,before+1);
-        await exec('document.querySelector("[data-character=new]").click();');
+        await exec('document.querySelector("[data-agent-action=new]").click();');
         await type('你还记得环形磁芯退火吗？');await waitForStatus('回答完成');
         assert.match(requests.at(-1).messages[0].content,/桌面测试林/);
         assert.match(requests.at(-1).messages[0].content,/使用 日本語/);

@@ -2,6 +2,7 @@
 export const KURISU_ID = 'makise-kurisu';
 export const REZE_ID = 'chainsawman-reze';
 export const GANYU_ID='genshin-ganyu';
+export const DEEPSEEK_VOICE_ID='deepseek';
 export const CHARACTER_MEMORY_IDS=Object.freeze([KURISU_ID,REZE_ID,GANYU_ID]);
 export const REPLY_LANGUAGES = Object.freeze({'zh-CN':'简体中文',en:'English',ja:'日本語'});
 export const cleanReplyLanguage = value => Object.hasOwn(REPLY_LANGUAGES,value) ? value : 'zh-CN';
@@ -13,6 +14,9 @@ export function characterIdFor(character) {
     typeof character.name === 'string' && /amadeus|红莉栖|紅莉栖|kurisu/i.test(character.name)
     ? KURISU_ID : null;
 }
+
+export const voiceIdFor=character=>character?.actorId===DEEPSEEK_VOICE_ID
+  ? DEEPSEEK_VOICE_ID : characterIdFor(character);
 
 export function legacyMemorySeeds(value) {
   return Array.isArray(value) ? [...new Set(value

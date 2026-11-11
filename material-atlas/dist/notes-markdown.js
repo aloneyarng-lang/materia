@@ -100,7 +100,8 @@ export function renderNoteMarkdown(body){
   for(let i=0;i<tokens.length;i++){
     const token=tokens[i];
     if(token.type==='heading_open'){
-      const id='notes-heading-'+outline.length,label=tokens[i+1]?.content||'';
+      const id='notes-heading-'+outline.length,inline=tokens[i+1];
+      const label=inline?.children?.map(child=>child.meta?.label||child.content||(child.type==='softbreak'?' ':'')).join('')||inline?.content||'';
       token.attrSet('id',id);
       outline.push({id,label,depth:Number(token.tag[1])});
     }

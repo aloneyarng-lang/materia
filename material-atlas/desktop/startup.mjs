@@ -2,8 +2,9 @@ import {BrowserWindow} from 'electron';
 import path from 'node:path';
 
 // Keep the loading window independent of library and renderer initialization.
-export async function createStartup(appRoot) {
+export async function createStartup(appRoot, minimalMode = false) {
   if (process.env.MATERIA_HEADLESS === '1') return {finish() {}, close() {}};
+  if (minimalMode) return {finish(reveal) {reveal();}, close() {}};
   const splash = new BrowserWindow({width:560,height:440,show:false,frame:false,
     resizable:false,maximizable:false,minimizable:false,skipTaskbar:true,
     backgroundColor:'#faf8f5',title:'少女祈愿中…',

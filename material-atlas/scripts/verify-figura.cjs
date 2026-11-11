@@ -13,7 +13,10 @@ const output = process.env.MATERIA_FIGURA_TEST_OUTPUT || path.join(root,'.local/
 let app, page, browser, server, networkProbe;
 const errors = [];
 const ui = key => page.locator('#figura-workspace [data-fig="'+key+'"]');
-const action = key => page.locator('#figura-workspace [data-fig-action="'+key+'"]:visible').click();
+const action = async key => {
+  if(['choose-data','sample','style-sample'].includes(key)&&!await page.locator('#figura-data-source').isVisible())await page.locator('[data-menu-toggle="figura-data-source"]').click();
+  await page.locator('#figura-workspace [data-fig-action="'+key+'"]:visible').click();
+};
 const template = id => page.locator('#figura-workspace [data-id="'+id+'"]');
 const montage = key => page.locator('[data-fig=montage] [data-montage="'+key+'"]');
 const montageAction = key => page.locator('[data-fig=montage] [data-montage-action="'+key+'"]:visible').click();
@@ -111,7 +114,9 @@ export async function render({params}) {
 
   await action('export');
   for (const type of ['svg','png','pdf']) {
-    await action(type);
+    await ui('export-format').selectOption(type);
+    assert.equal(await ui('dpi-field').isVisible(),type==='png');
+    await action('export-file');
     await waitText('[data-fig="export-dialog"] [data-fig-dialog-status]', type.toUpperCase()+' 已导出').catch(async error => {
       throw Error(type + ': ' + await page.locator('[data-fig="export-dialog"] [data-fig-dialog-status]').textContent(), {cause:error});
     });

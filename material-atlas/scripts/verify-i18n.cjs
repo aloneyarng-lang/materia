@@ -108,7 +108,9 @@ async function language(locale){await page.selectOption('#interface-language',lo
     await page.locator('[data-view="list"]').click();await click('[data-action="open-pdf"]');await page.waitForFunction(()=>document.querySelector('.reader-page[data-rendered="true"]'));
     assert.equal(await page.locator('#reader-flow option[value="vertical"]').textContent(),'Fortlaufend nach unten');assert.match(await page.locator('#reader-layout').textContent(),/Einzelseite/);
     assert.equal(await page.locator('#pdf-reader .reader-header h2').textContent(),'设置');assert.equal(await page.inputValue('#reader-translation-language'),'zh-CN');
+    await page.locator('[data-menu-toggle="reader-layout-menu"]').click();
     assert.ok(await page.locator('#reader-flow').evaluate(node=>node.getBoundingClientRect().width)>=185);
+    await page.keyboard.press('Escape');
     const collisions=await page.locator('.reader-note-tabs button').evaluateAll(nodes=>{const rects=nodes.map(node=>node.getBoundingClientRect());return rects.some((a,i)=>rects.slice(i+1).some(b=>a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1));});assert.equal(collisions,false);
     await page.screenshot({path:path.join(output,'reader-de.png')});
     await page.setViewportSize({width:1000,height:900});await page.waitForFunction(()=>!document.querySelector('#pdf-reader').dataset.rendering);

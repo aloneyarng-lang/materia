@@ -60,7 +60,10 @@ async function launch(){
  });
  await check('training report renders diagnostics, algorithm ranking and reproducible metadata',async()=>{
   await page.locator('[data-model-details]').first().click();await page.locator('.prediction-model-report svg').first().waitFor();
-  assert.equal(await page.locator('.prediction-model-report svg').count(),2);
+  await page.locator('[data-menu-toggle="prediction-report-export"]').click();
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelector('#prediction-report-export:popover-open').children].map(button=>button.hasAttribute('data-export-validation')?'validation':button.hasAttribute('data-export-report')?'report':'unknown')),['validation','report']);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.prediction-model-report .prediction-chart svg').count(),2);
   assert.ok((await page.locator('.prediction-model-report').textContent()).includes('外层 5 折'));
   if(!app){assert.ok(stored.models.every(m=>m.algorithm==='sklearn-regression-v1'&&m.validationPoints.length===60));await page.screenshot({path:path.join(output,'sklearn-report.png'),fullPage:true});}
  });
@@ -82,7 +85,7 @@ async function launch(){
  await check('custom properties persist without changing source code and exports work',async()=>{
   await openPanel('properties');await page.locator('#prediction-field-form [name=name]').fill('新增测试性能');await page.locator('#prediction-field-form [name=unit]').fill('unit');await page.locator('#prediction-field-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('.prediction-field-list')?.textContent.includes('新增测试性能'));
   await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});await enterPrediction();await openPanel('properties');assert.ok((await page.locator('#prediction-workspace').textContent()).includes('新增测试性能'));
-  if(!app){await openPanel('datasets');await page.locator('[data-prediction-action="export-workspace"]').click();await page.waitForFunction(()=>globalThis.__predictionExport==='materia-prediction-workspace.json');}
+  if(!app){await openPanel('datasets');await page.locator('[data-menu-toggle="prediction-files"]').click();await page.locator('[data-prediction-action="export-workspace"]').click();await page.waitForFunction(()=>globalThis.__predictionExport==='materia-prediction-workspace.json');}
  });
  await check('optional module disable, restart and re-enable preserve its datasets and trained models',async()=>{
   const entry=page.locator('#material-prediction-toggle');

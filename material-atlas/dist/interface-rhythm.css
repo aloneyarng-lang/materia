@@ -100,7 +100,7 @@ html[data-liquid-glass=true] .primary {box-shadow:0 3px 10px color-mix(in srgb,v
 html[data-liquid-glass=true] .sidebar .collection-item {font-weight:400;line-height:1.65;font-size:.75rem;padding-top:9px;padding-bottom:9px;}
 html[data-liquid-glass=true] .sidebar .nav-item {font-weight:400;}
 html[data-liquid-glass=true] .sidebar .nav-item.active {font-weight:500;}
-html[data-liquid-glass=true] :is(.paper-row,.material-library-row) {box-sizing:border-box;width:100%;min-width:0;padding:20px 18px;margin-bottom:10px;align-items:flex-start;gap:12px;}
+html[data-liquid-glass=true] :is(.paper-row,.material-library-row) {box-sizing:border-box;width:100%;min-width:0;padding:14px 18px;margin-bottom:7px;align-items:flex-start;gap:12px;}
 html[data-liquid-glass=true] .paper-row h3 {font-size:calc(1rem * var(--heading-scale));line-height:1.5;font-weight:500;margin-bottom:8px;letter-spacing:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;}
 html[data-liquid-glass=true] .paper-row-content {min-width:0;flex:1;}
 html[data-liquid-glass=true] .paper-row-content>.paper-row-citation {font-size:.6875rem;line-height:1.7;margin:4px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
@@ -117,10 +117,12 @@ html[data-liquid-glass=true] .detail-disclosure {border-top:1px solid var(--line
 html[data-liquid-glass=true] .detail-disclosure>summary {font-size:.75rem;font-weight:400;color:var(--muted);cursor:pointer;line-height:1.6;}
 html[data-liquid-glass=true] .detail-disclosure[open]>summary {color:var(--ink);margin-bottom:14px;}
 html[data-liquid-glass=true] .detail-bottom {margin-top:10px;padding-top:0;}
-html[data-liquid-glass=true] .list-selection-toolbar {padding-bottom:10px;margin-bottom:14px;}
+.list-selection-toolbar [data-action=select-filtered]{display:inline-flex;align-items:center;gap:6px}
+.list-selection-toolbar [data-action=select-filtered] svg{width:14px;height:14px}
+html[data-liquid-glass=true] .list-selection-toolbar {padding-bottom:8px;margin-bottom:10px;}
 @media(max-width:1150px) {
  html[data-liquid-glass=true] .detail-panel {flex-basis:240px;width:240px;padding:18px 16px;}
- html[data-liquid-glass=true] :is(.paper-row,.material-library-row) {padding:16px 14px;}
+ html[data-liquid-glass=true] :is(.paper-row,.material-library-row) {padding:12px 14px;}
 }
 
 /* The shared drawer shows only controls relevant to the current view. */

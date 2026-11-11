@@ -20,9 +20,9 @@ export function createMaterialList(config) {
       <label class="material-library-search">${icon('search')}<input id="material-list-query" type="search" maxlength="1000" placeholder="搜索材料、成分、性能参数或来源文献…" value="${esc(query)}" aria-label="搜索材料"></label>
       <button class="outline-button" id="material-list-filter-button" data-material-list-action="filters" aria-controls="material-list-filter-dialog" aria-haspopup="dialog" aria-expanded="false">${icon('sliders')}筛选<span id="material-list-filter-count" hidden></span></button>
       ${actionMenu('material-organize-menu', tr('整理'), tr('<button data-material-list-action="select-results">全选当前结果</button><button data-material-list-action="clear">清空选择</button><hr><button data-material-list-action="create-group">新建分组</button><button data-material-list-action="assign-group">归入 / 移出分组…</button><button data-material-list-action="edit-group" hidden>分组设置</button>'), {iconName:'folder'})}
-      <button class="outline-button" data-material-list-action="chart">${icon('chart')}对比与作图</button>
+      <span id="material-list-selected-count" class="material-library-selection" role="status"></span>
+      <button class="primary" data-material-list-action="chart" hidden>${icon('chart')}对比与作图</button>
       </div>
-      <p id="material-list-selected-count" class="material-library-selection" role="status"></p>
       <div class="material-library-status"><span data-material-save-status role="status"></span><button class="text-button" data-material-retry hidden>重试保存</button></div>
       <div id="material-list-rows"></div><button class="outline-button list-load-more" data-material-list-action="more" hidden>显示更多材料</button>
       <dialog id="material-list-filter-dialog" class="filter-drawer" aria-labelledby="material-list-filter-title">
@@ -63,6 +63,7 @@ export function createMaterialList(config) {
     status.textContent = keys.length ? msg`已选 ${r.materials} 个材料 · ${r.selected.length} 组样品 / 条件 · ${r.papers} 篇来源${r.selected.some(row => !shown.has(row.key)) ? tr(' · 含筛选外选择') : ''}${r.missing.length ? msg` · ${r.missing.length} 项失效选择` : ''}` : '';
     config.onCount?.(rows.length, all.length);
     for (const action of ['assign-group', 'chart']) $(`[data-material-list-action="${action}"]`).disabled = !r.selected.length;
+    $('[data-material-list-action="chart"]').hidden = !r.selected.length;
     $('[data-material-list-action="clear"]').disabled = !keys.length;
     $('[data-material-list-action="select-results"]').disabled = !rows.length;
     $('[data-material-list-action="more"]').hidden = rows.length <= limit;

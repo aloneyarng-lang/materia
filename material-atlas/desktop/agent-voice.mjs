@@ -3,12 +3,12 @@ import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
-import {KURISU_ID,REZE_ID,GANYU_ID} from '../dist/agent-character-memory.js';
+import {KURISU_ID,REZE_ID,GANYU_ID,DEEPSEEK_VOICE_ID} from '../dist/agent-character-memory.js';
 
 const worker=fileURLToPath(new URL('./agent-voice-worker.py',import.meta.url));
 const marker='MATERIA_VOICE ';
 const unavailable='当前角色配音暂不可用。';
-const configs=Object.freeze({[KURISU_ID]:'kurisu.json',[REZE_ID]:'reze.json',[GANYU_ID]:'ganyu.json'});
+const configs=Object.freeze({[KURISU_ID]:'kurisu.json',[REZE_ID]:'reze.json',[GANYU_ID]:'ganyu.json',[DEEPSEEK_VOICE_ID]:'deepseek.json'});
 export const isVoiceLanguage=value=>['follow','zh-CN','en','ja'].includes(value);
 const validLanguages=['zh','en','ja','auto'];
 const warmKey=p=>JSON.stringify([p.language,p.prompt]);

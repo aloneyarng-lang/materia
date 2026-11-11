@@ -371,7 +371,7 @@ def training_rows(ws, options):
         if ds['id'] not in options['datasetIds']:
             continue
         for original in ds['rows']:
-            if original.get('form', ds['form']) != options['form']:
+            if original.get('trainingExcluded') or original.get('form', ds['form']) != options['form']:
                 continue
             r = dict(original, composition=convert_composition(original['composition'], ds['basis'], options['basis']))
             y = r['targets'].get(target)

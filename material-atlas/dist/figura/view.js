@@ -52,10 +52,9 @@ export function workspaceHTML(native) {
         </section>
         <section data-fig="data-page" class="figura-data-page" hidden>
           <div class="figura-data-head">
-            ${figuraIcon('choose-data','导入表格','upload')}
             <input data-fig="file" type="file" accept=".csv,.tsv,.xlsx" hidden>
-            ${actionMenu('figura-data-samples',t('载入示例'),html`<button type="button" data-fig-action="sample">${icon('table')}载入示例</button>
-            <button type="button" data-fig-action="style-sample" hidden>${icon('chart')}论文样式示例</button>`,{iconName:'files',iconOnly:true,className:'icon-button'})}
+            ${actionMenu('figura-data-source',t('载入数据'),html`<button type="button" data-fig-action="choose-data">${icon('upload')}导入表格</button><hr><button type="button" data-fig-action="sample">${icon('table')}载入示例</button>
+            <button type="button" data-fig-action="style-sample" hidden>${icon('chart')}论文样式示例</button>`,{iconName:'upload'})}
             <span data-fig="dataset" class="figura-help"></span>
           </div>
           <div data-fig="sheets" class="figura-data-head" hidden><label>工作表<select data-fig="sheet"></select></label><button type="button" class="outline-button" data-fig-action="apply-sheet">应用工作表</button></div>
@@ -102,8 +101,7 @@ export function workspaceHTML(native) {
       ${dialogHeading('管理方案')}
       <div class="figura-dialog-footer">
         <button type="button" class="primary" data-fig-action="install" ${desktopOnly}>${icon('plus')}安装方案文件夹</button>
-        <button type="button" class="outline-button" data-fig-action="folder" ${desktopOnly}>打开自定义方案目录</button>
-        <button type="button" class="text-button" data-fig-action="scan">重新扫描</button>
+        ${actionMenu('figura-scheme-files',t('方案操作'),html`<button type="button" data-fig-action="folder" ${desktopOnly}>${icon('folder')}打开自定义方案目录</button><button type="button" data-fig-action="scan">${icon('refresh')}重新扫描</button>`,{iconName:'folder'})}
       </div>
       <p class="figura-help">选择包含 manifest.json、plot.js、example.csv 和封面的 Figura API 1 方案文件夹。仅安装你信任的方案。</p>
       <details class="figura-disclosure" data-fig="metadata-panel"><summary>当前方案资料</summary>
@@ -124,12 +122,11 @@ export function workspaceHTML(native) {
     <dialog class="modal figura-dialog" data-fig="export-dialog" aria-label="导出绘图">
       ${dialogHeading('导出绘图')}
       <p class="figura-help">SVG 和 PDF 为矢量。PNG 使用所选分辨率。</p>
-      <label class="figura-field">PNG 分辨率<select data-fig="dpi"><option>300</option><option>600</option><option>150</option><option>96</option></select></label>
+      <label class="figura-field">导出格式<select data-fig="export-format"><option value="png">PNG</option><option value="svg">SVG</option><option value="pdf" ${desktopOnly}>PDF</option></select></label>
+      <label class="figura-field" data-fig="dpi-field">PNG 分辨率<select data-fig="dpi"><option>300</option><option>600</option><option>150</option><option>96</option></select></label>
       <p class="figura-help" data-fig="export-size"></p>
       <div class="figura-dialog-footer">
-        <button type="button" class="outline-button" data-fig-action="svg">SVG</button>
-        <button type="button" class="outline-button" data-fig-action="pdf" ${desktopOnly}>PDF</button>
-        <button type="button" class="primary" data-fig-action="png">PNG</button>
+        <button type="button" class="primary" data-fig-action="export-file">${icon('download')}导出</button>
       </div>
     </dialog>
     <dialog class="modal figura-dialog" data-fig="confirm" aria-label="确认更改">

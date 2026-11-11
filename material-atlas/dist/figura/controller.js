@@ -390,6 +390,8 @@ export async function createFiguraController(context, native) {
   }
 
   function updateExportSize() {
+    const png = find('export-format').value === 'png';
+    find('dpi-field').hidden = find('export-size').hidden = !png;
     const {width, height} = draft().params, dpi = Number(find('dpi').value);
     find('export-size').textContent = Number(width) > 0 && Number(height) > 0
       ? `PNG · ${Math.round(width*dpi/96)} × ${Math.round(height*dpi/96)} px  /  ${dpi} DPI` : '';
@@ -524,9 +526,7 @@ export async function createFiguraController(context, native) {
     },
     export: () => { updateExportSize(); showDialog('export-dialog'); },
     montage: () => montage.show(),
-    svg: () => exportFigure('svg'),
-    png: () => exportFigure('png'),
-    pdf: () => exportFigure('pdf'),
+    'export-file': () => exportFigure(find('export-format').value),
     projects: () => { updateProjects(); showDialog('projects'); },
     'quick-import':openMarkdownImport,
     'choose-markdown':()=>find('markdown-file').click(),
@@ -627,7 +627,7 @@ export async function createFiguraController(context, native) {
       find('controls').innerHTML=parameterHTML(scheme(),draft());
       changed();
     }
-    if (fig === 'dpi') updateExportSize();
+    if (fig === 'dpi' || fig === 'export-format') updateExportSize();
     if (figParam) { draft().params[figParam] = target.value; changed(); }
     if (figMap) { draft().mapping[figMap] = target.value; changed(); }
     if (figRow === undefined) return;

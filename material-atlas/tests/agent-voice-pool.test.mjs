@@ -6,6 +6,7 @@ import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createAgentVoice} from '../desktop/agent-voice.mjs';
+import {characterIdFor,voiceIdFor} from '../dist/agent-character-memory.js';
 
 async function fixture(){
  const root=await mkdtemp(path.join(os.tmpdir(),'materia-voice-pool-'));
@@ -17,6 +18,8 @@ async function fixture(){
  await writeFile(path.join(root,'reze.json'),JSON.stringify({...common,voices}));
  await writeFile(path.join(root,'ganyu.json'),JSON.stringify({...common,voices}));
  await writeFile(path.join(root,'kurisu.json'),JSON.stringify({...common,gpt:'kurisu.ckpt',sovits:'kurisu.pth'}));
+ await writeFile(path.join(root,'deepseek.json'),JSON.stringify({...common,version:'v2',defaultLanguage:'zh-CN',
+   reference:'ja.wav',transcript:'Mayuri reference',promptLanguage:'ja'}));
  const requests=[],children=[];
  function spawnWorker(){
    const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.stdin=new PassThrough();child.killed=false;
@@ -35,6 +38,18 @@ async function fixture(){
  }
  return {root,requests,children,voice:createAgentVoice(root,{spawnWorker})};
 }
+test('DeepSeek routes to its own voice profile without enabling a character memory',async()=>{
+ const f=await fixture();
+ const actor={actorId:'deepseek',name:'DeepSeek 娘'};
+ try{
+  const id=voiceIdFor(actor);
+  assert.equal(characterIdFor(actor),null);
+  assert.deepEqual(await f.voice.status(id),{available:true,defaultLanguage:'zh-CN'});
+  await f.voice.synthesize({characterId:id,language:'zh',text:'你好'});
+  assert.equal(f.requests[0].profile.transcript,'Mayuri reference');
+  assert.equal(f.requests[0].language,'zh');
+ }finally{f.voice.close();await rm(f.root,{recursive:true,force:true});}
+});
 test('shared model survives role and language switches while each request retains its own voice conditioning',async()=>{
  const f=await fixture();const {voice}=f;
  try{

@@ -52,7 +52,7 @@ export function createNotesController(config) {
     papersPane.hidden=notesTab!=='papers';
     if(notesTab==='vault'){
       vaultLoading??=import('./notes-vault.js').then(({createNotesVault})=>{
-        vault=createNotesVault(personal,{saveText:config.saveText,escape:esc,toast});
+        vault=createNotesVault(personal,{saveText:config.saveText,editNote:config.editNote,escape:esc,toast});
         return vault.show();
       }).catch(error=>{personal.textContent=error.message;vaultLoading=null;});
       return null;
@@ -148,5 +148,5 @@ export function createNotesController(config) {
     } catch (error) { button.disabled = false; toast(msg`笔记未保存：${error.message}`, true); }
   });
   return { open, openIndex, renderLibrary, preview, count: (type, id) => notesFor({ type, id }).length, renderText,
-    independent:()=>notesTab==='vault',flush:()=>vault?.flush() };
+    independent:()=>notesTab==='vault',syncVault:()=>vault?.syncExternal(),flush:()=>vault?.flush() };
 }

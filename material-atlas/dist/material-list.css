@@ -14,7 +14,7 @@
   min-width:0;width:100%;border:0;background:none;color:var(--ink);font-size:.75rem;box-shadow:none!important;
 }
 .material-library-search input:focus-visible {outline:none;}
-.material-library-tools>.outline-button,.material-library-tools .ui-action-menu>button {
+.material-library-tools>:is(.outline-button,.primary),.material-library-tools .ui-action-menu>button {
   display:inline-flex;align-items:center;gap:6px;min-height:34px;font-size:.6875rem;white-space:nowrap;
 }
 .material-library-tools svg {width:15px;height:15px;flex-shrink:0;}
@@ -24,6 +24,7 @@
 .material-library-selection,.material-library-status {
   margin:0 0 10px;color:var(--muted);font-size:.6875rem;line-height:1.8;
 }
+.material-library-tools .material-library-selection{margin:0;max-width:360px;text-wrap:pretty}
 .material-library-selection:empty,
 .material-library-status:has([data-material-save-status]:empty):has([data-material-retry][hidden]) {display:none;}
 .material-library-status .is-error {color:var(--danger);}

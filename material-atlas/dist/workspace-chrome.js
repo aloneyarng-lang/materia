@@ -21,7 +21,7 @@ export function createWorkspaceChrome(config){
  const mac=/Mac|iPhone|iPad/.test(navigator.platform),modifier=mac?'⌘':'Ctrl';
  function commands(){return[
   ...(config.getViews?.()||primaryViews).map((module,i)=>({id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:i<9?modifier+' '+(i+1):'',keywords:[module.id],run:()=>openView(module.id)})),
-  ...[['import','导入文献','plus'],['module-settings','功能管理','sliders'],['research-canvas','研究画布','network'],['ai-agent','AI 研究助手','assistant'],['parameter-index','性能参数目录','ruler'],['themes','主题与字体','palette'],['settings','设置','settings']].map(([id,label,image])=>({id,label:t(label),image,detail:t('常用操作'),keywords:[id],run:()=>runAction(id)})),
+  ...[['import','导入文献','plus'],['module-settings','功能管理','sliders'],['research-canvas','研究画布','network'],['ai-agent','AI 研究助手','assistant'],['parameter-index','性能参数目录','ruler'],['themes','主题与字体','palette'],['settings','设置','settings']].filter(([id])=>id!=='ai-agent'||config.showAgent?.()!==false).map(([id,label,image])=>({id,label:t(label),image,detail:t('常用操作'),keywords:[id],run:()=>runAction(id)})),
  ];}
  function openView(view){const button=document.querySelector(`.view-tabs [data-view="${view}"]`);button?.click();button?.focus();}
  function renderResults(){const query=$('#workspace-command-input').value.trim().toLocaleLowerCase(),tokens=query.split(/\s+/).filter(Boolean);

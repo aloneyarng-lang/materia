@@ -1,4 +1,4 @@
-import {t as tr,html,msg} from './i18n.js';
+import {t as tr,html,msg,getLocale} from './i18n.js';
 import {READING_STATUSES,readingStatusInfo,readingStatusOf,readingStatusCounts} from './reading-status.js';
 
 export function readingStatusBadge(paper,escape){
@@ -13,6 +13,11 @@ export function createReadingStatusController(config){
   function close(restore=false){if(open())menu.hidePopover();origin?.setAttribute('aria-expanded','false');if(restore){const fallback=document.querySelector('#reading-status-filter');(origin?.isConnected?origin:fallback)?.focus({preventScroll:true});}}
   function render(){
     close();const host=document.querySelector('#reading-status-filter');if(!host)return;host.hidden=!config.isVisible();
+    const batch=document.querySelector('#selection-reading-actions');
+    if(batch&&batch.dataset.locale!==getLocale()){
+      batch.dataset.locale=getLocale();
+      batch.innerHTML=html`<p class="ui-menu-caption">阅读状态</p>${READING_STATUSES.map(s=>html`<button type="button" data-reading-batch="${s.id}" data-reading-status="${s.id}" role="menuitemradio" aria-checked="false"><i class="reading-status-dot" aria-hidden="true"></i>${tr(s.name)}</button>`).join('')}`;
+    }
     const papers=config.getScopePapers(),counts=readingStatusCounts(papers),selected=config.getFilter();
     host.replaceChildren(new Option(msg`阅读状态 · 全部 ${papers.length}`,''),...READING_STATUSES.map(s=>new Option(`${tr(s.name)} ${counts[s.id]}`,s.id)));host.value=selected;
   }
@@ -30,10 +35,20 @@ export function createReadingStatusController(config){
     try{const result=await config.persist(captured,status);await config.reload();const feedback=document.querySelector('#reading-status-feedback');if(feedback)feedback.textContent=msg`${captured.length} 篇文献已设为${READING_STATUSES.find(s=>s.id===status)?.name?tr(READING_STATUSES.find(s=>s.id===status).name):status}`;return result;}
     finally{busy=false;menu.setAttribute('aria-busy','false');menu.querySelectorAll('button').forEach(b=>b.disabled=false);}
   }
+  document.querySelector('#selection-organize-menu')?.addEventListener('beforetoggle',event=>{
+    if(event.newState!=='open')return;
+    const ids=config.getSelection(),rows=config.getPapers().filter(paper=>ids.has(paper.id));
+    for(const button of event.target.querySelectorAll('[data-reading-batch]')){
+      const active=rows.length>0&&rows.every(paper=>readingStatusOf(paper)===button.dataset.readingBatch);
+      button.setAttribute('aria-checked',String(active));
+    }
+  });
   document.addEventListener('change',event=>{if(event.target.id==='reading-status-filter')config.setFilter(event.target.value);});
   document.addEventListener('click',event=>{
     const filter=event.target.closest('[data-reading-filter]');if(filter){config.setFilter(filter.dataset.readingFilter);return;}
-    const button=event.target.closest('[data-reading-paper],[data-reading-selected]');if(button)show(button.hasAttribute('data-reading-selected')?[...config.getSelection()]:[button.dataset.readingPaper],button);
+    const batch=event.target.closest('[data-reading-batch]');
+    if(batch){const ids=[...config.getSelection()];if(ids.length)void set(ids,batch.dataset.readingBatch).catch(error=>config.toast(error.message,true));return;}
+    const button=event.target.closest('[data-reading-paper]');if(button)show([button.dataset.readingPaper],button);
   });
   menu.addEventListener('click',async event=>{event.stopPropagation();const button=event.target.closest('[data-reading-set]');if(!button||button.disabled||busy)return;const ids=[...targets];try{await set(ids,button.dataset.readingSet);close(true);}catch(error){config.toast(error.message,true);}});
   document.addEventListener('keydown',event=>{

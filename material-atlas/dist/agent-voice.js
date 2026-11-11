@@ -3,16 +3,16 @@ import {renderChatMarkdown} from './agent-markdown.js';
 const sentences = new Intl.Segmenter(undefined, {granularity: 'sentence'});
 const limit = 180;
 
-function replySegments(text, sources, fallback) {
+export function replySpeechSegments(text, sources, fallback) {
   const template = document.createElement('template');
   template.innerHTML = renderChatMarkdown(text, sources);
   template.content.querySelectorAll('pre, .agent-citation').forEach(node => node.remove());
   template.content.querySelectorAll('br, th, td').forEach(node => node.after(' '));
   const segments = splitSpeech(template.content.textContent);
-  return segments.length ? segments : [fallback];
+  return segments.length ? segments : fallback?[fallback]:[];
 }
 
-function splitSpeech(text) {
+export function splitSpeech(text) {
   return text.split(/\n+/).flatMap(line => [...sentences.segment(line)].flatMap(({segment}) => {
     const characters = [...segment.trim()];
     const chunks = [];
@@ -55,10 +55,11 @@ async function* speechRequests(segments, {preferred, voiceLanguage, prepared}, t
   }
 }
 
-async function play(wav, signal, onPlaying) {
+async function play(wav, signal, onPlaying, configureAudio) {
   const data = Uint8Array.fromBase64(wav);
   const url = URL.createObjectURL(new Blob([data], {type: 'audio/wav'}));
   const audio = new Audio(url);
+  configureAudio(audio);
   let cancel;
   try {
     await new Promise((resolve, reject) => {
@@ -77,7 +78,21 @@ async function play(wav, signal, onPlaying) {
 }
 
 export function createReplyVoice({synthesize, translate, onError, getCharacterId}) {
-  let active, synthesisQueue = Promise.resolve();
+  let active, currentAudio, synthesisQueue = Promise.resolve();
+  let playback={japaneseRate:90,volume:100};
+  const percent=(value,fallback,min,max)=>Number.isFinite(value)?Math.round(Math.min(max,Math.max(min,value))):fallback;
+  function applyPlayback(){
+    if(!currentAudio)return;
+    const {audio,language}=currentAudio;
+    audio.playbackRate=language==='ja'?playback.japaneseRate/100:1;
+    audio.preservesPitch=true;
+    audio.volume=playback.volume/100;
+  }
+  function setPlayback(value){
+    playback={japaneseRate:percent(value?.japaneseRate,90,60,120),volume:percent(value?.volume,100,0,100)};
+    applyPlayback();
+    return {...playback};
+  }
   const prefetched=new Map();
   const cacheKey=request=>JSON.stringify(request);
   function enqueue(request) {
@@ -101,14 +116,14 @@ export function createReplyVoice({synthesize, translate, onError, getCharacterId
     prefetched.clear();
   }
 
-  async function speak(text, {sources, preferred, fallback, voiceLanguage, prepared, paired, onSegment}) {
+  async function speak(text, {sources, preferred, fallback, voiceLanguage, prepared, paired, onSegment, onClip, manual=false}) {
     active?.abort();
     const characterId=getCharacterId?.();
     const turn = new AbortController();
     const {signal} = turn;
     active = turn;
     try {
-      const segments = replySegments(text, sources, fallback);
+      const segments = replySpeechSegments(text, sources, fallback);
       const matched=paired?.language===voiceLanguage&&Array.isArray(paired.segments)&&paired.segments.length;
       const code=voiceLanguage==='zh-CN'?'zh':voiceLanguage;
       const clips = matched ? paired.segments.map(row=>({text:row.speech,language:code,display:row.text})).values()
@@ -117,21 +132,26 @@ export function createReplyVoice({synthesize, translate, onError, getCharacterId
         try {
           const {value,done} = await clips.next();
           if (done || signal.aborted) return {};
-          const {display,...fields}=value,input={...fields,...(characterId?{characterId}:{})},key=cacheKey(input);
+          const {display,...fields}=value,input={...fields,...(characterId?{characterId}:{}),...(manual?{manual:true}:{})},key=cacheKey(input);
           const cached=prefetched.get(key);
           prefetched.delete(key);
           const response=cached ? await cached : {wav:await enqueue(input)};
-          return {...response,display:display??text};
+          if(response.wav)onClip?.({wav:response.wav,language:input.language,text:display??text});
+          return {...response,language:input.language,display:display??text};
         } catch (error) { return {error}; }
       };
       let pending = request(), played = false;
       while (!signal.aborted) {
-        const {wav, error, display} = await pending;
+        const {wav, error, language, display} = await pending;
         if (signal.aborted) return false;
         if (error) throw error;
         if (!wav) break;
         pending = request();
-        await play(wav, signal, ()=>onSegment?.(display));
+        try{
+          await play(wav,signal,()=>onSegment?.(display),audio=>{currentAudio={audio,language,turn};applyPlayback();});
+        }finally{
+          if(currentAudio?.turn===turn)currentAudio=null;
+        }
         played = true;
       }
       return played && !signal.aborted;
@@ -144,5 +164,23 @@ export function createReplyVoice({synthesize, translate, onError, getCharacterId
     }
   }
 
-  return {speak, stop, prefetch};
+  async function replay({language},load){
+    stop();
+    const turn=new AbortController(),{signal}=turn;
+    active=turn;
+    try{
+      const wav=await load();
+      if(signal.aborted)return false;
+      await play(wav,signal,undefined,audio=>{currentAudio={audio,language,turn};applyPlayback();});
+      return !signal.aborted;
+    }catch(error){
+      if(!signal.aborted)throw error;
+      return false;
+    }finally{
+      if(currentAudio?.turn===turn)currentAudio=null;
+      if(active===turn)active=null;
+    }
+  }
+
+  return {speak, stop, prefetch, setPlayback, replay};
 }

@@ -30,9 +30,9 @@ test('malformed speech keeps readable text for compatibility and ordinary replie
 });
 
 test('automatic dialogue keeps paired speech aligned after removing repeated lines',async()=>{
-  const lines=Array.from({length:10},(_,i)=>'第'+i+'句中文。');
-  const speech=Array.from({length:10},(_,i)=>'第'+i+'の日本語。');
-  const result=await runCompanionTurn({character:defaultCharacter(),history:[],companion:{locale:'zh-CN',seed:0},voiceLanguage:'ja',
+  const lines=Array.from({length:4},(_,i)=>'第'+i+'句中文。');
+  const speech=Array.from({length:4},(_,i)=>'第'+i+'の日本語。');
+  const result=await runCompanionTurn({character:defaultCharacter(),history:[{role:'user',content:'继续吧。'}],companion:{locale:'zh-CN',seed:0},voiceLanguage:'ja',
     complete:async()=>({content:JSON.stringify({lines:[lines[0],...lines],speech:[speech[0],...speech],recap:''})})});
   assert.deepEqual(result.lines,lines);
   assert.deepEqual(result.voice.segments.map(row=>row.speech),speech);

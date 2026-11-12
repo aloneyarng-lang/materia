@@ -13,7 +13,7 @@ const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtime
     await page.goto(pathToFileURL(path.join(root,'dist/startup.html')).href);
     await page.waitForFunction(()=>document.querySelector('.pet').style.backgroundPosition==='-576px 0px');
     await page.screenshot({path:path.join(output,'startup.png')});
-    assert.equal(await page.locator('h1').textContent(),'少女祈愿中...');
+    assert.equal(await page.locator('h1').textContent(),'少女祈願中...');
     assert.equal(await page.locator('.pet').evaluate(async el=>{const img=new Image();img.src=getComputedStyle(el).backgroundImage.slice(5,-2);await img.decode();return img.naturalWidth;}),1152);
     const positions=new Set();for(let i=0;i<10;i++){positions.add(await page.locator('.pet').evaluate(el=>el.style.backgroundPosition));await page.waitForTimeout(100);}
     assert.ok(positions.size>=5,'Original sprite frames should advance');

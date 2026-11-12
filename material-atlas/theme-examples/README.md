@@ -19,3 +19,5 @@
 
 - `codex.mtheme.json`：苹方简体 Codex 雾白工作台，浅色／深色双模式与统一玻璃界面。
 - `codex-source-han.mtheme.json`：保留的思源黑体版本。
+
+- [Claude · 灰白](claude-paper/README.md) 结合 Claude 手机端参考截图与 Anthropic 官方品牌配色，提供暖灰白与墨黑双模式、仅用于品牌标识的陶土橙、Lora 英文衬线及中文黑体。

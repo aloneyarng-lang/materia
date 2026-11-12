@@ -50,6 +50,7 @@ export const GRAPH_PRESETS={
  orbital:{name:tr('轨道圆环'),graph:graphFromTokens(graphTokens({nodeFill:'hollow',relationShape:'diamond',edgeStyle:'curve',edgeOpacity:.3,nodeStroke:1.5,nodeScale:1.25,background:'dots'}))},
  crystal:{name:tr('晶格节点'),graph:graphFromTokens(graphTokens({nodeShape:'hexagon',relationShape:'diamond',edgeStyle:'straight',background:'grid',nodeStroke:1.2,nodeScale:1.35,edgeOpacity:.3,edgeDash:'dashed'}))},
  cosmos:{name:tr('宇宙星野'),graph:graphFromTokens(graphTokens({nodeShape:'star',relationShape:'planet',background:'nebula',nodeFill:'solid',colorMode:'accent',nodeScale:1.15,nodeStroke:.5,edgeStyle:'straight',edgeOpacity:.34,glow:4,twinkle:'subtle'}))},
+ flow:{name:tr('流光圆点'),graph:graphFromTokens(graphTokens({nodeScale:1.35,edgeWidth:1.4,edgeOpacity:.42}))},
 };
 let themeProfiles=new Map();
 export function setGraphThemeOptions(themes){themeProfiles=new Map(themes.map(t=>['theme:'+t.id,{id:'theme:'+t.id,name:t.name,graph:t.graph||graphFromTokens(t.tokens),symbols:t.assets?.graphSymbols||{}}]));}

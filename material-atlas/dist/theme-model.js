@@ -8,7 +8,7 @@ import {THEME_ALIASES,PALETTE_KEYS,curateThemes,glassUI,modeTokens} from './them
 export const THEME_TOKENS={
   ...GRAPH_THEME_TOKENS,
   '--paper':'#f7f7f2','--surface':'#fcfdf9','--canvas':'#fafcf7','--panel':'#f0f4ec','--sidebar':'#f1f4ed',
-  '--ink':'#2e4843','--muted':'#718174','--line':'#dce5d7','--teal':'#285d59','--teal-light':'#e7efe3','--on-accent':'#ffffff',
+  '--ink':'#2e4843','--muted':'#718174','--line':'#dce5d7','--teal':'#285d59','--teal-light':'#e7efe3','--on-accent':'#ffffff','--brand-mark':'var(--teal)',
   '--warning':'#9b7946','--warning-soft':'#f5efdf','--danger':'#a15d54','--danger-soft':'#f7ece8','--shadow':'#18362c1c',
   '--serif':`Georgia, 'Noto Serif SC', 'Songti SC', SimSun, serif`,'--sans':`Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif`,
   '--radius':'6px','--theme-mode':'light',
@@ -49,7 +49,7 @@ function cleanToken(key,value){
   value=String(value).trim();
   if(!value||value.length>500||/[{};\\]|\/\*|\*\//.test(value))throw new Error(`主题变量 ${key} 的值不正确。`);
   if(colors.has(key)){
-    if(!/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)&&! /^(?:rgb|rgba|hsl|hsla)\([\d\s.,%+\-/]+\)$/i.test(value))throw new Error(`${key} 请使用十六进制、rgb() 或 hsl() 颜色。`);
+    if(!(key==='--brand-mark'&&value==='var(--teal)')&&!/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)&&! /^(?:rgb|rgba|hsl|hsla)\([\d\s.,%+\-/]+\)$/i.test(value))throw new Error(`${key} 请使用十六进制、rgb() 或 hsl() 颜色。`);
   }else if(key==='--theme-mode'){
     if(!['light','dark'].includes(value))throw new Error('--theme-mode 只能填写 light 或 dark。');
   }else if(key==='--radius'){

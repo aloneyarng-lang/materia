@@ -44,7 +44,7 @@ export function relatedPaperSections(groups,esc){
       ].filter(Boolean);
       return `<button type="button" class="related-paper" data-related="${esc(item.paper.id)}"><i class="related-dot" aria-hidden="true"></i><span><strong>${esc(item.paper.title)}</strong>${reasons.map(reason=>`<small>${esc(reason)}</small>`).join('')}</span></button>`;
     };
-    return html`<section class="related-group" data-related-group="${key}" aria-label="${title}"><div class="related-header"><h3>${title}</h3><small>${items.length} 篇</small></div>${key==='tags'&&items.length?tr('<p class="related-order-note">按重合 Tag 数量从多到少</p>'):''}<div class="related-list">${items.slice(0,3).map(row).join('')||`<p class="help-inline">${empty}</p>`}${items.length>3?html`<details class="related-more"><summary>展开其余 ${items.length-3} 篇</summary>${items.slice(3).map(row).join('')}</details>`:''}</div></section>`;
+    return html`<section class="related-group" data-related-group="${key}" aria-label="${title}"><div class="related-header"><h3>${title}</h3><small>${items.length} 篇</small></div>${key==='tags'&&items.length?tr(''):''}<div class="related-list">${items.slice(0,3).map(row).join('')||`<p class="help-inline">${empty}</p>`}${items.length>3?html`<details class="related-more"><summary>展开其余 ${items.length-3} 篇</summary>${items.slice(3).map(row).join('')}</details>`:''}</div></section>`;
   };
   return section('people',tr('作者 / 机构关联'),groups.people,tr('尚未找到共同作者或机构，可补充作者与机构信息。'))+section('tags',tr('Tag 关联'),groups.tags,tr('尚未找到共享 Tag 的文献。'));
 }

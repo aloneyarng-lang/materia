@@ -6,6 +6,21 @@
 #star-map .node-ring{vector-effect:non-scaling-stroke;stroke-width:1px;stroke-dasharray:none;transition:opacity .12s}
 #star-map .node-halo,#star-map .node-glint,#star-map .network-backdrop{display:none}
 #star-map .network-edges path{stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s,stroke .12s}
+#star-map[data-graph-appearance="flow"] .node-core{fill:var(--flow-node-color,var(--node-color));fill-opacity:.76;stroke:none;filter:none}
+html[data-theme-mode="dark"] #star-map[data-graph-appearance="flow"] .graph-node{--flow-node-color:color-mix(in srgb,var(--node-color) 90%,white)}
+#star-map .flow-node-halo{fill:var(--flow-node-color,var(--node-color));fill-opacity:.16}
+#star-map .network-flow{pointer-events:none}
+#star-map .network-flow path{
+  fill:none;
+  stroke:color-mix(in srgb,var(--ink) 82%,var(--canvas));
+  stroke-width:var(--flow-dot-size,3px);
+  stroke-linecap:round;
+  stroke-dasharray:0 100;
+  animation:graph-edge-flow 4s linear infinite;
+}
+#star-map[data-graph-paused="true"] .network-flow path{animation-play-state:paused}
+@keyframes graph-edge-flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
+@media(prefers-reduced-motion:reduce){#star-map .network-flow{display:none}}
 #star-map .graph-node .node-label,#star-map .graph-node .tag-node-label{stroke-width:var(--render-label-halo,3px);font-weight:400;fill:var(--render-label-color,var(--muted))}
 #star-map .graph-node.is-active .node-label,#star-map .graph-node.is-active .tag-node-label{fill:var(--ink)}
 #star-map.dragging .network-edges path{transition:none}
@@ -56,6 +71,7 @@ html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var
 .graph-mode-bar .graph-mode-help{padding:0;flex:1 1 260px}
 .graph-neighbors-control{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.75rem;white-space:nowrap}
 .graph-neighbors-control select{width:58px;min-width:0;padding:4px 6px}
+.graph-neighbors-control input{width:64px;min-width:0;padding:4px 6px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px}
 .graph-neighbors-control[hidden]{display:none}
 
 /* Keep detailed theme artwork at rest; avoid thousands of filters in motion. */
@@ -65,3 +81,9 @@ svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-twinkle{animat
 svg[data-graph-density="dense"] .graph-node{transition:none}
 
 .visualization-column:has(#graph-wrap[hidden]) .graph-mode-bar{display:none}
+.graph-neighbors-control input[type="checkbox"]{width:14px;height:14px;padding:0}
+#legend>span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+
+.community-label{fill:var(--ink);font-weight:600;letter-spacing:.02em;paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+#graph-mode-help[hidden]{display:none}
+.graph-mode-bar{justify-content:flex-start;gap:12px 24px} #legend>span>i{width:6px;height:6px;flex:none;border-radius:50%} .community-label{vector-effect:non-scaling-stroke}

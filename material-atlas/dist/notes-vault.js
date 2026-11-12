@@ -44,7 +44,7 @@ export function createNotesVault(host,{saveText,editNote,escape,toast}){
         <div class="vault-file-list" data-vault="list" aria-label="笔记文件"></div>
       </aside>
       <div class="vault-main">
-        <div class="vault-empty" data-vault="empty">${icon('notebook')}<strong>写下第一篇笔记</strong><p>点击 ＋ 新建，或从菜单导入 Markdown 文件。</p></div>
+        <div class="vault-empty" data-vault="empty">${icon('notebook')}<strong>写下第一篇笔记</strong></div>
         <section class="vault-document" data-vault="document" hidden>
           <div class="vault-document-bar">
             <div class="vault-title"><strong data-vault="title"></strong><small data-vault="path"></small></div>

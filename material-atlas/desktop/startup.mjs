@@ -7,7 +7,7 @@ export async function createStartup(appRoot, minimalMode = false) {
   if (minimalMode) return {finish(reveal) {reveal();}, close() {}};
   const splash = new BrowserWindow({width:560,height:440,show:false,frame:false,
     resizable:false,maximizable:false,minimizable:false,skipTaskbar:true,
-    backgroundColor:'#faf8f5',title:'少女祈愿中…',
+    transparent:true,backgroundColor:'#00000000',title:'少女祈願中…',
     webPreferences:{contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
   splash.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   splash.webContents.on('will-navigate',event=>event.preventDefault());

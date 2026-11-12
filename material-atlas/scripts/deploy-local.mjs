@@ -1,4 +1,4 @@
-import {readFile,writeFile,mkdir,copyFile,rename,stat} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,copyFile,rename,stat,rm} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';
 import {createHash,randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
@@ -35,9 +35,14 @@ export async function deployLocal({source,target,backupRoot,shortcuts=[],checkRu
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const args=process.argv.slice(2),option=name=>{const i=args.indexOf(name);return i<0?undefined:args[i+1];};const{version}=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
-  let buildSource;
-  if(!args.includes('--no-build')){const buildOut=path.join(root,'.local/builds',version+'-'+randomUUID());buildSource=path.join(buildOut,'Materia-win32-x64');const env={...process.env,MATERIA_PACKAGE_OUT:buildOut};if(await exists(path.join(root,'.local',`electron-v45.0.0-win32-x64.zip`)))env.MATERIA_ELECTRON_ZIP_DIR=path.join(root,'.local');const result=spawnSync(process.execPath,[path.join(root,'desktop/package.mjs')],{cwd:root,env,stdio:'inherit',windowsHide:true});if(result.status!==0)process.exit(result.status||1);}
-  const workspace=path.resolve(root,'../..'),target=path.resolve(option('--target')||path.join(workspace,'Materia-win32-x64'));
-  const report=await deployLocal({source:option('--source')||buildSource||path.join(root,`release/v${version}/Materia-win32-x64`),target,backupRoot:path.join(root,'.local/program-backups'),shortcuts:args.includes('--skip-shortcuts')?[]:[path.join(workspace,'Materia 最新版.lnk'),path.resolve(root,'../Materia.exe - 快捷方式.lnk')]});
+  let buildSource,buildOut;
+  try {
+  if(!args.includes('--no-build')){buildOut=path.join(root,'.local/builds',version+'-'+randomUUID());buildSource=path.join(buildOut,'Materia-win32-x64');const env={...process.env,MATERIA_PACKAGE_OUT:buildOut};if(await exists(path.join(root,'.local',`electron-v45.0.0-win32-x64.zip`)))env.MATERIA_ELECTRON_ZIP_DIR=path.join(root,'.local');const result=spawnSync(process.execPath,[path.join(root,'desktop/package.mjs')],{cwd:root,env,stdio:'inherit',windowsHide:true});if(result.status!==0)throw Error(`Packaging failed (${result.status}).`);}
+  const target=path.resolve(option('--target')||path.join(root,'release/current/Materia-win32-x64'));
+  const report=await deployLocal({source:option('--source')||buildSource||path.join(root,`release/v${version}/Materia-win32-x64`),target,backupRoot:path.join(root,'.local/program-backups'),shortcuts:[]});
+  const launcher=spawnSync(process.execPath,[path.join(root,'scripts/build-launcher.mjs')],{cwd:root,stdio:'inherit',windowsHide:true});if(launcher.status!==0)throw Error('Program updated, but root launcher build failed. Run npm run build:launcher.');
   await writeFile(path.join(root,'.local/local-install-current.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({version:report.version,target:report.target,updatedFiles:report.changedFiles.length,verifiedFiles:report.verifiedFiles,backup:report.backup}));
+  } finally {
+    if(buildOut)await rm(buildOut,{recursive:true,force:true});
+  }
 }

@@ -1,5 +1,5 @@
 import { packager } from '@electron/packager';
-import { mkdir, copyFile, writeFile, cp, readFile } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, cp, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {randomUUID} from 'node:crypto';
@@ -9,8 +9,10 @@ import {MachineLearningEngine} from './ml-engine.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const {version,devDependencies} = JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
 const stage = path.join(root, '.local', `desktop-stage-v${version}-${randomUUID()}`);
+const packagingTemp = path.join(root, '.local', `packager-temp-${randomUUID()}`);
 const iconPath = await makeIcon();
 await mkdir(stage,{recursive:true});
+try {
 await new MachineLearningEngine({appRoot:root}).run('status');
 await cp(path.join(root,'ml'),path.join(stage,'ml'),{recursive:true,filter:source=>!['__pycache__','runtime','test_engine.py'].includes(path.basename(source))});
 await cp(path.join(root,'.local/ml-runtime'),path.join(stage,'ml/runtime'),{recursive:true,filter:source=>!['__pycache__'].includes(path.basename(source))});
@@ -19,7 +21,7 @@ await cp(path.join(root,'desktop'),path.join(stage,'desktop'),{recursive:true,fi
 await writeFile(path.join(stage, 'package.json'), JSON.stringify({ name: 'materia-desktop', productName: 'Materia', version, type: 'module', main: 'desktop/main.mjs', description: '材料文献星图 · 多材料性能对比与完整主题包' }, null, 2));
 await validatePackagedAssets(stage);
 await new MachineLearningEngine({appRoot:stage}).run('status');
-const paths = await packager({ dir: stage, name: 'Materia', executableName: 'Materia', platform: 'win32', arch: 'x64', out: process.env.MATERIA_PACKAGE_OUT?path.resolve(process.env.MATERIA_PACKAGE_OUT):path.join(root, 'release', `v${version}`), overwrite: false, asar: false, prune: false, icon: iconPath, electronVersion: devDependencies.electron, ...(process.env.MATERIA_ELECTRON_ZIP_DIR?{electronZipDir:path.resolve(process.env.MATERIA_ELECTRON_ZIP_DIR)}:{}), win32metadata: { CompanyName: 'Materia', FileDescription: 'Materia · 材料文献星图', ProductName: 'Materia' } });
+const paths = await packager({ dir: stage, tmpdir: packagingTemp, name: 'Materia', executableName: 'Materia', platform: 'win32', arch: 'x64', out: process.env.MATERIA_PACKAGE_OUT?path.resolve(process.env.MATERIA_PACKAGE_OUT):path.join(root, 'release', `v${version}`), overwrite: false, asar: false, prune: false, icon: iconPath, electronVersion: devDependencies.electron, ...(process.env.MATERIA_ELECTRON_ZIP_DIR?{electronZipDir:path.resolve(process.env.MATERIA_ELECTRON_ZIP_DIR)}:{}), win32metadata: { CompanyName: 'Materia', FileDescription: 'Materia · 材料文献星图', ProductName: 'Materia' } });
 for (const output of paths) {
   await mkdir(path.join(output,'scripts'),{recursive:true});
   const themeValidator=(await readFile(path.join(root,'scripts/validate-theme-design.mjs'),'utf8')).replaceAll("'../dist/","'../resources/app/dist/");
@@ -34,3 +36,9 @@ for (const output of paths) {
   console.log(path.join(output, 'Materia.exe'));
 }
 
+
+} finally {
+  // This uniquely named directory contains only the generated packaging input.
+  await rm(stage,{recursive:true,force:true});
+  await rm(packagingTemp,{recursive:true,force:true});
+}

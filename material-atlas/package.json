@@ -43,7 +43,9 @@
     "verify:material-list-desktop": "node scripts/verify-material-list-desktop.cjs",
     "verify:agent-providers": "node scripts/verify-agent-providers.cjs",
     "verify:agent-providers-desktop": "node scripts/verify-agent-providers-desktop.cjs",
-    "deploy:local": "node scripts/deploy-local.mjs"
+    "deploy:local": "node scripts/deploy-local.mjs",
+    "build:launcher": "node scripts/build-launcher.mjs",
+    "cleanup": "node scripts/cleanup.mjs"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",

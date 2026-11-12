@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ef9a7e"/>
+      <stop offset="1" stop-color="#d97757"/>
+    </linearGradient>
+    <mask id="facet-seams" maskUnits="userSpaceOnUse" x="0" y="0" width="512" height="512">
+      <rect width="512" height="512" fill="#fff"/>
+      <path d="M138 177L253 245L369 177M253 245V390" fill="none" stroke="#000" stroke-width="12" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#surface)"/>
+  <rect x="17" y="17" width="478" height="478" rx="111" fill="none" stroke="#fff" stroke-opacity=".24" stroke-width="2"/>
+  <path d="M352 150L253 93L115 173V333L253 413L391 333V214" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <g mask="url(#facet-seams)">
+    <path d="M138 177H369L253 390Z" fill="#fff"/>
+    <path d="M138 177L253 245V390Z" fill="#fff4ed"/>
+    <path d="M369 177L253 245V390Z" fill="#ffe5d9"/>
+  </g>
+  <circle cx="391" cy="173" r="16" fill="#fff"/>
+</svg>

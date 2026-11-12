@@ -500,7 +500,7 @@ export function createAgentController(options) {
     const target = $('#agent-messages');
     if (!entries.length) {
       renderedLog=[];sources.clear();
-      target.innerHTML = html`<div class="agent-welcome">${icon('assistant')}<h3>从你的文献中寻找线索</h3><p>我能检索文献与材料、梳理笔记，并按材料保留单位和测试条件比较性能参数。</p><button type="button" data-agent-prompt="概览当前范围内的文献主题与已录入性能参数。">概览我的文献库</button><button type="button" data-agent-prompt="对比当前范围内各材料的性能参数，保留材料名称、单位、条件及来源。">比较性能参数</button><button type="button" data-agent-prompt="根据已有笔记梳理研究线索，区分证据与推断，并指出信息缺口。">从笔记梳理研究线索</button><small>可以日常聊天，也可以一起查阅文献与笔记。对话自动保存在本机，可从历史记录继续。</small></div>`;
+      target.innerHTML = html`<div class="agent-welcome">${icon('assistant')}<h3>从你的文献中寻找线索</h3><button type="button" data-agent-prompt="概览当前范围内的文献主题与已录入性能参数。">概览我的文献库</button><button type="button" data-agent-prompt="对比当前范围内各材料的性能参数，保留材料名称、单位、条件及来源。">比较性能参数</button><button type="button" data-agent-prompt="根据已有笔记梳理研究线索，区分证据与推断，并指出信息缺口。">从笔记梳理研究线索</button></div>`;
       target.scrollTop=0; return;
     }
     const append=!refreshLog&&renderedLog.length>0&&renderedLog.every((entry,index)=>entry===entries[index]);

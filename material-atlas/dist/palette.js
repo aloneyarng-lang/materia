@@ -1,1 +1,1 @@
-export const PALETTE = ['#397d78', '#6082a6', '#bb9660', '#b76e5c', '#879878', '#9584a5'];
+export const PALETTE = ['#12b99a', '#4385f5', '#f4b52d', '#ff775c', '#a275f5', '#ed65ae'];

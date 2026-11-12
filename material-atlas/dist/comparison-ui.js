@@ -10,7 +10,7 @@ import { figureDataCSV, PLOT_REASONS } from './chart-data.js';
 import { buildFigure, FIGURE_DEFAULTS, FIGURE_SIZES, cleanFigureSettings, validateFigureSettings } from './figure.js';
 
 export function comparisonMatrix(papers,options,esc) {
-  if(!options.length)return tr('<div class="comparison-no-data"><h3>所选文献没有性能记录</h3><p>可按性能参数重新找文献，或先导入 Markdown 性能表。</p><button class="outline-button" data-comparison-action="find-parameter">按性能参数找文献</button></div>');
+  if(!options.length)return tr('<div class="comparison-no-data"><h3>所选文献没有性能记录</h3><button class="outline-button" data-comparison-action="find-parameter">按性能参数找文献</button></div>');
   return html`<table class="comparison-table"><thead><tr><th>性能参数 / 单位</th>${papers.map(p=>`<th><strong>${esc(p.title)}</strong><small>${esc(p.year||tr('年份未填'))}</small></th>`).join('')}</tr></thead><tbody>${options.slice(0,100).map(option=>html`<tr><th><button class="matrix-parameter-link" data-parameter-name="${esc(parameterNameKey(option.name))}" data-parameter-unit="*" title="查看全库录入此参数的文献">${esc(option.name)} ↗</button><small>${esc(option.unit||tr('单位未填'))} · ${option.paperCount} 篇</small></th>${papers.map(p=>`<td>${paperMeasurements(p).filter(m=>parameterKey(m.name,m.unit)===option.key).map(m=>`<div class="measurement-cell"><strong>${esc(m.qualifier)}${esc(m.value)}${m.uncertainty!=null&&m.uncertainty!==''?` ± ${esc(m.uncertainty)}`:''}</strong><span>${esc(m.materialName)}${m.sample&&m.sample!==m.materialName?' · '+esc(m.sample):''}</span><small>${esc(m.conditions||tr('条件未填'))}</small>${m.source?`<small class="measurement-source">${esc(m.source)}</small>`:''}</div>`).join('')||'<span class="missing-value">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table>${options.length>100?tr('<p class="chart-footnote">预览前 100 个参数，完整测量 CSV 包含全部记录。</p>'):''}`;
 }
 
@@ -72,7 +72,7 @@ export function createComparison(config) {
     if(!available.some(item=>item.key===settings.y))settings.y=parameterOptions(papers)[0]?'m:'+parameterOptions(papers)[0].key:available.find(item=>item.key.startsWith('m:'))?.key||'impactFactor';
     if(!papers.length){
       const inventory=parameterInventory(config.getPapers());
-      config.showModal(tr('从性能参数开始绘图'),tr('点击参数找到全库相关文献，再选择要比较的数据。'),html`${picker.modeBar()}<div class="figure-start"><h3>先找参数，再选文献。</h3><p>单篇文献的参数也会列出，所有单位均可找到。</p><button class="primary" data-comparison-action="find-parameter">搜索全部 ${inventory.length} 个性能参数</button></div><div class="parameter-directory compact">${parameterCards(inventory.slice(0,8),'',esc)}</div>`,'comparison');return;
+      config.showModal(tr('从性能参数开始绘图'),tr('点击参数找到全库相关文献，再选择要比较的数据。'),html`${picker.modeBar()}<div class="figure-start"><h3>先找参数，再选文献。</h3><button class="primary" data-comparison-action="find-parameter">搜索全部 ${inventory.length} 个性能参数</button></div><div class="parameter-directory compact">${parameterCards(inventory.slice(0,8),'',esc)}</div>`,'comparison');return;
     }
     const materialMode=picker.mode()==='material',r=materialMode?picker.resolved():null;
     const years=[...new Set(config.getMetrics().map(row=>row.year))].sort().reverse();

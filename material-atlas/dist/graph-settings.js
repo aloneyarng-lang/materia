@@ -1,14 +1,22 @@
 import {THEME_ALIASES} from './theme-variants.js';
-export const GRAPH_DEFAULTS = {mode:'similarity',neighbors:3,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,colorBy:'tag',localMode:false,localDepth:1,appearance:'theme'};
+import {GRAPH_PRESETS} from './graph-appearance.js';
+export const GRAPH_DEFAULTS = {mode:'similarity',neighbors:3,similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65,sharedTagThreshold:6,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,showCommunityLabels:true,colorBy:'community',localMode:false,localDepth:1,appearance:'theme'};
 export function cleanGraphSettings(value = {}) {
   const output={...GRAPH_DEFAULTS},limits={neighbors:[1,12],center:[0,2],repulsion:[.25,4],linkStrength:[.1,2],linkDistance:[40,250],inertia:[0,1],nodeSize:[.6,2],linkWidth:[.3,2.5],labelThreshold:[.5,2.5],localDepth:[0,2]};
   for(const [key,[min,max]]of Object.entries(limits))if(Number.isFinite(Number(value[key])))output[key]=Math.max(min,Math.min(max,Number(value[key])));
-  if(['similarity','tags'].includes(value.mode))output.mode=value.mode;
+  Object.assign(output,{similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65});
+  for(const [key,min,max] of [['similarityThreshold',.01,1],['resolution',.3,2.5],['clusterStrength',0,2]])if(Number.isFinite(Number(value[key])))output[key]=Math.max(min,Math.min(max,Number(value[key])));
+  if(typeof value.mutualKnn==='boolean')output.mutualKnn=value.mutualKnn;
+  if(['similarity','tags','shared-tags'].includes(value.mode))output.mode=value.mode;
+  if(value.sharedTagThreshold!==undefined&&Number.isFinite(Number(value.sharedTagThreshold)))output.sharedTagThreshold=Math.round(Math.max(6,Math.min(29,Number(value.sharedTagThreshold))));
   output.neighbors=Math.round(output.neighbors);
   output.localDepth=Math.round(output.localDepth);
+  output.showCommunityLabels=value.showCommunityLabels!==false;
   for(const key of ['showRelations','localMode'])if(typeof value[key]==='boolean')output[key]=value[key];
-  if(['tag','journal','collection'].includes(value.colorBy))output.colorBy=value.colorBy;
-  if(['theme','classic','orbital','crystal','cosmos'].includes(value.appearance)||/^theme:[a-z][a-z\d-]{0,100}$/i.test(value.appearance||''))output.appearance=value.appearance;
+  if(['tag','journal','collection','community'].includes(value.colorBy))output.colorBy=value.colorBy;
+  if(value.researchGraphVersion!==2&&output.colorBy==='tag')output.colorBy='community';
+  output.researchGraphVersion=2;
+  if(value.appearance==='theme'||Object.hasOwn(GRAPH_PRESETS,value.appearance)||/^theme:[a-z][a-z\d-]{0,100}$/i.test(value.appearance||''))output.appearance=value.appearance;
   if(output.appearance.startsWith('theme:')&&THEME_ALIASES[output.appearance.slice(6)])output.appearance='theme:'+THEME_ALIASES[output.appearance.slice(6)].id;
   return output;
 }

@@ -113,6 +113,7 @@
 | `--teal` / `--teal-light` / `--on-accent` | 强调色 / 选中底色 / 强调色上的文字 |
 | `--warning` / `--warning-soft` / `--danger` / `--danger-soft` | 提示及错误的文字与底色 |
 | `--shadow` / `--theme-mode` | 阴影颜色 / `light` 或 `dark` 原生控件风格 |
+| `--brand-mark` | 可选的应用品牌标识色；未设置时跟随 `--teal`，不改变按钮、链接或选中态 |
 | `--sans` / `--serif` / `--numeric` / `--mono` | 正文 / 标题 / 数字 / 等宽字体栈 |
 | `--font-size` / `--font-weight` / `--line-height` | 正文字号（如 `13px`）/ 字重 / 行高 |
 | `--heading-scale` / `--heading-weight` / `--heading-line-height` | 标题比例 / 字重 / 行高 |

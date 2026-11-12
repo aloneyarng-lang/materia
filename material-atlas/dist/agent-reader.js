@@ -7,7 +7,7 @@ export function createAgentReader(panel,{read,replay,stop,desktop,getLibraryKey}
   dialog.setAttribute('aria-labelledby','agent-reader-title');
   dialog.innerHTML=html`<form>
     <header class="agent-reader-heading">
-      <div><h2 id="agent-reader-title">朗读器</h2><p>当前 AI 翻译 · 当前角色朗读</p></div>
+      <div><h2 id="agent-reader-title">朗读器</h2></div>
       <button type="button" data-reader-close aria-label="关闭朗读器" title="关闭">×</button>
     </header>
     <div class="agent-reader-toolbar">

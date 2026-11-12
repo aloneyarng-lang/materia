@@ -42,7 +42,7 @@ export function createParameterFinder(config) {
   let inventory = [];
   function open(query = '') {
     inventory = parameterInventory(config.getPapers());
-    config.showModal(tr('按性能参数找文献'), msg`${inventory.length} 个参数名称 · 按整个文献库检索，不受标签篇数限制`, html`<div class="parameter-finder-intro"><strong>先找参数，再选文献。</strong><p>点击名称查看所有单位的相关文献，也可点击单位缩小范围。找到文献后再设置绘图数值与测试条件。</p></div><input id="parameter-finder-query" class="parameter-search" type="search" value="${config.escape(query)}" placeholder="搜索参数名称或单位，例如：矫顽力、MPa…" aria-label="搜索性能参数"><div id="parameter-directory" class="parameter-directory">${parameterCards(inventory,query,config.escape)}</div>`, 'parameter-finder');
+    config.showModal(tr('按性能参数找文献'), msg`${inventory.length} 个参数名称`, html`<input id="parameter-finder-query" class="parameter-search" type="search" value="${config.escape(query)}" placeholder="搜索参数名称或单位，例如：矫顽力、MPa…" aria-label="搜索性能参数"><div id="parameter-directory" class="parameter-directory">${parameterCards(inventory,query,config.escape)}</div>`, 'parameter-finder');
   }
   document.addEventListener('input',event=>{if(event.target.id==='parameter-finder-query')document.querySelector('#parameter-directory').innerHTML=parameterCards(inventory,event.target.value,config.escape);});
   document.addEventListener('click',async event=>{const button=event.target.closest('[data-parameter-name]');if(button)try{await config.apply(button.dataset.parameterName,button.dataset.parameterUnit ?? '*');}catch(error){config.toast(error.message,true);}});

@@ -81,7 +81,7 @@ async function start() {
   canvasStore=new CanvasFile(library.root);
   moduleServices=new DesktopModuleServices(DESKTOP_MODULES,library.root);
   await savePreferences({libraryPath:library.root});
-  mainWindow = new BrowserWindow({ show: false, width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
+  mainWindow = new BrowserWindow({ show: false, width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), icon: path.join(appRoot, 'desktop', 'materia.ico'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
   const revealMain=()=>{if(!mainWindow.isDestroyed()&&process.env.MATERIA_HEADLESS!=='1'){mainWindow.show();mainWindow.focus();}};
   // Reveal initialization errors too, rather than trapping the user behind a loader.
   const startupTimeout=setTimeout(()=>startup.finish(revealMain),15000);

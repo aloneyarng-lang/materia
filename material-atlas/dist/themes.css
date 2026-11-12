@@ -7,7 +7,7 @@ html{font-size:calc(16px * var(--ui-font-scale,1));background:var(--paper);color
 .paper-title,.paper-row h3{color:var(--ink)}.toast{color:var(--on-accent)}.toast.error{color:var(--danger)}
 .modal::backdrop,.filter-drawer::backdrop{background:var(--shadow)}
 .relation-node .node-core{fill:var(--surface)}.paper-node .node-core{stroke:var(--canvas)}
-.brand-symbol circle{stroke:var(--sidebar)}.brand-symbol svg{stroke:var(--teal)}.brand-symbol circle{fill:var(--teal)}
+.brand-symbol svg,.brand-symbol circle{stroke:var(--brand-mark,var(--teal))}.brand-symbol circle{fill:none}.brand-symbol .brand-satellite{fill:var(--brand-mark,var(--teal));stroke:none}
 .theme-intro p,.theme-format-note{font-size:0.6875rem;line-height:1.9;color:var(--muted);margin:0 0 17px}
 .theme-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}.theme-tools button{font-size:0.6875rem;padding:8px 12px}
 .theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-height:min(490px,45vh);overflow:auto;padding:3px}

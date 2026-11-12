@@ -43,6 +43,7 @@
     "--teal": "#97491e",
     "--teal-light": "#a85d281b",
     "--on-accent": "#ffffff",
+    "--brand-mark": "var(--teal)",
     "--warning": "#7c6428",
     "--warning-soft": "#f6e9c8",
     "--danger": "#b63b36",

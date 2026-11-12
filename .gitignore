@@ -10,6 +10,8 @@ release/
 *.tar
 *.tar.gz
 *.tgz
+*.nvg
+/*preview.png
 *.mp4
 
 # Local environments & test results
@@ -52,7 +54,11 @@ backups/
 
 # Machine-specific shortcuts and generated theme previews
 *.lnk
-!Materia.exe - 快捷方式.lnk
+*.tar.gz
+*.tgz
+*.nvg
+/*preview.png
+/scratch/
 **/theme-examples/*preview.png
 **/theme-examples/*comparison.png
 

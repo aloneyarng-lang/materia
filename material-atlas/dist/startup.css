@@ -1,19 +1,25 @@
 @import url('./builtin-fonts.css');
-:root{color-scheme:light;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#4c3038;background:#faf8f5}
+:root{color-scheme:light;font-family:"Materia Inter","Materia Source Han Sans",sans-serif;color:#ffffff;background:transparent}
 *{box-sizing:border-box}
 body{margin:0;overflow:hidden}
-main{height:100vh;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 47%,#fffdfa 0%,#faf8f5 70%);transition:opacity .4s ease,filter .4s ease;-webkit-app-region:drag;user-select:none}
-.wordmark{font-family:Georgia,serif;font-size:25px;letter-spacing:-1px;line-height:1;color:#503e40;margin-bottom:5px}
-.wordmark span{color:#b42c44}
-.stage{position:relative;width:270px;height:256px;display:grid;place-items:center}
-.aura{position:absolute;inset:35px 30px 20px;border-radius:50%;background:radial-gradient(ellipse,#f2e1dd80,transparent 70%)}
-.pet{position:relative;width:192px;height:208px;background-image:url('./startup-reimu.png');background-size:1152px 208px;background-position:0 0;background-repeat:no-repeat;transform:scale(1.1);filter:drop-shadow(0 8px 8px #7d2c3510)}
-h1{font-size:20px;line-height:1.5;font-weight:400;letter-spacing:4px;margin:0;position:relative}
+/* Match the main interface's large glass panels (glassUI.cardRadius). */
+body{border-radius:20px;clip-path:inset(0 round 20px)}
+main{position:relative;height:100vh;min-height:400px;border-radius:20px;overflow:hidden;background:#d97757;transition:opacity .4s ease,filter .4s ease;-webkit-app-region:drag;user-select:none}
+.brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-75%);display:flex;flex-direction:column;align-items:center;gap:18px}
+.app-icon{display:block;width:112px;height:112px}
+.wordmark{font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:28px;font-weight:400;letter-spacing:-.8px;line-height:1;color:#ffffff}
+.wordmark span{color:#ffffff}
+.companion{position:absolute;left:24px;bottom:26px;width:116px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.stage{position:relative;width:116px;height:126px;display:grid;place-items:center}
+.aura{position:absolute;inset:18px 0 0;border-radius:50%;background:radial-gradient(ellipse,#ffffff18,transparent 70%)}
+.pet{position:absolute;width:192px;height:208px;background-image:url('./startup-reimu.png');background-size:1152px 208px;background-position:0 0;background-repeat:no-repeat;transform:scale(.6);filter:drop-shadow(0 8px 8px #7d2c3510)}
+.status{display:flex;flex-direction:column;align-items:center}
+h1{font-family:"Materia Source Han Sans","Yu Gothic",sans-serif;font-size:12px;line-height:1.5;font-weight:400;letter-spacing:1px;margin:0;position:relative}
 .dots{position:absolute;left:100%;letter-spacing:2px;margin-left:3px;animation:dots 1.8s ease-in-out infinite}
-.loading{width:72px;height:2px;border-radius:2px;overflow:hidden;background:#e9dedb;margin-top:20px}
-.loading span{display:block;width:32px;height:100%;background:#b74558;animation:loading 1.8s ease-in-out infinite}
-.caption{margin-top:14px;font-size:8px;letter-spacing:3px;color:#aa9397}
+.loading{position:absolute;left:50%;bottom:74px;transform:translateX(-50%);width:260px;height:4px;border-radius:4px;overflow:hidden;background:#ffffff40}
+.loading span{display:block;width:90px;height:100%;border-radius:inherit;background:#ffffff;animation:loading 1.8s ease-in-out infinite}
+.caption{font-family:"Materia Inter","Materia Source Han Sans",sans-serif;margin-top:5px;font-size:7px;font-weight:400;letter-spacing:1.4px;color:#ffffff}
 .depart main{opacity:0;filter:blur(4px)}
 @keyframes dots{0%,100%{opacity:.3}50%{opacity:1}}
-@keyframes loading{0%{transform:translateX(-32px)}100%{transform:translateX(74px)}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.loading span{transform:translateX(20px)}}
+@keyframes loading{0%{transform:translateX(-90px)}100%{transform:translateX(260px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.loading span{transform:translateX(85px)}}

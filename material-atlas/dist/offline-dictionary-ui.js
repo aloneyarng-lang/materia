@@ -3,7 +3,7 @@ import {readStudy,updateStudy} from './study-client.js';
 import {OFFLINE_DICTIONARY_LANGUAGES,searchOfflineDictionary,offlineDictionarySize} from './offline-dictionary.js';
 
 export function offlineDictionaryShell(){
-  return html`<div class="offline-dictionary-tools"><input type="search" data-offline-query aria-label="本地词典查词" placeholder="输入英文、日文或德文单词…"><select data-offline-target aria-label="离线翻译目标语言">${Object.entries(OFFLINE_DICTIONARY_LANGUAGES).map(([id,label])=>`<option value="${id}">${tr(label)}</option>`).join('')}</select></div><p class="study-notice">已内置 ECDICT 英汉词典、Princeton WordNet 英语释义、EDRDG JMdict 日英词典与 Ding 德英词典。支持日英、德英双向离线查词，日语可按汉字或假名查询。日文、德文译成中文时会明确标注经英语转译；词库随程序安装，无需联网或 API Key。</p><p data-offline-status role="status"></p><div class="offline-dictionary-results"></div>`;
+  return html`<div class="offline-dictionary-tools"><input type="search" data-offline-query aria-label="本地词典查词" placeholder="输入英文、日文或德文单词…"><select data-offline-target aria-label="离线翻译目标语言">${Object.entries(OFFLINE_DICTIONARY_LANGUAGES).map(([id,label])=>`<option value="${id}">${tr(label)}</option>`).join('')}</select></div><p data-offline-status role="status"></p><div class="offline-dictionary-results"></div>`;
 }
 export function createOfflineDictionaryView(root,{escape:esc,onVocabularyChanged}={}){
   const $=selector=>root.querySelector(selector);let rows=[],libraryKey='',targetLanguage='zh-CN',query='',busy=false,active=true;

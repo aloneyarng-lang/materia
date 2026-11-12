@@ -24,7 +24,7 @@ test('stronger links settle closer and their weights survive natural arrangement
   for(const similarity of [.2,.9]){
     const graph=createNetwork(papers.slice(0,2),[],{},[],'similarity');graph.edges[0].similarity=similarity;
     Object.assign(graph.nodes[0],{x:100,y:300,pinned:true});Object.assign(graph.nodes[1],{x:600,y:300});
-    for(let i=0;i<400;i++)stepNetwork(graph,.4,{...GRAPH_DEFAULTS,center:0,repulsion:0});
+    for(let i=0;i<400;i++)stepNetwork(graph,.4,{...GRAPH_DEFAULTS,center:0,repulsion:0,clusterStrength:0});
     distances.push(graph.nodes[1].x-graph.nodes[0].x);
     assert.equal(cleanLayoutInput(graph).edges[0].similarity,similarity);
   }

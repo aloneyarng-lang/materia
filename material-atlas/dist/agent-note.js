@@ -8,7 +8,7 @@ export function createAgentNoteEditor(panel,announce){
   dialog.innerHTML=html`
     <form>
       <h2 id="agent-note-heading">AI 笔记</h2>
-      <p>编辑草稿后，保存为笔记库中的一篇新笔记。</p>
+      
       <label>标题<input name="title" maxlength="110" required></label>
       <label>Markdown 正文<textarea name="body" rows="12" required></textarea></label>
       <p class="agent-note-status" role="status"></p>

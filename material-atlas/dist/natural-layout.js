@@ -1,5 +1,6 @@
 import {forceSimulation,forceManyBody,forceLink,forceCollide,forceX,forceY} from './vendor/d3-force.mjs';
 import {fitGraphViewport,placeNodeLabels} from './graph-settings.js';
+import {graphLinkDistance,graphLinkStrength} from './graph-link-force.js';
 
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const hash=text=>[...text].reduce((n,c)=>Math.imul(n^c.charCodeAt(0),16777619)>>>0,2166136261);
@@ -10,13 +11,15 @@ const abort=signal=>{if(signal?.aborted)throw new DOMException('整理已取消�
 export function cleanLayoutInput(input){
   const ids=new Set();
   const nodes=(input?.nodes||[]).slice(0,1000).filter(n=>typeof n.id==='string'&&!ids.has(n.id)&&ids.add(n.id)).map(n=>({
-    id:n.id,type:n.type==='relation'?'relation':'paper',title:String(n.title||'').slice(0,1000),group:String(n.group||''),
+    id:n.id,type:n.type==='relation'?'relation':'paper',title:String(n.title||'').slice(0,1000),group:String(n.group||''),community:Number.isInteger(n.community)?n.community:undefined,
     x:Number.isFinite(n.x)?n.x:500,y:Number.isFinite(n.y)?n.y:310,pinned:Boolean(n.pinned),radius:clamp(Number(n.radius)||6,3,40),
   })).sort((a,b)=>a.id.localeCompare(b.id));
-  const edges=(input?.edges||[]).map(e=>({source:typeof e.source==='object'?e.source.id:e.source,target:typeof e.target==='object'?e.target.id:e.target,...(Number.isFinite(e.similarity)?{similarity:clamp(e.similarity,0,1)}:{})})).filter(e=>ids.has(e.source)&&ids.has(e.target)&&e.source!==e.target);
+  const edges=(input?.edges||[]).map(e=>({source:typeof e.source==='object'?e.source.id:e.source,target:typeof e.target==='object'?e.target.id:e.target,...(Number.isFinite(e.similarity)?{similarity:clamp(e.similarity,0,1)}:{}),...(Number.isFinite(e.sharedTags)?{sharedTags:clamp(Math.round(e.sharedTags),1,30)}:{})})).filter(e=>ids.has(e.source)&&ids.has(e.target)&&e.source!==e.target);
   return {nodes,edges,width:1000,height:clamp(Number(input?.height)||620,430,1200),activeId:String(input?.activeId||''),threshold:clamp(Number(input?.threshold)||1.3,.5,2.5),showLabels:input?.showLabels!==false,fontScale:clamp(Number(input?.fontScale)||1,.7,2),glyphWidths:input?.glyphWidths||{}};
 }
 function groupsFor(input){
+  if(input.nodes.some(n=>n.community!==undefined)){const groups=new Map();for(const n of input.nodes){const key=n.community===undefined?n.id:"community:"+n.community;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(n);}return [...groups].map(([id,nodes])=>({id,nodes})).sort((a,b)=>b.nodes.length-a.nodes.length||String(a.id).localeCompare(String(b.id)));}
+
   const parent=new Map(input.nodes.map(n=>[n.id,n.id]));
   const find=id=>{let root=id;while(parent.get(root)!==root)root=parent.get(root);while(id!==root){const next=parent.get(id);parent.set(id,root);id=next;}return root;};
   for(const edge of input.edges){const a=find(edge.source),b=find(edge.target);if(a!==b)parent.set(a<b?b:a,a<b?a:b);}
@@ -75,7 +78,7 @@ async function candidate(input,groups,seed,attempt,{signal,yieldTask}){
     });
   }
   const links=input.edges.map(e=>({...e})),simulation=forceSimulation(nodes).stop().randomSource(rng).alphaDecay(.027).velocityDecay(.52)
-    .force('link',forceLink(links).id(n=>n.id).distance(e=>spacing*(.9+attempt*.055)*(e.similarity===undefined?1:1.65-1.15*e.similarity)).strength(e=>e.similarity===undefined?.38:.38*(.4+1.6*e.similarity)))
+    .force('link',forceLink(links).id(n=>n.id).distance(e=>graphLinkDistance(e,spacing*(.9+attempt*.055))).strength(e=>graphLinkStrength(e,.38)/(e.sharedTags===undefined?1:Math.max(1,Math.min(degree.get(e.source.id)||0,degree.get(e.target.id)||0)))))
     .force('charge',forceManyBody().strength(-spacing*.8).distanceMax(spacing*5))
     .force('collision',forceCollide(n=>Math.max(n.radius+11,spacing*.28)).strength(.95).iterations(3))
     .force('x',forceX(n=>n.tx).strength(.032)).force('y',forceY(n=>n.ty).strength(.045));

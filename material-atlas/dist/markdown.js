@@ -83,6 +83,13 @@ function noteBlocks(lines, tagged) {
   for (const line of lines) { const m = line.match(/^####\s+(.+)$/); if (m) { flush(); name=m[1].trim(); } else body.push(line); } flush();
   return result;
 }
+export function paperTagsMarkdown(papers) {
+  const line = value => String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
+  return '# Materia 文献与标签\n\n格式版本: 2\n\n' + papers.map((paper, index) =>
+    `## 文献 ${index + 1}\n\n- 文献ID: ${line(paper.id)}\n- 文件名: ${line(paper.filename)}\n- 标题: ${line(paper.title)}\n- 标签: ${(paper.tags || []).map(line).join('；')}\n`
+  ).join('\n');
+}
+
 export function markdownTemplate(filenames = ['请替换为实际文件名.pdf']) {
   const material=index=>`#### 材料 ${index}\n\n- 名称: \n- 成分 / 配方: \n- 说明: \n\n##### 性能参数\n\n| 样品 / 批次 | 参数名称 | 数值 | 单位 | 测试条件 | 来源 | 限定符 | 误差 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n\n`;
   return '# Materia 文献批量元数据\n\n格式版本: 2\n\n每个「## 文献」对应一个 PDF；每篇可有多个「#### 材料」区块。先填写材料名称，再填写其性能表；可复制或删除材料区块。数值、单位与条件分列填写。空材料模板保留已有数据，非空材料列表会整体替换该篇的材料与参数，请包含所有需要保留的材料。\n\n' + filenames.map((filename, i)=>`## 文献 ${i+1}\n\n- 文件名: ${filename}\n- 标题: \n- 发表年份: \n- 期刊: \n- DOI: \n- 标签: \n- 影响因子: \n- 指标年份: \n\n### 作者与机构\n\n| 作者 | 机构 |\n| --- | --- |\n\n### 材料\n\n${material(1)}${material(2)}### 文献笔记\n\n#### 笔记 1\n\n### 标签笔记\n\n`).join('\n');

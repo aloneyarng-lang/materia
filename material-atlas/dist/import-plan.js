@@ -10,14 +10,14 @@ export function parseMetadata(text) {
   if (!Array.isArray(rows)) throw new Error('请导入规范 Markdown 或包含 papers 数组的 JSON。');
   return rows;
 }
-export function matchRecords(records, papers) {
+export function matchRecords(records, papers, {tagMode='append'} = {}) {
   const updates = [], unmatched = [], notes = [], ids = new Set();
   for (const row of records) {
     const result = matchMetadata(JSON.stringify([row]), papers);
     if (!result.updates.length) { unmatched.push(...result.unmatched); continue; }
     const paper = result.updates[0];
     const previous=papers.find(p=>p.id===paper.id);
-    if(row.tags!==undefined)paper.tags=[...new Set([...(previous?.tags || []),...paper.tags])];
+    if(row.tags!==undefined&&tagMode!=='replace')paper.tags=[...new Set([...(previous?.tags || []),...paper.tags])];
     if (ids.has(paper.id)) throw new Error(`多条元数据匹配到「${paper.title}」，请按文献区块去重。`); ids.add(paper.id);
     updates.push(paper);
     for (const note of row.paperNotes || []) if (note.body?.trim()) notes.push({ owner: `paper:${paper.id}`, body: note.body.trim(), paperId: paper.id });
@@ -34,7 +34,7 @@ export function mergeImportNotes(current, incoming) {
   }
   return next;
 }
-export async function planBatch(files, records, existing, { collection = '', tags = [], onProgress = () => {}, fingerprint = null } = {}) {
+export async function planBatch(files, records, existing, { collection = '', tags = [], tagMode = 'append', onProgress = () => {}, fingerprint = null } = {}) {
   const hash = fingerprint || (async file => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))].map(b=>b.toString(16).padStart(2,'0')).join(''));
   const byHash = new Map(existing.filter(p=>p.fingerprint).map(p=>[p.fingerprint,p]));
   const targets = new Map(), rows = [], matchedRecords = new Set(), incomingNotes = [];
@@ -51,7 +51,7 @@ export async function planBatch(files, records, existing, { collection = '', tag
     if (choices.length) {
       const {r,i} = choices[0];
       if (matchedRecords.has(i)) throw new Error(`多个不同 PDF 都叫「${file.name}」，请先使用唯一文件名再匹配 Markdown。`);
-      const matched = matchRecords([{ ...r, id:base.id }], [base]); paper = matched.updates[0]; notes = matched.notes; matchedRecords.add(i);
+      const matched = matchRecords([{ ...r, id:base.id }], [base], {tagMode}); paper = matched.updates[0]; notes = matched.notes; matchedRecords.add(i);
     }
     paper.tags = [...new Set([...paper.tags, ...tags])];
     if (collection) paper.collection = collection;
@@ -63,7 +63,7 @@ export async function planBatch(files, records, existing, { collection = '', tag
   }
   const unmatched = [];
   for (let i=0;i<records.length;i++) if (!matchedRecords.has(i)) {
-    const result = matchRecords([records[i]], existing);
+    const result = matchRecords([records[i]], existing, {tagMode});
     if (result.updates.length) {
       const paper = result.updates[0]; if (targets.has(paper.id)) throw new Error(`「${paper.title}」被重复匹配，请检查 MD 文献区块。`);
       targets.set(paper.id,paper); incomingNotes.push(...result.notes); rows.push({ filename:paper.filename, paper, status:'仅元数据 · 更新' });

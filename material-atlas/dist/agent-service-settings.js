@@ -3,8 +3,8 @@ import {bindStaticDOM} from './i18n.js';
 import {AGENT_PROVIDERS,agentProvider,providerForConfig,canonicalAgentUrl} from './agent-providers.js';
 import {cleanAgentKey} from './agent-auth.js';
 
-export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native,isBusy}){
-  const $=selector=>panel.querySelector(selector),provider=$('#agent-provider'),key=$('#agent-key'),model=$('#agent-model'),picker=$('#agent-model-select'),manual=$('#agent-model-manual'),status=$('#agent-connection-status'),refresh=$('[data-agent-action="test-connection"]');
+export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native,isBusy,prefix=''}){
+  const $=selector=>panel.querySelector(selector.replace(/^#agent-/, '#'+prefix+'agent-')),provider=$('#agent-provider'),key=$('#agent-key'),model=$('#agent-model'),picker=$('#agent-model-select'),manual=$('#agent-model-manual'),status=$('#agent-connection-status'),refresh=$('[data-agent-action="test-connection"]');
   for(const preset of AGENT_PROVIDERS){const option=document.createElement('option');option.value=preset.id;option.textContent=tr(preset.name);provider.append(option);}
   const custom=document.createElement('option');custom.value='custom';custom.textContent=tr('自定义服务 / 本机模型');provider.append(custom);
   bindStaticDOM(provider,{translated:true});
@@ -23,7 +23,7 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
   }
   function sync(){
     $('#agent-api-settings').hidden=local();$('#agent-antigravity-settings').hidden=!local();
-    for(const field of $('#agent-api-settings').querySelectorAll('input,select,button'))field.disabled=local()||isBusy()||(field.id==='agent-remember'&&!getConfig().canRememberKey);
+    for(const field of $('#agent-api-settings').querySelectorAll('input,select,button'))field.disabled=local()||isBusy()||(field.id===prefix+'agent-remember'&&!getConfig().canRememberKey);
     for(const field of $('#agent-antigravity-settings').querySelectorAll('input,select,button'))field.disabled=!local()||isBusy()||fetching;
     $('[data-agent-action="forget"]').hidden=local();
     if(!fetching)refresh.textContent=tr(local()?'检测客户端':'刷新模型');

@@ -1,5 +1,5 @@
 import MarkdownIt from './vendor/markdown-it.mjs';
-import katex from './vendor/katex/katex.mjs';
+import {dollarEnd, inlineMath, renderMath} from './markdown-math.js';
 import {noteName} from './notes-vault-model.js';
 
 const markdown=new MarkdownIt({html:false,linkify:false});
@@ -39,25 +39,7 @@ markdown.renderer.rules.note_wiki=(tokens,index)=>{
 };
 markdown.renderer.rules.note_wiki_image=(tokens,index)=>imageMarkup(tokens[index].meta.target,tokens[index].meta.label);
 
-function dollarEnd(text,from,marker){
-  let end=from;
-  while((end=text.indexOf(marker,end))!==-1){
-    let slash=end;
-    while(slash>0&&text[slash-1]==='\\')slash--;
-    if((end-slash)%2===0)return end;
-    end+=marker.length;
-  }
-  return -1;
-}
-markdown.inline.ruler.before('escape','note_math_inline',(state,silent)=>{
-  const start=state.pos,src=state.src;
-  if(src[start]!=='$'||src[start+1]==='$'||/\s/.test(src[start+1]||' '))return false;
-  const end=dollarEnd(src,start+1,'$');
-  if(end<=start+1||end>=state.posMax||src.slice(start,end).includes('\n')||/\s/.test(src[end-1])||/\d/.test(src[end+1]||''))return false;
-  if(!silent)state.push('note_math_inline','',0).content=src.slice(start+1,end);
-  state.pos=end+1;
-  return true;
-});
+inlineMath(markdown);
 markdown.block.ruler.before('fence','note_math_block',(state,start,end,silent)=>{
   if(state.sCount[start]-state.blkIndent>=4)return false;
   const line=index=>state.src.slice(state.bMarks[index]+state.tShift[index],state.eMarks[index]);
@@ -80,14 +62,8 @@ markdown.block.ruler.before('fence','note_math_block',(state,start,end,silent)=>
   return true;
 },{alt:['paragraph','reference','blockquote','list']});
 
-function math(tokens,index,_options,env){
-  const token=tokens[index],block=token.type==='note_math_block',raw=token.content;
-  env.formulas=(env.formulas||0)+1;
-  if(raw.length>4000||env.formulas>300)return `<code class="note-math-error">${escape(raw)}</code>`;
-  return katex.renderToString(raw,{displayMode:block,throwOnError:false,trust:false,strict:'ignore',maxSize:20,maxExpand:300});
-}
-markdown.renderer.rules.note_math_inline=math;
-markdown.renderer.rules.note_math_block=math;
+markdown.renderer.rules.note_math_block=(tokens,index,_options,env)=>
+  renderMath(markdown,tokens[index].content,env,{displayMode:true});
 
 function parsed(body){
   const env={};

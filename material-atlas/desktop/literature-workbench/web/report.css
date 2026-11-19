@@ -1,0 +1,15 @@
+.markdown{min-width:0;overflow-wrap:anywhere;line-height:1.65}
+.markdown > :first-child{margin-top:0}
+.markdown > :last-child{margin-bottom:0}
+.markdown p,.markdown ul,.markdown ol,.markdown pre,.markdown blockquote,.markdown .table-scroll{margin:.65em 0}
+.markdown h1,.markdown h2,.markdown h3,.markdown h4{margin:1em 0 .45em}
+.markdown ul,.markdown ol{padding-inline-start:1.5em}
+.markdown blockquote{padding:.15em .85em;border-inline-start:3px solid var(--line,#cbd6d1);margin-inline:0}
+.markdown pre{overflow:auto;padding:.75em;background:var(--pane,#f2f5f3);border-radius:5px}
+.markdown code{font-family:ui-monospace,Consolas,monospace}
+.markdown .table-scroll{max-width:100%;overflow:auto}
+.markdown table{border-collapse:collapse;font-size:.94em}
+.markdown th,.markdown td{border:1px solid var(--line,#dbe4dd);padding:.35em .55em;vertical-align:top}
+.markdown th{background:var(--pane,#f2f5f3)}
+.markdown a{color:var(--accent,#215742);text-underline-offset:2px}
+.markdown hr{border:0;border-top:1px solid var(--line,#dbe4dd)}

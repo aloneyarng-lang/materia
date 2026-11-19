@@ -44,6 +44,13 @@
 #agent-provider-hint{overflow-wrap:anywhere}
 
 .agent-config-fields{display:grid;gap:12px;min-width:0}
+#shared-ai-service label{display:grid;gap:5px;color:var(--ink)}
+#shared-ai-service :is(input:not([type=checkbox]),select){width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:var(--button-radius,6px);background:var(--surface);color:var(--ink)}
+#shared-ai-service .agent-remember{display:flex;align-items:center;gap:7px}
+#shared-ai-service :is(#shared-agent-api-settings,#shared-agent-antigravity-settings,#shared-agent-custom-settings){display:grid;gap:10px}
+#shared-ai-service [hidden]{display:none!important}
+#shared-agent-connection-status{white-space:pre-line;overflow-wrap:anywhere;margin:10px 0}
+#shared-agent-connection-status:empty{display:none}
 .agent-config-actions{padding-top:12px;border-top:1px solid var(--line)}
 #agent-connection-status{max-height:75px;overflow:auto;flex-shrink:0}
 #agent-connection-status:empty{display:none}

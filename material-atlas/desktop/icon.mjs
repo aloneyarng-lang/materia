@@ -13,6 +13,7 @@ const coverage=(distance,width,feather)=>clamp((width+feather-distance)/(2*feath
 
 // Same round-capped rays as the SVG, in its 512-unit viewBox.
 const markCenter=[248,258];
+const markScale=1.1;
 const rays = [
   [228, 232, 226, 123], [250, 225, 314, 150],
   [279, 246, 379, 272], [279, 269, 332, 351],
@@ -21,6 +22,8 @@ const rays = [
 ];
 
 function markCoverage(x,y) {
+  x=markCenter[0]+(x-markCenter[0])/markScale;
+  y=markCenter[1]+(y-markCenter[1])/markScale;
   let distance=Math.abs(Math.hypot(x-markCenter[0],y-markCenter[1])-33);
   for(const [startX,startY,endX,endY] of rays){
     const dx=endX-startX,dy=endY-startY;
@@ -46,7 +49,7 @@ export async function makeIcon() {
         const u=(x+(sx+.5)/samples)/size-.5,v=(y+(sy+.5)/samples)/size-.5;
         const edge=roundedDistance(u,v,240/512,112/512),inside=coverage(edge,0,.006);
         if(!inside)continue;
-        let color=mix([239,154,126],[217,119,87],clamp((v*512+240)/480));
+        let color=mix([217,119,87],[219,106,70],clamp((v*512+240)/480));
         const border=coverage(Math.abs(edge+1/512),1/512,.001);
         color=over(color,[255,255,255],border*.24);
         color=over(color,[255,255,255],markCoverage((u+.5)*512+offsetX,(v+.5)*512+offsetY));

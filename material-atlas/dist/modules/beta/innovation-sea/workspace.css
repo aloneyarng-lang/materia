@@ -1,0 +1,129 @@
+#innovation-sea:not([hidden]) {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: clamp(16px, 2.6vw, 36px);
+  color: var(--ink);
+}
+
+#innovation-sea :is(h2, h3, h4, p, blockquote) { margin: 0; }
+#innovation-sea [hidden] { display: none; }
+
+.innovation-header,
+.innovation-paper > header,
+.innovation-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.innovation-header { align-items: center; }
+.innovation-header button { flex: 0 0 auto; }
+
+.innovation-header p {
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.55;
+}
+
+.innovation-controls {
+  margin: 22px 0 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.innovation-controls label,
+.innovation-timeline-header label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: .74rem;
+}
+
+.innovation-controls label:first-child { flex: 1 1 200px; max-width: 360px; }
+
+#innovation-sea :is(input, select) {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  min-width: 0;
+  padding: 7px 9px;
+  font: inherit;
+}
+
+#innovation-sea .innovation-hint,
+#innovation-sea .innovation-coverage {
+  color: var(--muted);
+  font-size: .75rem;
+  line-height: 1.55;
+}
+
+#innovation-sea .innovation-status {
+  color: var(--teal);
+  min-height: 1.2em;
+  margin: 8px 0;
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+
+.innovation-overview {
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+#innovation-sea h3 { color: var(--teal); font-size: 1rem; }
+#innovation-sea .innovation-coverage { margin-top: 4px; }
+.innovation-directions:not(:empty) { margin-top: 12px; }
+.innovation-directions { display: grid; grid-template-columns: repeat(auto-fit, minmax(146px, 1fr)); gap: 8px; }
+
+.innovation-directions button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--teal);
+  background: var(--surface);
+  text-align: left;
+  font-size: .75rem;
+}
+
+.innovation-directions button:is(:hover, [aria-pressed="true"]) { border-color: var(--teal); }
+.innovation-bar { grid-column: 1 / -1; display: block; height: 3px; background: var(--line); }
+.innovation-bar i { display: block; height: 100%; background: var(--teal); }
+.innovation-timeline { margin-top: 22px; }
+.innovation-timeline-header { justify-content: flex-start; align-items: end; flex-wrap: wrap; margin-bottom: 14px; }
+.innovation-timeline-header h3 { margin-right: auto !important; align-self: center; }
+.innovation-year { display: grid; grid-template-columns: minmax(55px, 92px) minmax(0, 1fr); gap: 12px; }
+.innovation-year > h4 { color: var(--teal); font: 1.15rem var(--serif); padding-top: 12px; }
+.innovation-year > div { border-inline-start: 1px solid var(--line); padding-inline-start: 12px; }
+
+.innovation-paper {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+
+.innovation-paper h4 { font: 1rem/1.4 var(--serif); }
+.innovation-paper header p { color: var(--muted); font-size: .7rem; }
+.innovation-paper header p:empty { display: none; }
+.innovation-paper header button { flex: 0 0 auto; }
+#innovation-sea .innovation-paper-status { margin-top: 5px; color: var(--muted); font-size: .75rem; }
+.innovation-points { padding-inline-start: 1.4em; margin: 12px 0 0; font-size: .85rem; line-height: 1.55; }
+.innovation-points li + li { margin-top: 12px; }
+.innovation-tag { color: var(--teal); font-size: .73rem; font-weight: 600; }
+#innovation-sea blockquote { margin: 4px 0; padding-inline-start: 8px; border-inline-start: 2px solid var(--line); color: var(--muted); font-size: .76rem; }
+.innovation-source { font-size: .75rem; }

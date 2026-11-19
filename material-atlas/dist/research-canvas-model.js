@@ -1,8 +1,12 @@
 // Data-only research canvas format. Shared by browser, native storage and exports.
 export const CANVAS_FORMAT='materia-canvas',CANVAS_VERSION=1;
 export const CANVAS_LIMITS={boards:50,nodes:300,edges:700,assets:24,documentBytes:12582912,storeBytes:41943040,code:250000};
-export const CANVAS_SHAPES=['roundrect','rect','ellipse','diamond','hexagon'];
+export const CANVAS_SHAPES=['roundrect','rect','ellipse','diamond','hexagon','pill','parallelogram','document','octagon'];
 export const CANVAS_COLORS=['accent','blue','purple','gold','green','red','gray'];
+export const CANVAS_THEMES=['system','paper','blueprint','forest','night'];
+export const CANVAS_NODE_THEMES=['inherit',...CANVAS_THEMES.filter(theme=>theme!=='system')];
+export const CANVAS_IMAGE_SIZES=['small','medium','large'];
+const imageSizes={small:{width:180,height:80},medium:{width:216,height:112},large:{width:360,height:210}};
 const identifier=/^[a-zA-Z_][\w-]{0,99}$/;
 const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
 const fail=message=>{throw Error(message);};
@@ -16,12 +20,18 @@ export function newCanvas(id,name='未命名画布',now=Date.now()){
 export function cleanCanvas(input){
  if(!object(input))fail('画布需要是对象。');
  const id=text(input.id,120,'画布 ID',true),name=text(input.name,100,'画布名称',true);
+ const theme=input.theme??'system';
+ if(!CANVAS_THEMES.includes(theme))fail('不支持的画布主题。');
  if(!['mindmap','free'].includes(input.layout)||!['both','right','left','down'].includes(input.direction))fail('画布布局或方向不正确。');
  if(!Array.isArray(input.nodes)||input.nodes.length>300||!Array.isArray(input.edges)||input.edges.length>700)fail('每张画布最多 300 个节点、700 条连线。');
  const ids=new Set(),nodes=input.nodes.map(row=>{
   if(!object(row)||!identifier.test(row.id)||ids.has(row.id))fail('节点 ID 必须唯一，使用字母、数字、下划线或短横线，以字母或下划线开头。');ids.add(row.id);
   if(!CANVAS_SHAPES.includes(row.shape||'roundrect'))fail('不支持的节点形状。');
-  return{id:row.id,text:text(row.text,400,'节点文字',true),x:coord(row.x),y:coord(row.y),shape:row.shape||'roundrect',color:color(row.color||'accent'),note:text(row.note??'',10000,'节点说明'),paperId:text(row.paperId??'',200,'文献链接'),tag:text(row.tag??'',80,'标签链接'),image:text(row.image??'',100,'图片 ID'),group:text(row.group??'',80,'分组')};
+  const imageSize=row.imageSize??'medium';
+  if(!CANVAS_IMAGE_SIZES.includes(imageSize))fail('图片尺寸应为 small、medium 或 large。');
+  const nodeTheme=row.theme??'inherit';
+  if(!CANVAS_NODE_THEMES.includes(nodeTheme))fail('不支持的节点主题。');
+  return{id:row.id,text:text(row.text,400,'节点文字',true),x:coord(row.x),y:coord(row.y),shape:row.shape||'roundrect',color:color(row.color||'accent'),...(nodeTheme!=='inherit'?{theme:nodeTheme}:{}),note:text(row.note??'',10000,'节点说明'),paperId:text(row.paperId??'',200,'文献链接'),tag:text(row.tag??'',80,'标签链接'),image:text(row.image??'',100,'图片 ID'),...(imageSize!=='medium'?{imageSize}:{}),group:text(row.group??'',80,'分组')};
  });
  const edgeIds=new Set(),pairs=new Set(),edges=input.edges.map(row=>{
   if(!object(row)||!identifier.test(row.id)||edgeIds.has(row.id)||!ids.has(row.source)||!ids.has(row.target)||row.source===row.target)fail('连线 ID 需唯一，两端必须是不同的已有节点。');const pair=row.source+'\0'+row.target;if(pairs.has(pair))fail('同一方向的节点之间只保留一条连线。');edgeIds.add(row.id);pairs.add(pair);
@@ -38,6 +48,7 @@ export function cleanCanvas(input){
  }
  for(const node of nodes)if(node.image&&!Object.hasOwn(assets,node.image))fail('图片资源不存在：'+node.image);
  const camera=input.camera||{},scale=Number(camera.scale),result={id,name,layout:input.layout,direction:input.direction,nodes,edges,assets,codeDraft:text(input.codeDraft??'',250000,'规则草稿'),hasCodeDraft:input.hasCodeDraft===true||Boolean(input.codeDraft),createdAt:Number.isFinite(input.createdAt)?input.createdAt:Date.now(),updatedAt:Number.isFinite(input.updatedAt)?input.updatedAt:Date.now(),camera:{x:viewCoord(camera.x),y:viewCoord(camera.y),scale:Number.isFinite(scale)?Math.max(.1,Math.min(3,scale)):1}};
+ if(theme!=='system')result.theme=theme;
  if(JSON.stringify(result).length>CANVAS_LIMITS.documentBytes)fail('单张画布文件超过 12 MB。');return result;
 }
 export function cleanCanvasStore(value){
@@ -47,7 +58,19 @@ export function cleanCanvasStore(value){
 export function wrapCanvasText(input,width=184,maxLines=6){
  const lines=[];let line='',size=0;for(const char of input){const w=char.charCodeAt(0)>255?16:8;if(char==='\n'||size+w>width){lines.push(line);line='';size=0;if(lines.length>=maxLines){lines[maxLines-1]=lines[maxLines-1].slice(0,-1)+'…';return lines;}}if(char!=='\n'){line+=char;size+=w;}}if(line||!lines.length)lines.push(line);return lines;
 }
-export function canvasNodeSize(node){const width=node.shape==='diamond'?260:node.shape==='ellipse'?240:216,lines=wrapCanvasText(node.text,width-(node.shape==='diamond'?100:node.shape==='ellipse'?70:32)),height=Math.max(node.shape==='diamond'?116:72,lines.length*22+34+(node.image?126:0)+(node.paperId||node.tag||node.note?20:0));return{width,height,lines};}
+export function canvasNodeSize(node){
+ const picture=node.image?imageSizes[node.imageSize]||imageSizes.medium:null;
+ const diamond=node.shape==='diamond',ellipse=node.shape==='ellipse';
+ const width=Math.max(diamond?260:ellipse?240:picture?.width||216,picture?.width||0);
+ const padding=diamond?100:ellipse?70:['parallelogram','octagon','pill'].includes(node.shape)?56:32;
+ const hasDetails=Boolean(node.paperId||node.tag||node.note);
+ const lines=wrapCanvasText(node.text,width-padding);
+ const imageHeight=picture?.height||0;
+ const contentHeight=lines.length*22+34+(picture?imageHeight+14:0)+(hasDetails?20:0);
+ const narrowEnds=picture&&(diamond||ellipse);
+ const height=Math.max(diamond?116:72,narrowEnds?Math.ceil(contentHeight/.7):contentHeight);
+ return{width,height,lines,imageHeight,contentTop:-contentHeight/2};
+}
 export function canvasBounds(board){if(!board.nodes.length)return{x:-200,y:-120,width:400,height:240};const boxes=board.nodes.map(n=>{const s=canvasNodeSize(n);return{x:n.x-s.width/2,y:n.y-s.height/2,right:n.x+s.width/2,bottom:n.y+s.height/2};});const x=Math.min(...boxes.map(b=>b.x))-70,y=Math.min(...boxes.map(b=>b.y))-70;return{x,y,width:Math.max(...boxes.map(b=>b.right))+70-x,height:Math.max(...boxes.map(b=>b.bottom))+70-y};}
 export function canvasNodesInRect(nodes,rect){
  const left=Math.min(rect.x,rect.x+rect.width),right=Math.max(rect.x,rect.x+rect.width),top=Math.min(rect.y,rect.y+rect.height),bottom=Math.max(rect.y,rect.y+rect.height);
@@ -64,16 +87,227 @@ export function moveCanvasNodes(nodes,positions,dx,dy){
  dy=Math.max(-50000-Math.min(...originals.map(n=>n.y)),Math.min(50000-Math.max(...originals.map(n=>n.y)),dy));
  for(const node of nodes){const original=positions.get(node.id);if(original){node.x=original.x+dx;node.y=original.y+dy;}}
 }
-export const CANVAS_ARRANGEMENTS={auto:'智能紧凑整理',both:'左右平衡树',right:'向右分层',left:'向左分层',down:'向下分层',grid:'整齐网格',selection:'仅整理所选节点'};
+export const CANVAS_ARRANGEMENTS={
+ auto:'智能紧凑整理',both:'左右平衡树',right:'向右分层',left:'向左分层',down:'向下分层',
+ radial:'中心辐射',lanes:'分组泳道',components:'连通分区',grid:'整齐网格',masonry:'瀑布流',selection:'仅整理所选节点',
+};
+function nodeFootprint(node,size=canvasNodeSize(node)){
+ return {x:node.x-size.width/2,y:node.y-size.height/2,width:size.width,height:size.height};
+}
+function nodeBlock(nodes,dimensions){
+ const boxes=nodes.map(n=>nodeFootprint(n,dimensions.get(n.id)));
+ const x=Math.min(...boxes.map(b=>b.x)),y=Math.min(...boxes.map(b=>b.y));
+ return {nodes,x,y,width:Math.max(...boxes.map(b=>b.x+b.width))-x,height:Math.max(...boxes.map(b=>b.y+b.height))-y};
+}
+function padGroup(block){
+ return {...block,x:block.x-30,y:block.y-42,width:block.width+60,height:block.height+62};
+}
+// Try several shelf widths and keep the one that uses the viewport at the largest zoom.
+function packForViewport(blocks,aspect,{columnGap=56,rowGap=46,snake=false}={}){
+ const ratio=Math.max(.55,Math.min(3,aspect));
+ const area=blocks.reduce((sum,b)=>sum+(b.width+columnGap)*(b.height+rowGap),0);
+ const target=Math.sqrt(area*ratio),minWidth=Math.max(...blocks.map(b=>b.width));
+ let best=null;
+ for(const factor of [.65,.8,.95,1.1,1.3,1.55,1.85]){
+  const widthLimit=Math.max(minWidth,target*factor),rows=[];
+  let row={blocks:[],width:0,height:0};
+  for(const block of blocks){
+   if(row.blocks.length&&row.width+columnGap+block.width>widthLimit){rows.push(row);row={blocks:[],width:0,height:0};}
+   row.width+=(row.blocks.length?columnGap:0)+block.width;
+   row.height=Math.max(row.height,block.height);
+   row.blocks.push(block);
+  }
+  rows.push(row);
+  const width=Math.max(...rows.map(r=>r.width)),height=rows.reduce((sum,r)=>sum+r.height,0)+rowGap*(rows.length-1);
+  const fit=Math.max((width+140)/ratio,height+140),area=width*height;
+  if(!best||fit<best.fit||(fit===best.fit&&area<best.area))best={rows,width,fit,area};
+ }
+ let y=0;
+ for(const [index,row] of best.rows.entries()){
+  const reverse=snake&&index%2===1;
+  let x=snake?(reverse?best.width:0):(best.width-row.width)/2;
+  for(const block of row.blocks){
+   if(reverse)x-=block.width;
+   const dx=x-block.x,dy=y+(row.height-block.height)/2-block.y;
+   for(const node of block.nodes){node.x+=dx;node.y+=dy;}
+   x+=reverse?-columnGap:block.width+columnGap;
+  }
+  y+=row.height+rowGap;
+ }
+}
+function nearestOffset(intervals,minimum,maximum){
+ if(minimum>maximum)return null;
+ const start=Math.max(minimum,Math.min(maximum,0));
+ const sorted=intervals.sort((a,b)=>a[0]-b[0]);
+ const merged=[];
+ for(const [low,high] of sorted){
+  const previous=merged.at(-1);
+  if(previous&&low<previous[1])previous[1]=Math.max(previous[1],high);
+  else merged.push([low,high]);
+ }
+ const conflict=merged.find(([low,high])=>start>low&&start<high);
+ if(!conflict)return start;
+ const choices=conflict.filter(offset=>offset>=minimum&&offset<=maximum);
+ return choices.sort((a,b)=>Math.abs(a)-Math.abs(b))[0]??null;
+}
+function keepClearOfOtherNodes(nodes,obstacles){
+ const fixed=obstacles.map(n=>nodeFootprint(n)),moving=nodes.map(n=>nodeFootprint(n)),horizontal=[],vertical=[],gap=26;
+ for(const a of moving)for(const b of fixed){
+  const x=[b.x-a.x-a.width-gap,b.x+b.width-a.x+gap];
+  const y=[b.y-a.y-a.height-gap,b.y+b.height-a.y+gap];
+  if(y[0]<0&&y[1]>0)horizontal.push(x);
+  if(x[0]<0&&x[1]>0)vertical.push(y);
+ }
+ const dx=nearestOffset(horizontal,-50000-Math.min(...nodes.map(n=>n.x)),50000-Math.max(...nodes.map(n=>n.x)));
+ const dy=nearestOffset(vertical,-50000-Math.min(...nodes.map(n=>n.y)),50000-Math.max(...nodes.map(n=>n.y)));
+ const validX=dx!==null&&nodes.every(n=>Math.abs(n.y)<=50000),validY=dy!==null&&nodes.every(n=>Math.abs(n.x)<=50000);
+ if(!validX&&!validY)fail('所选节点附近没有足够空间，请移动后再整理。');
+ if(validX&&(!validY||Math.abs(dx)<=Math.abs(dy)))for(const n of nodes)n.x+=dx;
+ else for(const n of nodes)n.y+=dy;
+}
+function linkedParts(nodes,edges){
+ const neighbors=new Map(nodes.map(n=>[n.id,new Set()]));
+ for(const {source,target} of edges){
+  neighbors.get(source).add(target);
+  neighbors.get(target).add(source);
+ }
+ const byId=new Map(nodes.map(n=>[n.id,n])),visited=new Set(),parts=[];
+ for(const node of nodes){
+  if(visited.has(node.id))continue;
+  const ids=[node.id];
+  visited.add(node.id);
+  for(const id of ids)for(const next of neighbors.get(id))if(!visited.has(next)){
+   visited.add(next);
+   ids.push(next);
+  }
+  parts.push(ids.map(id=>byId.get(id)));
+ }
+ return {neighbors,parts};
+}
+function arrangeRings(nodes,neighbors,dimensions,preferred){
+ const center=nodes.find(n=>n.id===preferred)||nodes.find(n=>n.id==='root')||nodes.reduce((best,n)=>neighbors.get(n.id).size>neighbors.get(best.id).size?n:best);
+ const distance=new Map([[center.id,0]]),order=[center.id];
+ for(const id of order)for(const next of neighbors.get(id))if(!distance.has(next)){
+  distance.set(next,distance.get(id)+1);
+  order.push(next);
+ }
+ const byId=new Map(nodes.map(n=>[n.id,n])),layers=[];
+ const hopsPerLayer=Math.max(1,Math.ceil(distance.get(order.at(-1))/10));
+ for(const id of order.slice(1)){
+  const layer=Math.floor((distance.get(id)-1)/hopsPerLayer);
+  (layers[layer]??=[]).push(byId.get(id));
+ }
+ center.x=center.y=0;
+ const cardRadius=id=>{const {width,height}=dimensions.get(id);return Math.hypot(width,height)/2;};
+ let radius=0,previous=cardRadius(center.id),ring=0;
+ for(const layer of layers){
+  for(let i=0;i<layer.length;){
+   ring++;
+   const cards=layer.slice(i,i+6*ring);
+   i+=cards.length;
+   const size=Math.max(...cards.map(n=>cardRadius(n.id)));
+   const angularRadius=cards.length>1?(2*size+42)/(2*Math.sin(Math.PI/cards.length)):0;
+   radius=Math.max(radius+previous+size+50,angularRadius);
+   cards.forEach((node,index)=>{
+    const angle=2*Math.PI*index/cards.length-Math.PI/2;
+    node.x=Math.cos(angle)*radius;
+    node.y=Math.sin(angle)*radius;
+   });
+   previous=size;
+  }
+ }
+}
+function arrangeMasonry(nodes,dimensions,aspect){
+ const ratio=Math.max(.55,Math.min(3,aspect)),gap=50;
+ const count=Math.min(nodes.length,Math.ceil(Math.sqrt(nodes.length*ratio)*2));
+ let best=null;
+ for(let cols=1;cols<=count;cols++){
+  const columns=Array.from({length:cols},()=>({nodes:[],width:0,height:0}));
+  for(const node of nodes){
+   const column=columns.reduce((a,b)=>a.height<=b.height?a:b);
+   const {width,height}=dimensions.get(node.id);
+   column.nodes.push(node);
+   column.width=Math.max(column.width,width);
+   column.height+=height+gap;
+  }
+  const width=columns.reduce((sum,c)=>sum+c.width+gap,-gap),height=Math.max(...columns.map(c=>c.height))-gap;
+  const fit=Math.max((width+140)/ratio,height+140);
+  if(!best||fit<best.fit)best={fit,columns};
+ }
+ let x=0;
+ for(const column of best.columns){
+  let y=0;
+  for(const node of column.nodes){
+   const {height}=dimensions.get(node.id);
+   node.x=x+column.width/2;
+   node.y=y+height/2;
+   y+=height+gap;
+  }
+  x+=column.width+gap;
+ }
+}
+function arrangeOverview(board,mode,aspect,preferred){
+ const nodes=board.nodes.map(n=>({...n}));
+ if(!nodes.length)return {...board,nodes};
+ const dimensions=new Map(nodes.map(n=>[n.id,canvasNodeSize(n)]));
+ if(mode==='masonry')arrangeMasonry(nodes,dimensions,aspect);
+ else if(mode==='lanes'){
+  const lanes=new Map();
+  for(const node of nodes){
+   const group=node.group||'';
+   if(!lanes.has(group))lanes.set(group,[]);
+   lanes.get(group).push(node);
+  }
+  const totalArea=nodes.reduce((sum,node)=>{const {width,height}=dimensions.get(node.id);return sum+(width+64)*(height+54);},0);
+  const laneAspect=Math.max(1.8,Math.min(3,aspect));
+  const laneWidth=Math.max(800,Math.sqrt(totalArea*laneAspect));
+  let y=0;
+  for(const [group,rows] of lanes){
+   let x=0,rowY=y+(group?42:0),height=0;
+   for(const node of rows){
+    const {width,height:cardHeight}=dimensions.get(node.id);
+    if(x&&x+width>laneWidth){x=0;rowY+=height+54;height=0;}
+    node.x=x+width/2;
+    node.y=rowY+cardHeight/2;
+    x+=width+64;
+    height=Math.max(height,cardHeight);
+   }
+   y=rowY+height+(group?20:0)+64;
+  }
+ }else{
+  const {neighbors,parts}=linkedParts(nodes,board.edges);
+  const blocks=parts.map(part=>{
+   if(mode==='radial')arrangeRings(part,neighbors,dimensions,preferred);
+   else{
+    const ids=new Set(part.map(n=>n.id));
+    const local=arrangeCanvas({...board,nodes:part,edges:board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target))},{compact:true,aspect});
+    const positions=new Map(local.nodes.map(n=>[n.id,n]));
+    for(const node of part){const {x,y}=positions.get(node.id);node.x=x;node.y=y;}
+   }
+   return nodeBlock(part,dimensions);
+  });
+  packForViewport(blocks,aspect,{columnGap:108,rowGap:96});
+ }
+ let bounds=nodeBlock(nodes,dimensions);
+ if(bounds.width>98000||bounds.height>98000){
+  packForViewport(nodes.map(n=>({nodes:[n],...nodeFootprint(n,dimensions.get(n.id))})),aspect);
+  bounds=nodeBlock(nodes,dimensions);
+ }
+ for(const node of nodes){node.x-=bounds.x+bounds.width/2;node.y-=bounds.y+bounds.height/2;}
+ return {...board,nodes};
+}
 export function arrangeCanvasMode(board,mode='auto',{aspect=1.5,selection=[]}={}){
  if(!Object.hasOwn(CANVAS_ARRANGEMENTS,mode))throw Error('请选择有效的整理方式。');
+ if(['radial','lanes','components','masonry'].includes(mode))return arrangeOverview(board,mode,aspect,selection.length===1?selection[0]:undefined);
  const ids=new Set(selection),scoped=mode==='selection',nodes=scoped?board.nodes.filter(n=>ids.has(n.id)):board.nodes;
  if(scoped&&nodes.length<2)throw Error('请先选择至少两个节点。');
  const original={...board,nodes,edges:scoped?board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)):board.edges};
  const tree=['both','left','right','down'].includes(mode),arranged=arrangeCanvas({...original,...(tree?{layout:'mindmap',direction:mode}:mode==='grid'?{layout:'free'}:{})},{compact:mode==='auto'||scoped,aspect});
  if(!scoped)return{...arranged,...(mode==='grid'?{layout:board.layout}:{} )};
  const a=canvasBounds(original),b=canvasBounds(arranged),dx=a.x+a.width/2-b.x-b.width/2,dy=a.y+a.height/2-b.y-b.height/2;
- const updates=new Map(arranged.nodes.map(n=>[n.id,{...n,x:n.x+dx,y:n.y+dy}]));
+ const moved=arranged.nodes.map(n=>({...n,x:n.x+dx,y:n.y+dy}));
+ keepClearOfOtherNodes(moved,board.nodes.filter(n=>!ids.has(n.id)));
+ const updates=new Map(moved.map(n=>[n.id,n]));
  return{...board,nodes:board.nodes.map(n=>updates.get(n.id)||{...n})};
 }
 export function findCanvasPosition(nodes,node){
@@ -89,24 +323,26 @@ export function arrangeCanvas(board,{compact=false,aspect=1.5}={}){
   let x=0,y=0,rowHeight=0;
   for(const block of blocks){if(x&&x+block.width>limit){x=0;y+=rowHeight+gap;rowHeight=0;}for(const n of block.nodes){n.x+=x-block.x;n.y+=y-block.y;}x+=block.width+gap;rowHeight=Math.max(rowHeight,block.height);}
  };
- const bounds=rows=>{const boxes=rows.map(n=>{const d=dimensions.get(n.id);return{x:n.x-d.width/2,y:n.y-d.height/2,right:n.x+d.width/2,bottom:n.y+d.height/2};}),x=Math.min(...boxes.map(b=>b.x)),y=Math.min(...boxes.map(b=>b.y));return{nodes:rows,x,y,width:Math.max(...boxes.map(b=>b.right))-x,height:Math.max(...boxes.map(b=>b.bottom))-y};};
+ const bounds=rows=>nodeBlock(rows,dimensions);
  const grid=rows=>{
-  const cols=Math.max(1,Math.ceil(Math.sqrt(rows.length*1.3))),w=Math.max(...rows.map(n=>dimensions.get(n.id).width))+64,h=Math.max(...rows.map(n=>dimensions.get(n.id).height))+48;
-  rows.forEach((n,i)=>{const row=Math.floor(i/cols),col=i%cols;n.x=(row%2?cols-1-col:col)*w;n.y=row*h;});
+  const blocks=rows.map(node=>({nodes:[node],...nodeFootprint(node,dimensions.get(node.id))}));
+  packForViewport(blocks,aspect,{snake:board.layout==='mindmap'});
  };
- const named=[...new Set(nodes.map(n=>n.group).filter(Boolean))];
- if(compact&&named.length>=3){
-  // Pack existing semantic groups as separate blocks, rather than a 20+ column chain.
-  const groups=new Map();for(const n of nodes){const key=n.group||'';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(n);}
+ const groups=new Map();
+ if(compact)for(const n of nodes){const key=n.group||'';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(n);}
+ if(compact&&groups.size>1){
   const blocks=[];
-  for(const rows of groups.values()){
-   const ids=new Set(rows.map(n=>n.id)),local=arrangeCanvas({...board,nodes:rows,edges:board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target)),direction:'right'});
-   const b=canvasBounds(local);
-   if(b.width>Math.max(1200,b.height*2.4)||b.height>Math.max(1200,b.width*2.4))grid(rows);
-   else{const positions=new Map(local.nodes.map(n=>[n.id,n]));for(const n of rows){n.x=positions.get(n.id).x;n.y=positions.get(n.id).y;}}
-   blocks.push(bounds(rows));
+  for(const [name,rows] of groups){
+   const ids=new Set(rows.map(n=>n.id));
+   const local=arrangeCanvas({...board,nodes:rows,edges:board.edges.filter(e=>ids.has(e.source)&&ids.has(e.target))},{compact:true,aspect});
+   const positions=new Map(local.nodes.map(n=>[n.id,n]));
+   for(const n of rows){const {x,y}=positions.get(n.id);n.x=x;n.y=y;}
+   // Account for the group outline and its heading when packing adjacent blocks.
+   const block=bounds(rows);
+   blocks.push(name?padGroup(block):block);
   }
-  pack(blocks);return result;
+  packForViewport(blocks,aspect,{columnGap:64,rowGap:54});
+  return result;
  }
  if(board.layout==='free'){grid(nodes);return result;}
  const byId=new Map(nodes.map(n=>[n.id,n])),out=new Map(nodes.map(n=>[n.id,[]])),incoming=new Map(nodes.map(n=>[n.id,0]));
@@ -144,56 +380,160 @@ export function arrangeCanvas(board,{compact=false,aspect=1.5}={}){
   }
   blocks.push(bounds(component));
  }
- pack(blocks);
- if(compact){const b=bounds(nodes);if(b.width>Math.max(1800,b.height*3.2)||b.height>Math.max(1800,b.width*3.2))grid(nodes);}
+ if(!compact){pack(blocks);return result;}
+ packForViewport(blocks,aspect,{columnGap:72,rowGap:64});
+ const b=bounds(nodes),ratio=Math.max(.55,Math.min(3,aspect));
+ if(b.width>Math.max(1350,b.height*ratio*2.3)||b.height>Math.max(1350,b.width/ratio*2.3)){
+  // Keep the relationships of a branched tree; wrap a long process chain in reading order.
+  const chain=roots.length===1&&[...children.values()].every(branches=>branches.length<=1);
+  if(chain){
+   const ordered=[];
+   for(let id=roots[0].id;id;id=children.get(id)[0])ordered.push(byId.get(id));
+   grid(ordered);
+  }
+ }
  return result;
 }
 export function exportCanvasDocument(board){return JSON.stringify({format:CANVAS_FORMAT,version:1,board:cleanCanvas(board)},null,2)+'\n';}
 export function importCanvasDocument(input){if(typeof input==='string'){if(input.length>CANVAS_LIMITS.documentBytes+10000)fail('画布文件超过 12 MB。');try{input=JSON.parse(input);}catch{fail('画布文件不是有效 JSON。');}}if(!object(input)||input.format!==CANVAS_FORMAT||input.version!==1)fail('请选择版本 1 的 Materia 画布文件。');return cleanCanvas(input.board);}
 const Q='("(?:[^"\\\\]|\\\\.)*")',ID='([a-zA-Z_][\\w-]{0,99})';
+const NUMBER='([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)';
 const match=(line,pattern)=>line.match(new RegExp('^'+pattern+'$'));
 const quoted=value=>{try{return JSON.parse(value);}catch{fail('请使用 JSON 双引号字符串和转义。');}};
 function attrs(value,allowed){const result={};for(const part of value.trim().split(/\s+/).filter(Boolean)){const m=part.match(/^([a-z]+)=([^\s=]+)$/);if(!m||!allowed.includes(m[1])||Object.hasOwn(result,m[1]))fail('不支持或重复的属性：'+part);result[m[1]]=m[2];}return result;}
-export function parseCanvasRules(source,previous=newCanvas('canvas-preview')){
+export function parseCanvasRules(source,previous,{allowUpdate=Boolean(previous)}={}){
+ previous??=newCanvas('canvas-preview');
  if(typeof source!=='string'||source.length>250000)fail('规则文本不超过 250 KB。');
  const reservedEdges=new Set(previous.edges.map(e=>e.id));
  const fenced=source.trim().match(/^```(?:materia-canvas|mcanvas|text)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/);if(fenced)source='\n'+fenced[1]+'\n';
- const board={...previous,layout:'mindmap',direction:'both',nodes:[],edges:[],assets:{...previous.assets},codeDraft:'',hasCodeDraft:false},commands=[],nodeIds=new Set(),pairs=new Set();let header=false;
+ const board={...previous,layout:'mindmap',direction:'both',nodes:[],edges:[],assets:{...previous.assets},camera:{...previous.camera},codeDraft:'',hasCodeDraft:false},commands=[],nodeIds=new Set(),pairs=new Set();
+ let header=false,sawRule=false,updating=false;
  for(const[index,raw]of source.replace(/^\uFEFF/,'').split(/\r?\n/).entries()){
   const line=raw.trim();if(!line||line.startsWith('//')||line.startsWith('#'))continue;
   try{let m;
+   if(line==='update'){
+    if(sawRule||updating)fail('update 必须是第一条规则。');
+    if(!allowUpdate)fail('局部更新需要已有画布。');
+    updating=true;
+    Object.assign(board,{layout:previous.layout,direction:previous.direction,nodes:previous.nodes.map(n=>({...n})),edges:previous.edges.map(e=>({...e,line:index+1}))});
+    continue;
+   }
+   sawRule=true;
    if(m=match(line,'canvas\\s+'+Q)){if(header)fail('canvas 名称只能定义一次。');board.name=text(quoted(m[1]),100,'画布名称',true);header=true;}
    else if(m=match(line,'layout\\s+(mindmap|free)'))board.layout=m[1];
    else if(m=match(line,'direction\\s+(both|right|left|down)'))board.direction=m[1];
-   else if(m=match(line,'node\\s+'+ID+'\\s+'+Q)){if(nodeIds.has(m[1]))fail('节点 ID 重复：'+m[1]);nodeIds.add(m[1]);board.nodes.push({id:m[1],text:text(quoted(m[2]),400,'节点文字',true),x:0,y:0,shape:'roundrect',color:'accent',note:'',paperId:'',tag:'',image:'',group:''});}
-   else if(m=match(line,ID+'\\s*->\\s*'+ID+'(?:\\s*:\\s*'+Q+')?')){const pair=m[1]+'\0'+m[2];if(pairs.has(pair))fail('重复连线。');pairs.add(pair);const old=previous.edges.find(e=>e.source===m[1]&&e.target===m[2]);let edgeId=old?.id;if(!edgeId){const hash=[...pair].reduce((v,c)=>(Math.imul(v,31)+c.charCodeAt(0))>>>0,7),base='edge_'+hash.toString(36);edgeId=base;let suffix=1;while(reservedEdges.has(edgeId))edgeId=base+'_'+suffix++;reservedEdges.add(edgeId);}board.edges.push({id:edgeId,source:m[1],target:m[2],label:m[3]?quoted(m[3]):'',dashed:false,arrow:true,line:index+1});}
+   else if(m=match(line,'theme\\s+(\\S+)')){
+    if(!CANVAS_THEMES.includes(m[1]))fail('不支持的画布主题。');
+    board.theme=m[1];
+   }
+   else if(line==='empty'){
+    if(updating)fail('empty 用于定义完整的空画布。');
+    commands.push({kind:'empty',line:index+1});
+   }
+   else if(m=match(line,'node\\s+'+ID+'\\s+'+Q+'(?:\\s+(.+))?')){
+    const [,id,label,options]=m;
+    if(nodeIds.has(id))fail('节点 ID 重复：'+id);
+    nodeIds.add(id);
+    const content=text(quoted(label),400,'节点文字',true);
+    const existing=updating&&board.nodes.find(n=>n.id===id);
+    if(existing)existing.text=content;
+    else board.nodes.push({id,text:content,x:0,y:0,shape:'roundrect',color:'accent',note:'',paperId:'',tag:'',image:'',group:''});
+    if(options)commands.push({kind:'style',id,attrs:attrs(options,['shape','color','theme']),line:index+1});
+   }
+   else if(m=match(line,ID+'\\s*->\\s*'+ID+'(?:\\s*:\\s*'+Q+')?')){
+    const [,sourceId,targetId,label]=m,pair=sourceId+'\0'+targetId;
+    if(pairs.has(pair))fail('重复连线。');
+    pairs.add(pair);
+    const old=previous.edges.find(e=>e.source===sourceId&&e.target===targetId);
+    if(updating&&old){
+     if(label!==undefined)board.edges.find(e=>e.id===old.id).label=quoted(label);
+     continue;
+    }
+    let edgeId=old?.id;
+    if(!edgeId){
+     const hash=[...pair].reduce((v,c)=>(Math.imul(v,31)+c.charCodeAt(0))>>>0,7),base='edge_'+hash.toString(36);
+     edgeId=base;
+     let suffix=1;
+     while(reservedEdges.has(edgeId))edgeId=base+'_'+suffix++;
+     reservedEdges.add(edgeId);
+    }
+    board.edges.push({id:edgeId,source:sourceId,target:targetId,label:label===undefined?'':quoted(label),dashed:false,arrow:true,line:index+1});
+   }
    else if(m=match(line,'group\\s+'+Q+'\\s*\\[([^\\]]*)\\]'))commands.push({kind:'group',name:quoted(m[1]),ids:m[2].split(/[\s,]+/).filter(Boolean),line:index+1});
+   else if(m=match(line,'ungroup\\s+\\[([^\\]]+)\\]'))commands.push({kind:'group',name:'',ids:m[1].split(/[\s,]+/).filter(Boolean),line:index+1});
+   else if(m=match(line,'remove\\s+node\\s+'+ID))commands.push({kind:'remove-node',id:m[1],line:index+1});
+   else if(m=match(line,'remove\\s+edge\\s+'+ID+'\\s*->\\s*'+ID))commands.push({kind:'remove-edge',source:m[1],target:m[2],line:index+1});
    else if(m=match(line,'(note|image)\\s+'+ID+'\\s+'+Q))commands.push({kind:m[1],id:m[2],value:quoted(m[3]),line:index+1});
+   else if(m=match(line,'image\\s+'+ID+'\\s+none'))commands.push({kind:'image',id:m[1],value:'',line:index+1});
+   else if(m=match(line,'image-size\\s+'+ID+'\\s+(\\S+)'))commands.push({kind:'imageSize',id:m[1],value:m[2],line:index+1});
    else if(m=match(line,'link\\s+'+ID+'\\s+(paper|tag)='+Q))commands.push({kind:m[2],id:m[1],value:quoted(m[3]),line:index+1});
-   else if(m=match(line,'style\\s+'+ID+'\\s+(.+)'))commands.push({kind:'style',id:m[1],attrs:attrs(m[2],['shape','color']),line:index+1});
-   else if(m=match(line,'position\\s+'+ID+'\\s+(-?\\d+(?:\\.\\d+)?)\\s+(-?\\d+(?:\\.\\d+)?)'))commands.push({kind:'position',id:m[1],x:Number(m[2]),y:Number(m[3]),line:index+1});
+   else if(m=match(line,'style\\s+'+ID+'\\s+(.+)'))commands.push({kind:'style',id:m[1],attrs:attrs(m[2],['shape','color','theme']),line:index+1});
+   else if(m=match(line,'position\\s+'+ID+'\\s+'+NUMBER+'\\s+'+NUMBER))commands.push({kind:'position',id:m[1],x:Number(m[2]),y:Number(m[3]),line:index+1});
    else if(m=match(line,'edge-style\\s+'+ID+'\\s+'+ID+'\\s+(.+)'))commands.push({kind:'edge-style',source:m[1],target:m[2],attrs:attrs(m[3],['dashed','arrow']),line:index+1});
    else fail('无法识别这条规则，请查看规则说明。');
   }catch(error){throw Error(`第 ${index+1} 行：${error.message}`);}
  }
- if(!board.nodes.length)fail('至少需要一条 node 规则。');
+ if(!updating&&!board.nodes.length&&!commands.some(c=>c.kind==='empty'))fail('至少需要一条 node 规则，空画布请使用 empty。');
  const byId=new Map(board.nodes.map(n=>[n.id,n])),explicit=new Map();
  for(const e of board.edges)if(!byId.has(e.source)||!byId.has(e.target)||e.source===e.target)fail(`第 ${e.line} 行：连线两端必须是不同的已有节点。`);
  for(const c of commands)try{
+  if(c.kind==='empty'){
+   if(board.nodes.length)fail('empty 与 node 不能同时使用。');
+   continue;
+  }
+  if(c.kind==='remove-node'||c.kind==='remove-edge'){
+   if(!updating)fail('remove 需要在 update 模式中使用。');
+   if(c.kind==='remove-node'){
+    if(!byId.delete(c.id))fail('节点不存在：'+c.id);
+    board.nodes=board.nodes.filter(n=>n.id!==c.id);
+    board.edges=board.edges.filter(e=>e.source!==c.id&&e.target!==c.id);
+   }else{
+    const index=board.edges.findIndex(e=>e.source===c.source&&e.target===c.target);
+    if(index<0)fail('对应连线不存在。');
+    board.edges.splice(index,1);
+   }
+   continue;
+  }
   if(c.kind==='group'){for(const id of c.ids){if(!byId.has(id))fail('节点不存在：'+id);byId.get(id).group=c.name;}continue;}
   if(c.kind==='edge-style'){const edge=board.edges.find(e=>e.source===c.source&&e.target===c.target);if(!edge)fail('对应连线不存在。');for(const[k,v]of Object.entries(c.attrs)){if(!['true','false'].includes(v))fail(k+' 只能为 true 或 false。');edge[k]=v==='true';}continue;}
   const n=byId.get(c.id);if(!n)fail('节点不存在：'+c.id);
-  if(c.kind==='style'){if(c.attrs.shape&&!CANVAS_SHAPES.includes(c.attrs.shape))fail('不支持的节点形状。');if(c.attrs.color)color(c.attrs.color);Object.assign(n,c.attrs);}else if(c.kind==='position')explicit.set(c.id,{x:coord(c.x),y:coord(c.y)});else if(c.kind==='paper')n.paperId=c.value;else if(c.kind==='tag')n.tag=c.value;else {const value=c.kind==='image'?c.value.replace(/^asset:/,''):c.value;if(c.kind==='image'&&!Object.hasOwn(board.assets,value))fail('图片资源不存在：'+value);n[c.kind]=value;}
+  if(c.kind==='style'){
+   if(c.attrs.shape&&!CANVAS_SHAPES.includes(c.attrs.shape))fail('不支持的节点形状。');
+   if(c.attrs.color)color(c.attrs.color);
+   if(c.attrs.theme&&!CANVAS_NODE_THEMES.includes(c.attrs.theme))fail('不支持的节点主题。');
+   Object.assign(n,c.attrs);
+  }
+  else if(c.kind==='position')explicit.set(c.id,{x:coord(c.x),y:coord(c.y)});
+  else if(c.kind==='paper')n.paperId=c.value;
+  else if(c.kind==='image'){
+   const asset=c.value.replace(/^asset:/,'');
+   if(asset&&!Object.hasOwn(board.assets,asset))fail('图片资源不存在：'+asset);
+   n.image=asset;
+  }else if(c.kind==='imageSize'){
+   if(!CANVAS_IMAGE_SIZES.includes(c.value))fail('图片尺寸应为 small、medium 或 large。');
+   n.imageSize=c.value;
+  }else n[c.kind]=c.value;
  }catch(error){fail(`第 ${c.line} 行：${error.message}`);}
  const arranged=arrangeCanvas(board),old=new Map(previous.nodes.map(n=>[n.id,n]));for(const n of arranged.nodes){const p=explicit.get(n.id)||old.get(n.id);if(p){n.x=p.x;n.y=p.y;}}
  const parked=arranged.nodes.filter(n=>old.has(n.id)||explicit.has(n.id));for(const n of arranged.nodes)if(!old.has(n.id)&&!explicit.has(n.id)){Object.assign(n,findCanvasPosition(parked,n));parked.push(n);}
  const used=new Set(arranged.nodes.map(n=>n.image).filter(Boolean));arranged.assets=Object.fromEntries(Object.entries(arranged.assets).filter(([id])=>used.has(id)));return cleanCanvas(arranged);
 }
 export function serializeCanvasRules(board){
- const q=JSON.stringify,lines=[`canvas ${q(board.name)}`,`layout ${board.layout}`,`direction ${board.direction}`,''];
+ const q=JSON.stringify,lines=[`canvas ${q(board.name)}`,`layout ${board.layout}`,`direction ${board.direction}`];
+ if(board.theme)lines.push(`theme ${board.theme}`);
+ if(!board.nodes.length)return [...lines,'','empty',''].join('\n');
+ lines.push('');
  for(const n of board.nodes)lines.push(`node ${n.id} ${q(n.text)}`);lines.push('');for(const e of board.edges){lines.push(`${e.source} -> ${e.target}${e.label?' : '+q(e.label):''}`);if(e.dashed||!e.arrow)lines.push(`edge-style ${e.source} ${e.target} dashed=${e.dashed} arrow=${e.arrow}`);}lines.push('');
- for(const n of board.nodes){if(n.shape!=='roundrect'||n.color!=='accent')lines.push(`style ${n.id} shape=${n.shape} color=${n.color}`);if(n.note)lines.push(`note ${n.id} ${q(n.note)}`);if(n.paperId)lines.push(`link ${n.id} paper=${q(n.paperId)}`);if(n.tag)lines.push(`link ${n.id} tag=${q(n.tag)}`);if(n.image)lines.push(`image ${n.id} ${q('asset:'+n.image)}`);}
+ for(const n of board.nodes){
+  const theme=n.theme&&n.theme!=='inherit'?` theme=${n.theme}`:'';
+  if(n.shape!=='roundrect'||n.color!=='accent'||theme)lines.push(`style ${n.id} shape=${n.shape} color=${n.color}${theme}`);
+  if(n.note)lines.push(`note ${n.id} ${q(n.note)}`);
+  if(n.paperId)lines.push(`link ${n.id} paper=${q(n.paperId)}`);
+  if(n.tag)lines.push(`link ${n.id} tag=${q(n.tag)}`);
+  if(n.image)lines.push(`image ${n.id} ${q('asset:'+n.image)}`);
+  if(n.imageSize&&n.imageSize!=='medium')lines.push(`image-size ${n.id} ${n.imageSize}`);
+ }
  for(const group of new Set(board.nodes.map(n=>n.group).filter(Boolean)))lines.push(`group ${q(group)} [${board.nodes.filter(n=>n.group===group).map(n=>n.id).join(', ')}]`);
- lines.push('','// 坐标可省略；保留 ID 可延续手工布局。');for(const n of board.nodes)lines.push(`position ${n.id} ${Math.round(n.x*10)/10} ${Math.round(n.y*10)/10}`);return lines.join('\n')+'\n';
+ lines.push('','// 坐标可省略；保留 ID 可延续手工布局。');for(const n of board.nodes)lines.push(`position ${n.id} ${n.x} ${n.y}`);return lines.join('\n')+'\n';
 }
 export const CANVAS_EXAMPLE=`canvas "成分—工艺—结构—性能"\nlayout mindmap\ndirection right\n\nnode root "材料设计"\nnode composition "成分设计"\nnode process "制备与热处理"\nnode structure "微观结构"\nnode performance "力学性能"\n\nroot -> composition\nroot -> process\nprocess -> structure : "调控"\nstructure -> performance : "影响"\n\nstyle structure shape=hexagon color=purple\nstyle performance shape=roundrect color=gold\nnote structure "补充证据、实验条件与待验证的问题。"\ngroup "实验变量" [composition, process]\n`;

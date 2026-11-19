@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="workbench" content="__LOCAL_TOKEN__">
+<title>研读</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/report.css">
+<script src="/app.js" type="module"></script>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="section-title"><h2>选择文献</h2><span id="paper-count" aria-live="polite">0 篇</span></div>
+    <label class="search"><span class="sr-only">搜索文献</span><input id="query" placeholder="搜索标题、DOI 或作者" type="search"></label>
+    <nav id="papers" aria-label="文献列表"></nav>
+      <div id="paper-tooltip" class="paper-tooltip" aria-hidden="true" hidden></div>
+  </aside>
+  <div class="workspace">
+    <header>
+      <div class="paper-heading" id="paper-header" hidden>
+        <h2 id="paper-title"></h2>
+        <button id="open-paper" class="icon" aria-label="查看原文" title="查看原文" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z"/><circle cx="12" cy="12" r="2.5"/></svg></button>
+      </div>
+      <div class="service-controls">
+        <span id="service-badge" class="service-badge" role="status"><i aria-hidden="true"></i><span>正在读取 AI 服务…</span></span>
+        <details class="model-menu" id="model-menu">
+          <summary><span>模型</span><strong id="model-label">未配置</strong><span aria-hidden="true">⌄</span></summary>
+          <div class="model-popover">
+            <p id="model-description"></p>
+            <button type="button" id="configure-model">更换模型…</button>
+          </div>
+        </details>
+        <button type="button" id="display-settings" class="icon" aria-label="文字显示设置" title="字体和字号" disabled>Aa</button>
+        <button id="settings" class="icon" aria-label="AI 设置" title="AI 设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg></button>
+      </div>
+    </header>
+    <div class="runbar">
+      <div class="actions">
+        <label for="operation">处理方式</label>
+        <select id="operation" aria-label="处理方式" disabled></select>
+        <button type="button" id="new-preset" class="icon" aria-label="新建处理预设" title="新建处理预设" disabled>＋</button>
+        <button id="edit-preset" class="icon" aria-label="编辑预设" title="编辑预设" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l1-5L16 4a2.8 2.8 0 0 1 4 4L9 19z"/></svg></button>
+      </div>
+        <div id="figure-actions" class="actions" hidden>
+          <button id="crop" class="icon" aria-label="补录图片" title="补录图片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v14h14M3 7h14v14"/></svg></button>
+          <button class="primary" id="all" disabled>生成图解报告</button>
+          <button type="button" id="stop-generation" hidden>停止生成</button>
+        </div>
+        <form id="text-actions" class="actions" hidden>
+          <label>起始页 <input id="first-page" type="number" min="1" value="1" required></label>
+          <label>结束页 <input id="last-page" type="number" min="1" required></label>
+          <button class="primary" id="run-preset" disabled>运行预设</button>
+        </form>
+    </div>
+    <p id="preset-error" role="status"></p>
+  <main>
+    <div id="empty">
+      <h2 id="empty-title">选择文献和处理方式</h2>
+      <p id="library-status" role="status">正在读取文献库…</p>
+    </div>
+    <section id="work" hidden>
+      <div class="result-bar">
+        <div class="outline-tabs" id="result-tabs" role="group" aria-label="导图视图" hidden>
+          <button type="button" data-outline-view="overview" aria-pressed="true">研究速览</button>
+          <button type="button" data-outline-view="map" aria-pressed="false">交互式导图</button>
+          <button type="button" data-outline-view="evidence" aria-pressed="false">逐图证据</button>
+        </div>
+        <p class="notice" id="status" role="status" aria-live="polite"></p>
+      </div>
+      <section id="outline" aria-label="论文导图" hidden>
+        <div id="outline-content"></div>
+      </section>
+      <section id="figure-result" aria-label="论文图表" hidden>
+        <div class="result-heading">
+          <div class="report-heading">
+            <h2 id="figure-result-title">图解报告</h2>
+            <span id="figure-count" class="muted"></span>
+          </div>
+          <div class="figure-nav">
+            <button type="button" id="prev-figure" aria-label="上一图">← <span>上一图</span></button>
+            <span id="figure-position" aria-live="polite"></span>
+            <button type="button" id="next-figure" aria-label="下一图"><span>下一图</span> →</button>
+          </div>
+        </div>
+        <div class="cards" id="cards"></div>
+      </section>
+      <article id="text-result" class="markdown" hidden></article>
+      <section id="conversation" aria-label="报告追问" hidden>
+        <form id="ask-form" class="ask-form">
+          <label for="question">继续追问</label>
+          <div class="question-field">
+            <input id="question" placeholder="针对这份报告提问…" maxlength="4000" required>
+            <button type="button" id="clear-question" aria-label="清空追问" title="清空" hidden>×</button>
+          </div>
+          <button type="submit" id="ask" aria-label="发送追问" title="发送">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 9.5 14.5M21 3l-6 18-5.5-6.5L3 9l18-6Z"/></svg>
+          </button>
+        </form>
+        <p id="ask-status" role="status"></p>
+        <div id="turns" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+  </div>
+</div>
+<dialog id="display-dialog">
+  <form id="display-form">
+    <div class="dialog-head"><h2>文字显示</h2><button type="button" id="close-display" aria-label="关闭文字显示设置">×</button></div>
+    <label>页面字体<select id="display-font">
+      <option value="theme">跟随主题</option>
+      <option value="deng">等线</option>
+      <option value="yahei">微软雅黑</option>
+      <option value="simsun">宋体</option>
+      <option value="segoe">Segoe UI</option>
+      <option value="mono">等宽字体</option>
+    </select></label>
+    <fieldset>
+      <legend>各区字号（px）</legend>
+      <p class="muted">留空表示跟随主题。</p>
+      <div id="display-sizes"></div>
+    </fieldset>
+    <p id="display-status" role="status"></p>
+    <div class="actions"><button type="button" id="reset-display">恢复默认</button><button type="submit" class="primary" id="save-display">保存设置</button></div>
+  </form>
+</dialog>
+<dialog id="preset-dialog">
+  <form id="preset-form">
+    <div class="dialog-head"><h2 id="preset-title">新建预设</h2><button type="button" id="close-preset" aria-label="关闭">×</button></div>
+    <label>预设名称<input id="preset-name" maxlength="80" required></label>
+    <label>处理流程<select id="preset-mode">
+      <option value="outline-evidence">研究速览、导图和逐图证据</option>
+      <option value="outline">仅研究速览和导图</option>
+      <option value="figures">仅逐图解读</option>
+      <option value="text">按页处理正文</option>
+    </select></label>
+    <p id="preset-flow" class="muted"></p>
+    <label><span id="preset-prompt-label">处理指令</span><textarea id="preset-prompt" rows="4" maxlength="12000" placeholder="留空使用默认指令"></textarea></label>
+    <label id="preset-figure-options">逐图解读指令<textarea id="preset-figure-prompt" rows="3" maxlength="12000" placeholder="留空使用默认指令"></textarea></label>
+    <p id="preset-status" role="status"></p>
+    <div class="actions"><button type="submit" class="primary" id="save-preset">保存预设</button></div>
+  </form>
+</dialog>
+<dialog id="crop-dialog">
+  <div class="dialog-head"><h2 id="page-title">从原页补录图片</h2><button id="close-crop" aria-label="关闭">×</button></div>
+  <div class="row"><label>PDF 页码 <select id="crop-page"></select></label><span id="crop-hint">在页面上拖出图的范围</span></div>
+  <p id="crop-status" role="status"></p>
+  <canvas id="canvas" aria-label="页面裁剪预览"></canvas>
+  <div class="row" id="crop-fields"><label>图号<input id="crop-label" placeholder="图 1"></label><label>图注<input id="crop-caption" placeholder="可粘贴原文图注"></label></div>
+  <button class="primary" id="add-crop" disabled>添加图片</button>
+</dialog>
+</body>
+</html>
+

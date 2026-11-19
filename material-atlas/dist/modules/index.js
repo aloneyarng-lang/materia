@@ -1,6 +1,8 @@
 // Add a feature here. Navigation, lazy loading, lifecycle and packaging use this registry.
 import {predictionModule} from './prediction-module.js';
 import {figuraModule} from './figura-module.js';
+import {literatureWorkbenchModule} from './literature-workbench/index.js';
+import {betaModule,betaExperiments} from './beta/index.js';
 export const WORKSPACE_MODULES = [
   {id:'graph',label:'星图',title:'研究星图',icon:'orbit',panelId:'graph-wrap',required:true,libraryView:true,create:context=>context.builtin('graph')},
   {id:'list',label:'文献',title:'文献列表',icon:'list',panelId:'paper-list',required:true,libraryView:true,create:context=>context.builtin('list')},
@@ -8,6 +10,9 @@ export const WORKSPACE_MODULES = [
   {id:'notes',label:'笔记',title:'研究笔记',icon:'notebook',panelId:'notes-library',libraryView:true,create:context=>context.builtin('notes')},
   predictionModule,
   figuraModule,
+  literatureWorkbenchModule,
+  betaModule,
+  ...betaExperiments.map(experiment=>({...experiment,parentView:betaModule.id})),
 ];
 
 export function workspaceTab(view) {

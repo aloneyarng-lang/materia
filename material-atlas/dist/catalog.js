@@ -102,7 +102,7 @@ export function matchMetadata(text, papers) {
     const updated = { ...existing };
     for (const field of ['title', 'journal', 'doi', 'year', 'impactYear']) if (row[field] !== undefined) updated[field] = String(row[field]).slice(0, 1000);
     if (!updated.title.trim() || updated.year && !/^\d{4}$/.test(updated.year) || updated.impactYear && !/^\d{4}$/.test(updated.impactYear)) throw new Error('标题或年份格式不正确。');
-    if (authorDetails) { updated.authorDetails = authorDetails; updated.authors = authorDetails.map(a => a.name).join(', '); }
+    if ((row.authors !== undefined || row.authorDetails !== undefined) && authorDetails) { updated.authorDetails = authorDetails; updated.authors = authorDetails.map(a => a.name).join(', '); }
     if (row.tags !== undefined) { if (!Array.isArray(row.tags)) throw new Error('tags 必须是字符串数组。'); updated.tags = [...new Set(row.tags.map(t => String(t).trim()).filter(Boolean))].slice(0, 30); }
     if (row.impactFactor !== undefined) { updated.impactFactor = numericImpact(row.impactFactor); if (updated.impactFactor === null && row.impactFactor !== null && row.impactFactor !== '') throw new Error('影响因子格式不正确。'); }
     if (row.materials !== undefined && row.measurements !== undefined) throw new Error('请使用 materials 材料数组，不要同时提供文献级 measurements。');

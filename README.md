@@ -125,9 +125,9 @@ npm run build:exe
 
 ## 本地启动与更新
 
-双击项目根目录的 `Materia.exe` 启动当前安装版。请保留整个项目目录。
+双击项目根目录的 `Materia.exe` 启动应用，无需输入命令，也不会弹出命令窗口。请保留整个项目目录。
 
-启动入口：`materia/Materia.exe`。这是原生 Windows 启动器，指向 `material-atlas/release/current/Materia-win32-x64/Materia.exe`。
+根目录只保留 `Materia.exe` 一个启动入口。这是原生 Windows 启动器，优先使用 `material-atlas` 的源码运行环境；缺少该环境时，启动 `material-atlas/release/current/Materia-win32-x64/Materia.exe`。构建启动器时不会自动生成根目录快捷方式。
 
 在 `material-atlas` 中运行 `npm run cleanup` 可预览可清理的旧打包目录，运行 `npm run cleanup -- --apply` 执行清理。仅处理已识别的构建产物和旧发布目录；含个人数据、符号链接或最近一小时仍在修改的目录会跳过。请在打包、更新和程序退出后运行。
 

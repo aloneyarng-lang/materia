@@ -14,6 +14,7 @@ export function cleanLayout(value = {}) {
 }
 
 export function createNetwork(papers, groups, saved = {}, suppliedAssociations = [], mode = 'tags', neighbors = 3, sharedTagThreshold = 6, preferences = {}) {
+  if(mode==='shared-tags')mode='similarity';
   const allowed=new Set(groups.map(group=>group.name)),colors=new Map(groups.map(group=>[group.name,group.color]));
   const nodes=papers.map((paper,index)=>{
     const angle=index*2.399963+(hash(paper.id)%100)/900,distance=papers.length===1?0:Math.sqrt((index+.5)/papers.length)*300;
@@ -32,6 +33,11 @@ export function createNetwork(papers, groups, saved = {}, suppliedAssociations =
   for(const node of nodes){node.vx=0;node.vy=0;node.degree=0;}
   for(const node of nodes.filter(node=>node.type==='relation'))for(const id of node.members){const source=byId.get('paper:'+id);edges.push({source,target:node,tag:node.id,associationId:node.id});source.degree++;node.degree++;}
   let layoutEdges;
+  if(mode==='citations')for(const citation of preferences.citations || []){
+    const source=byId.get('paper:'+citation.source),target=byId.get('paper:'+citation.target);
+    if(!source||!target||source===target)continue;
+    edges.push({...citation,source,target});source.degree++;target.degree++;
+  }
   if(mode==='similarity'){
     const graph=researchGraph(papers,{...preferences,neighbors});
     const convert=edge=>({...edge,source:nodes[edge.source],target:nodes[edge.target]});

@@ -7,3 +7,31 @@
 .selection-target-language{flex:0 0 auto;margin-bottom:8px}.selection-target-language select{min-width:112px}
 .selection-translation footer .offline-dictionary-action{border-color:var(--teal);color:var(--teal);background:color-mix(in srgb,var(--teal) 8%,var(--panel))}
 .dictionary-tabs{display:flex;gap:6px;padding:12px 22px 0}.dictionary-tabs button{padding:7px 12px;border:1px solid var(--line);border-radius:16px;color:var(--muted)}.dictionary-tabs button[aria-selected=true]{background:var(--teal);border-color:var(--teal);color:var(--on-accent)}.offline-dictionary-content{padding:18px 22px}.offline-dictionary-content[hidden],.vocabulary-content[hidden]{display:none}.offline-dictionary-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.offline-dictionary-tools input{flex:1;min-width:200px}.offline-dictionary-tools input,.offline-dictionary-tools select{padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit}.offline-dictionary-content [data-offline-status]{font-size:.6875rem;color:var(--muted)}.offline-dictionary-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.offline-dictionary-card{padding:13px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}.offline-dictionary-card header,.offline-dictionary-card footer{display:flex;align-items:center;justify-content:space-between;gap:8px}.offline-dictionary-card header strong{font-size:.875rem}.offline-dictionary-card header small,.offline-dictionary-card footer span{font-size:.625rem;color:var(--muted)}.offline-dictionary-card p{font-size:.8125rem;line-height:1.7;min-height:1.7em}.offline-dictionary-card footer button{padding:5px 8px;border:1px solid var(--line);border-radius:5px;font-size:.625rem}.offline-dictionary-card footer button:hover{border-color:var(--teal);color:var(--teal)}
+.vocab-modes{margin-bottom:14px}
+.vocab-modes [data-vocab-import]{margin-inline-start:auto}
+.vocab-modes [aria-pressed=true],.vocab-tools button.primary,.vocab-review-card>button.primary{
+  background:var(--teal);border-color:var(--teal);color:var(--on-accent)
+}
+.vocab-tools button:hover:not(:disabled),.vocab-review-card>button:hover:not(:disabled){border-color:var(--teal)}
+.vocab-tools button:disabled{opacity:.55;cursor:default}
+.vocab-feedback,[data-vocab-review-count],.vocab-import{font-size:.75rem;line-height:1.6;overflow-wrap:anywhere}
+.vocab-feedback{color:var(--teal)}
+.vocab-feedback.is-error{color:var(--danger)}
+[data-vocab-review-count],.vocab-dates,.vocab-reading,.vocab-review-card>small{color:var(--muted)}
+.vocab-import,.vocab-review-card{padding:16px;margin:0 0 14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+.vocab-import>p,[data-vocab-preview] p:first-child{margin-top:0}
+[data-vocab-preview]:not(:empty){margin-top:12px}
+[data-vocab-preview] ul{padding-inline-start:20px}
+.vocab-review-settings label{display:grid;gap:5px}
+.vocab-review-settings [data-vocab-start]{align-self:end}
+.vocab-review-card{overflow-wrap:anywhere}
+.vocab-review-card h3,.vocab-answer [data-vocab-answer]{font-size:1.125rem;line-height:1.55;white-space:pre-wrap;margin:8px 0 18px}
+.vocab-review-card [tabindex="-1"]:focus,.vocab-review-empty:focus{outline:none}
+.vocab-review-card>button{padding:7px 10px;border:1px solid var(--line);border-radius:5px;font-size:.75rem}
+.vocab-review-card kbd{font-size:.625rem;opacity:.8;margin-inline-start:4px}
+.vocab-answer{border-top:1px solid var(--line);padding-top:12px}
+.vocab-answer .vocab-tools{margin-top:16px}
+.vocab-reading,.vocab-example,.vocab-dates{font-size:.75rem;line-height:1.6;white-space:pre-wrap}
+.vocab-example{border-inline-start:2px solid var(--line);padding-inline-start:9px}
+.vocab-card details select{display:block;margin-top:5px}
+.vocabulary-content [hidden]{display:none!important}

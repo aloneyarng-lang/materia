@@ -12,9 +12,18 @@ export function createWorkspaceModules(config){
   }
   const views=()=>registry.list().filter(definition=>!definition.parentView);
   function navigation(){
+    const ribbonSpacer=document.querySelector('.ribbon-spacer');
+    document.querySelectorAll('[data-ribbon-view]').forEach(button=>button.remove());
     tabs.replaceChildren();for(const definition of registry.list()){
       if(!document.getElementById(definition.panelId)){const host=document.createElement('section');host.id=definition.panelId;host.hidden=true;container.insertBefore(host,container.querySelector('.map-footer'));}
       if(definition.parentView)continue;
+      if(definition.navigation==='ribbon'){
+        const button=document.createElement('button'),label=t(definition.label);
+        button.type='button';button.className='ribbon-button';button.dataset.view=definition.id;button.dataset.ribbonView='';
+        button.title=label;button.setAttribute('aria-label',label);button.innerHTML=icon(definition.icon);
+        ribbonSpacer.before(button);
+        continue;
+      }
       const button=document.createElement('button');button.className='view-tab';button.type='button';button.dataset.view=definition.id;button.dataset.panel=definition.panelId;button.setAttribute('role','tab');button.innerHTML=icon(definition.icon)+escape(t(definition.label));tabs.append(button);
     }
     if(!available(config.getView())){
@@ -32,6 +41,10 @@ export function createWorkspaceModules(config){
     return{host,signal:scope.signal,on:(target,event,handler,options={})=>target.addEventListener(event,handler,{...options,signal:scope.signal}),isReady:config.isReady,toast:config.toast,saveText:config.saveText,services,builtin:id=>config.builtins[id],getPapers:()=>structuredClone(config.getPapers()),
       readData:()=>config.readSetting('module:'+definition.id),writeData:value=>config.writeSetting('module:'+definition.id,value),
       setCount:value=>{if(config.getView()===definition.id)document.getElementById('visible-count').textContent=value;},
+      getChildViews:()=>registry.list().filter(child=>child.parentView===definition.id),
+      openAISettings:config.openAISettings,
+      openPdfPage:config.openPdfPage,readPaperPdf:config.readPaperPdf,readLargePaperText:config.readLargePaperText,
+      innovationAI:{extract:config.extractInnovations,status:config.aiServiceStatus},
       release:()=>{scope.abort();for(const link of links)link.remove();styles.delete(definition.id);if(definition.bodyClass)document.body.classList.remove(definition.bodyClass);if(!definition.required){host.replaceChildren();host.hidden=true;}}
     };
   },{onChange:navigation,persist:config.persistPreferences});

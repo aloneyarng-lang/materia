@@ -5,9 +5,88 @@ import path from 'node:path';
 import {newCanvas,cleanCanvas,cleanCanvasStore,parseCanvasRules,serializeCanvasRules,arrangeCanvas,arrangeCanvasMode,CANVAS_ARRANGEMENTS,canvasNodesInRect,canvasDescendants,moveCanvasNodes,canvasNodeSize,canvasBounds,findCanvasPosition,exportCanvasDocument,importCanvasDocument,CANVAS_EXAMPLE} from '../dist/research-canvas-model.js';
 import {exportCanvasSVG,canvasEdgeGeometry} from '../dist/research-canvas-render.js';
 import {CanvasFile} from '../desktop/canvases.mjs';
+
+test('node themes round trip independently of the board theme and can be reset by rules',()=>{
+ const board=parseCanvasRules('theme forest\nnode a "A" shape=octagon theme=night\nnode b "B"');
+ assert.equal(board.theme,'forest');
+ assert.equal(board.nodes[0].theme,'night');
+ assert.equal(board.nodes[1].theme,undefined);
+ assert.deepEqual(parseCanvasRules(serializeCanvasRules(board)).nodes,board.nodes);
+ assert.deepEqual(importCanvasDocument(exportCanvasDocument(board)).nodes,board.nodes);
+ const reset=parseCanvasRules('update\nstyle a theme=inherit',board);
+ assert.equal(reset.nodes[0].theme,undefined);
+ assert.equal(reset.nodes[0].shape,'octagon');
+ assert.equal(reset.theme,'forest');
+ assert.throws(()=>parseCanvasRules('update\nstyle a theme=unknown',board),/第 2 行/);
+});
+
+test('partial rules remove only their targets, preserve exact positions, and handle empty boards',()=>{
+ const initial=parseCanvasRules('theme paper\nnode a "A"\nnode b "B"\na -> b\nposition a 1.25e-7 -12.345');
+ const edit=parseCanvasRules('update\ntheme night\nnode b "B edited" shape=document\nremove edge a -> b',initial);
+ assert.deepEqual(edit.nodes[0],initial.nodes[0]);
+ assert.equal(edit.nodes[1].shape,'document');
+ assert.equal(edit.edges.length,0);
+ assert.equal(initial.edges.length,1);
+ const roundTrip=parseCanvasRules(serializeCanvasRules(edit));
+ assert.deepEqual(roundTrip.nodes,edit.nodes);
+ assert.equal(roundTrip.theme,'night');
+ const empty=parseCanvasRules('update\nremove node a\nremove node b',edit);
+ assert.deepEqual(parseCanvasRules(serializeCanvasRules(empty)).nodes,[]);
+ assert.equal(parseCanvasRules('update\nnode new "New"',empty).nodes[0].id,'new');
+ assert.throws(()=>parseCanvasRules('update\nremove node a'),/第 1 行/);
+ assert.throws(()=>parseCanvasRules('update\nremove node missing',initial),/第 2 行/);
+});
 const sample=()=>parseCanvasRules(CANVAS_EXAMPLE,{...newCanvas('canvas-test'),nodes:[]});
 
 function assertNoOverlap(board){for(let i=0;i<board.nodes.length;i++)for(let j=i+1;j<board.nodes.length;j++){const a=board.nodes[i],b=board.nodes[j],x=canvasNodeSize(a),y=canvasNodeSize(b);assert.ok(Math.abs(a.x-b.x)>=(x.width+y.width)/2||Math.abs(a.y-b.y)>=(x.height+y.height)/2,`${a.id} overlaps ${b.id}`);}}
+test('additional layouts preserve graph data and organize nodes by the chosen scope',()=>{
+ const board=parseCanvasRules('node a "A"\nnode b "B"\nnode c "C"\nnode d "D"\nnode e "E"\na -> b\nb -> c\nb -> d\ngroup "Inputs" [a, b]\ngroup "Results" [c, d]');
+ board.nodes.find(n=>n.id==='c').image='large';
+ board.nodes.find(n=>n.id==='c').imageSize='large';
+ const get=(layout,id)=>layout.nodes.find(n=>n.id===id);
+ const radial=arrangeCanvasMode(board,'radial',{selection:['b']});
+ const center=get(radial,'b'),distance=id=>Math.hypot(get(radial,id).x-center.x,get(radial,id).y-center.y);
+ assert.ok(Math.abs(distance('a')-distance('c'))<1e-8);
+ assert.ok(Math.abs(distance('c')-distance('d'))<1e-8);
+ const lanes=arrangeCanvasMode(board,'lanes');
+ const inputs=canvasBounds({nodes:lanes.nodes.filter(n=>n.group==='Inputs')});
+ const results=canvasBounds({nodes:lanes.nodes.filter(n=>n.group==='Results')});
+ assert.ok(inputs.y+inputs.height-140<results.y);
+ for(const mode of ['radial','lanes','components','masonry']){
+  const arranged=arrangeCanvasMode(board,mode);
+  assertNoOverlap(arranged);
+  assert.deepEqual(arranged.edges,board.edges);
+  assert.deepEqual(arranged.nodes.map(({x,y,...node})=>node),board.nodes.map(({x,y,...node})=>node));
+ }
+});
+test('automatic arrangement separates two groups and adapts mixed node sizes to the viewport',()=>{
+ const board=newCanvas('mixed-layout');
+ const template=board.nodes[0];
+ board.nodes=Array.from({length:12},(_,index)=>({
+  ...template,id:`n${index}`,group:index%2?'test':'process',
+  shape:index===1?'diamond':'roundrect',...(index===1?{image:'large',imageSize:'large'}:{}),
+ }));
+ board.edges=board.nodes.slice(1).map((node,index)=>({id:`e${index}`,source:`n${index}`,target:node.id}));
+ const arranged=arrangeCanvasMode(board);
+ const [a,b]=['test','process'].map(group=>canvasBounds({nodes:arranged.nodes.filter(n=>n.group===group)}));
+ // canvasBounds adds 70px of padding; group outlines consume up to 42px of it.
+ assert.ok(a.x+a.width-56<=b.x||b.x+b.width-56<=a.x||a.y+a.height-56<=b.y||b.y+b.height-56<=a.y);
+ assertNoOverlap(arranged);
+ const narrow=arrangeCanvasMode(board,'grid',{aspect:.65}),wide=arrangeCanvasMode(board,'grid',{aspect:2.6});
+ const narrowBounds=canvasBounds(narrow),wideBounds=canvasBounds(wide);
+ assert.ok(wideBounds.width>narrowBounds.width&&wideBounds.height<narrowBounds.height);
+ assertNoOverlap(narrow);
+ assertNoOverlap(wide);
+});
+
+test('selected-only arrangement avoids a fixed image node without moving it',()=>{
+ const board=newCanvas('selection-obstacle'),template=board.nodes[0];
+ board.nodes=[{...template,id:'a',x:-700},{...template,id:'b',x:700},{...template,id:'fixed',image:'image',imageSize:'large'}];
+ const arranged=arrangeCanvasMode(board,'selection',{selection:['a','b']});
+ assert.deepEqual(arranged.nodes.at(-1),board.nodes.at(-1));
+ assertNoOverlap(arranged);
+ assert.ok(Math.abs(arranged.nodes[0].x-arranged.nodes[1].x)<1400);
+});
 test('marquee hit testing handles reversed drags and actual node footprints',()=>{
  const n={...newCanvas('hits').nodes[0],x:100,y:100},other={...n,id:'other',x:1000};
  assert.deepEqual(canvasNodesInRect([n,other],{x:220,y:150,width:-240,height:-100}),['root']);

@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  openLiteratureWorkbench: () => ipcRenderer.invoke('literature-workbench:open'),
   notesVaultList: () => ipcRenderer.invoke('notes-vault:list'),
   notesVaultSave: payload => ipcRenderer.invoke('notes-vault:save',payload),
   notesVaultImage: payload => ipcRenderer.invoke('notes-vault:image',payload),
@@ -68,6 +69,9 @@ contextBridge.exposeInMainWorld('materiaDesktop', {
   setSetting: (key, value) => ipcRenderer.invoke('library:set-setting', key, value),
   mergeBackup: backup => ipcRenderer.invoke('library:merge-backup', backup),
   readPdf: id => ipcRenderer.invoke('library:read-pdf', id),
+  readPdfRange: request => ipcRenderer.invoke('library:read-pdf-range', request),
+  innovationReadPdf: request => ipcRenderer.invoke('innovation:read-pdf',request),
+  innovationCancelPdf: id => ipcRenderer.invoke('innovation:cancel-pdf',id),
   openPdf: id => ipcRenderer.invoke('library:open-pdf', id),
   savePdf: id => ipcRenderer.invoke('library:save-pdf', id),
   info: () => ipcRenderer.invoke('library:info'),

@@ -55,15 +55,45 @@ const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtime
     await page.screenshot({path:path.resolve(__dirname,'../.local/research-graph-verification/communities.png')});
     for(const width of [1440,900,650]){await page.setViewportSize({width,height:940});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
     await page.locator('#graph-mode').selectOption('tags');assert.equal(await page.locator('[data-graph-setting="mutualKnn"]').isVisible(),false);
-    await page.locator('#graph-mode').selectOption('shared-tags');assert.equal(await page.locator('#graph-shared-tags-control').isVisible(),true);
+    assert.equal(await page.locator('#graph-mode option[value="shared-tags"]').count(),0);
     await page.locator('#graph-mode').selectOption('similarity');await page.waitForFunction(()=>document.querySelectorAll('.paper-node').length===37);
     await page.setViewportSize({width:1440,height:940});
+    assert.equal(await page.evaluate(async()=> (await import('./tag-facets.js')).tagFacet('方向:磁粉芯与软磁复合材料').weight),.35);
+    const basis=page.locator('[data-graph-setting="clusterBasis"]');
+    await basis.selectOption('方向');
+    assert.equal(await page.locator('.network-edges path').count(),0);
+    await page.waitForTimeout(650);await page.reload();
+    await page.waitForFunction(()=>document.querySelectorAll('.paper-node').length===37);
+    assert.equal(await basis.inputValue(),'方向');
+    await basis.selectOption('combined');
+    await page.locator('[data-action="import"]').first().evaluate(el=>el.click());
+    await page.locator('.batch-paste').evaluate(el=>el.open=true);
+    await page.locator('#batch-metadata-text').fill('# Materia\n格式版本: 2\n## 文献 1\n- 文献ID: domain-0\n- 标签: 方向:磁粉芯与软磁复合材料；体系:Finemet类');
+    await page.locator('#batch-tag-mode').selectOption('replace');
+    await page.locator('#batch-submit').click();
+    await page.waitForFunction(()=>!document.querySelector('#batch-submit').disabled);
+    assert.equal(await page.locator('#batch-error').isVisible(),false,await page.locator('#batch-error').textContent());
+    await page.locator('#batch-preview tbody tr').waitFor();
+    assert.equal(await page.locator('#batch-preview tbody tr').count(),1);
+    assert.match(await page.locator('#batch-preview tbody tr').textContent(),/体系:Finemet类/);
+    assert.ok(!(await page.locator('#batch-preview tbody tr').textContent()).includes('Materials'));
+    assert.equal(await page.evaluate(async()=> (await (await import('./storage.js')).getPapers()).find(p=>p.id==='domain-0').tags.includes('Materials')),true);
+    await page.locator('#batch-import-form [data-action="close-modal"]').click();
+    await page.locator('[data-action="settings"]').first().evaluate(el=>el.click());
+    await page.locator('.settings-companion').waitFor();
+    assert.equal(await page.locator('.settings-companion').getAttribute('open'),null);
+    await page.locator('.settings-companion summary').click();
+    const companion=page.frameLocator('.settings-companion iframe');
+    await companion.locator('.pet').waitFor();
+    assert.match(await companion.locator('p').textContent(),/少女祈願中/);
+    await page.locator('.settings-companion').screenshot({path:path.resolve(__dirname,'../.local/research-graph-verification/settings-companion.png')});
+    await page.locator('#modal [data-action="close-modal"]').last().click();
     const views=await page.locator('.view-tabs [data-view]').evaluateAll(nodes=>nodes.map(n=>({view:n.dataset.view,panel:n.dataset.panel})));
     for(const {view,panel} of views){await page.locator(`.view-tabs [data-view="${view}"]`).click();await page.waitForFunction(id=>!document.getElementById(id).hidden,panel);await page.waitForTimeout(200);assert.ok(!(await page.locator('#'+panel).textContent()).includes('功能暂时无法打开'));}
     assert.deepEqual(errors,[]);
     const startup=await context.newPage();await startup.goto('http://localhost:17425/startup.html');
-    const colors=await startup.evaluate(()=>({background:getComputedStyle(document.querySelector('main')).backgroundColor,foreground:getComputedStyle(document.querySelector('h1')).color,brand:getComputedStyle(document.querySelector('.wordmark')).color}));
-    assert.deepEqual(colors,{background:'rgb(238, 119, 36)',foreground:'rgb(255, 255, 255)',brand:'rgb(255, 255, 255)'});
+    const colors=await startup.evaluate(()=>({background:getComputedStyle(document.querySelector('main')).backgroundColor,foreground:getComputedStyle(document.querySelector('.wordmark')).color,brand:getComputedStyle(document.querySelector('.wordmark')).color}));
+    assert.deepEqual(colors,{background:'rgb(217, 119, 87)',foreground:'rgb(255, 255, 255)',brand:'rgb(255, 255, 255)'});
     await startup.setViewportSize({width:560,height:440});await startup.screenshot({path:path.resolve(__dirname,'../.local/research-graph-verification/startup-orange.png')});await startup.close();
     console.log('PASS community grouping, isolated paper, display density, mutual KNN, persistence, natural arrangement, three modes, responsive widths and no browser errors');
   }finally{await browser.close();}

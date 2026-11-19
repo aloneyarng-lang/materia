@@ -16,14 +16,16 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 export function createWorkspaceChrome(config){
  const {$,getState,getPapers,canOpen,runAction,selectPaper,clearSearch}=config;
  let returnFocus=null,items=[],active=0,executing=false;
+ const views=()=>config.getViews?.()||primaryViews;
+ const tabViews=()=>views().filter(module=>module.navigation!=='ribbon');
  let storage=null;try{storage=globalThis.localStorage;}catch{}
  const dialog=document.createElement('dialog');dialog.id='workspace-command-dialog';dialog.className='workspace-command-dialog';dialog.setAttribute('aria-label',t('快速操作'));document.body.append(dialog);
  const mac=/Mac|iPhone|iPad/.test(navigator.platform),modifier=mac?'⌘':'Ctrl';
  function commands(){return[
-  ...(config.getViews?.()||primaryViews).map((module,i)=>({id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:i<9?modifier+' '+(i+1):'',keywords:[module.id],run:()=>openView(module.id)})),
+  ...views().map(module=>{const index=tabViews().indexOf(module);return{id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:index>=0&&index<9?modifier+' '+(index+1):'',keywords:[module.id],run:()=>openView(module.id)};}),
   ...[['import','导入文献','plus'],['module-settings','功能管理','sliders'],['research-canvas','研究画布','network'],['ai-agent','AI 研究助手','assistant'],['parameter-index','性能参数目录','ruler'],['themes','主题与字体','palette'],['settings','设置','settings']].filter(([id])=>id!=='ai-agent'||config.showAgent?.()!==false).map(([id,label,image])=>({id,label:t(label),image,detail:t('常用操作'),keywords:[id],run:()=>runAction(id)})),
  ];}
- function openView(view){const button=document.querySelector(`.view-tabs [data-view="${view}"]`);button?.click();button?.focus();}
+ function openView(view){const button=document.querySelector(`.view-tabs [data-view="${view}"], [data-ribbon-view][data-view="${view}"]`);button?.click();button?.focus();}
  function renderResults(){const query=$('#workspace-command-input').value.trim().toLocaleLowerCase(),tokens=query.split(/\s+/).filter(Boolean);
   items=commands().filter(c=>tokens.every(token=>[c.label,c.detail,...(c.keywords||[])].join(' ').toLocaleLowerCase().includes(token)));
   if(query)items.push(...getPapers().filter(p=>tokens.every(token=>[p.title,p.authors,p.year,...(p.tags||[])].join(' ').toLocaleLowerCase().includes(token))).slice(0,7).map(p=>({id:'paper:'+p.id,label:p.title,image:'files',detail:[t('文献'),p.journal,p.year].filter(Boolean).join(' · '),run:()=>selectPaper(p.id)})));
@@ -49,21 +51,30 @@ export function createWorkspaceChrome(config){
   if(dialog.open||!canOpen())return;
   if(e.key==='Escape'&&e.target.id==='search'&&e.target.value){e.preventDefault();clearSearch();return;}
   const editing=e.target.matches('input,textarea,select')||e.target.isContentEditable;
-  const views=(config.getViews?.()||primaryViews).map(module=>module.id);
-  if(!editing&&(e.ctrlKey||e.metaKey)&&!e.altKey&&/^[1-9]$/.test(e.key)&&views[Number(e.key)-1]){e.preventDefault();openView(views[Number(e.key)-1]);return;}
+  const tabs=tabViews().map(module=>module.id);
+  if(!editing&&(e.ctrlKey||e.metaKey)&&!e.altKey&&/^[1-9]$/.test(e.key)&&tabs[Number(e.key)-1]){e.preventDefault();openView(tabs[Number(e.key)-1]);return;}
   const tab=e.target.closest('.view-tabs [data-view]');if(!tab||e.ctrlKey||e.metaKey||e.altKey)return;
-  let index=views.indexOf(tab.dataset.view);if(e.key==='ArrowLeft')index--;else if(e.key==='ArrowRight')index++;else if(e.key==='Home')index=0;else if(e.key==='End')index=views.length-1;else return;
-  e.preventDefault();openView(views[(index+views.length)%views.length]);
+  let index=tabs.indexOf(tab.dataset.view);if(e.key==='ArrowLeft')index--;else if(e.key==='ArrowRight')index++;else if(e.key==='Home')index=0;else if(e.key==='End')index=tabs.length-1;else return;
+  e.preventDefault();openView(tabs[(index+tabs.length)%tabs.length]);
  });
  return{sync(){const state=getState();
   const tab=workspaceTab(state.view),child=WORKSPACE_MODULES.find(module=>module.id===state.view&&module.parentView);
+  const tabs=tabViews(),tabFocusFallback=tabs.some(module=>module.id===tab)?null:tabs[0]?.id;
   document.querySelectorAll('.view-tabs [data-view]').forEach(button=>{
     const selected=button.dataset.view===tab;
-    button.disabled=!state.ready||state.storageError;button.tabIndex=selected?0:-1;button.id='workspace-tab-'+button.dataset.view;
+    button.disabled=!state.ready||state.storageError;button.tabIndex=selected||tabFocusFallback===button.dataset.view?0:-1;button.id='workspace-tab-'+button.dataset.view;
     button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));
     const id=selected&&child?child.panelId:button.dataset.panel;
     button.setAttribute('aria-controls',id);
     const panel=$('#'+id);panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby',button.id);
+  });
+  document.querySelectorAll('[data-ribbon-view]').forEach(button=>{
+    const current=button.dataset.view===tab;
+    const definition=WORKSPACE_MODULES.find(module=>module.id===button.dataset.view);
+    button.disabled=!state.ready||state.storageError;
+    button.classList.toggle('active',current);
+    button.setAttribute('aria-current',current?'page':'false');
+    button.setAttribute('aria-controls',current&&child?child.panelId:definition.panelId);
   });
   $('#clear-workspace-search').hidden=!state.query;$('#workspace-details').hidden=!['graph','list'].includes(state.view);$('#workspace-details').setAttribute('aria-pressed',String(state.detailOpen));
   $('#ribbon-import').hidden=!config.getViews?.().find(view=>view.id===state.view)?.libraryView;

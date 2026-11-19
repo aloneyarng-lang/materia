@@ -1,8 +1,9 @@
 const normalize = value => String(value || '').normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+export const normalizedTagSet = paper => new Set((paper.tags || []).map(normalize).filter(Boolean));
 let cache;
 
 export function sharedTagLinks(papers, threshold = 6) {
-  const rows = papers.map(paper => [...new Set((paper.tags || []).map(normalize).filter(Boolean))]);
+  const rows = papers.map(paper => [...normalizedTagSet(paper)]);
   const key = JSON.stringify([threshold, papers.map((paper, index) => [paper.id, rows[index]])]);
   if (cache?.key === key) return cache.links.map(edge => ({ ...edge }));
   const index = new Map();

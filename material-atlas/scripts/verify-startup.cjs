@@ -11,9 +11,12 @@ const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtime
     const page=await browser.newPage({viewport:{width:560,height:440},deviceScaleFactor:2});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(pathToFileURL(path.join(root,'dist/startup.html')).href);
+    assert.equal(await page.locator('.pet').count(),0);
+    assert.ok(!(await page.locator('body').innerText()).includes('少女祈願中'));
+    await page.goto(pathToFileURL(path.join(root,'dist/settings-companion.html')).href);
     await page.waitForFunction(()=>document.querySelector('.pet').style.backgroundPosition==='-576px 0px');
     await page.screenshot({path:path.join(output,'startup.png')});
-    assert.equal(await page.locator('h1').textContent(),'少女祈願中...');
+    assert.equal(await page.locator('p').textContent(),'少女祈願中...');
     assert.equal(await page.locator('.pet').evaluate(async el=>{const img=new Image();img.src=getComputedStyle(el).backgroundImage.slice(5,-2);await img.decode();return img.naturalWidth;}),1152);
     const positions=new Set();for(let i=0;i<10;i++){positions.add(await page.locator('.pet').evaluate(el=>el.style.backgroundPosition));await page.waitForTimeout(100);}
     assert.ok(positions.size>=5,'Original sprite frames should advance');
@@ -24,6 +27,7 @@ const {chromium}=require(path.join(process.env.USERPROFILE,'.cache/codex-runtime
       await page.locator('.pet').evaluate((el,index)=>{el.style.backgroundPosition=`${-192*index}px 0px`;},i);
       await page.screenshot({path:path.join(output,`frame-${i}.png`)});
     }
+    await page.goto(pathToFileURL(path.join(root,'dist/startup.html')).href);
     await page.emulateMedia({reducedMotion:'no-preference'});
     await page.evaluate(()=>document.documentElement.classList.add('depart'));
     await page.waitForTimeout(480);

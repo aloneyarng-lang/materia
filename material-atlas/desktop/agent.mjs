@@ -89,7 +89,16 @@ function providerBody(config, messages, tools) {
       if(message.role==='tool')content=[{type:'tool_result',tool_use_id:message.tool_call_id,content:message.content||''}];
       else if(role==='assistant'&&Array.isArray(message.providerOutput))content=message.providerOutput.filter(b=>['text','tool_use','thinking','redacted_thinking'].includes(b.type));
       else{
-        if(message.content)content.push({type:'text',text:message.content});
+        if(Array.isArray(message.content)){
+          for(const part of message.content){
+            if(part.type==='text')content.push({type:'text',text:part.text});
+            else if(part.type==='image_url'){
+              const [,media_type,data]=/^data:(image\/png);base64,(.+)$/.exec(part.image_url?.url||'')||[];
+              if(!data)throw new Error('图片格式无效。');
+              content.push({type:'image',source:{type:'base64',media_type,data}});
+            }
+          }
+        }else if(message.content)content.push({type:'text',text:message.content});
         for(const call of message.tool_calls||[]){let args;try{args=JSON.parse(call.function.arguments||'{}');}catch{throw new Error('工具参数格式无效，请重新提问。');}content.push({type:'tool_use',id:call.id,name:call.function.name,input:args});}
       }
       if(!content.length)continue;
@@ -103,7 +112,10 @@ function providerBody(config, messages, tools) {
     if (message.role === 'tool') input.push({ type: 'function_call_output', call_id: message.tool_call_id, output: message.content });
     else if (message.role === 'assistant' && Array.isArray(message.providerOutput)) input.push(...message.providerOutput.filter(item => ['reasoning','message','function_call'].includes(item.type)));
     else {
-      if (message.content) input.push({ role: message.role === 'system' ? 'developer' : message.role, content: message.content });
+      const content=Array.isArray(message.content)?message.content.map(part=>part.type==='image_url'
+        ? {type:'input_image',image_url:part.image_url.url,detail:'auto'}
+        : {type:'input_text',text:part.text}):message.content;
+      if (content) input.push({ role: message.role === 'system' ? 'developer' : message.role, content });
       for (const call of message.tool_calls || []) input.push({ type: 'function_call', call_id: call.id, name: call.function.name, arguments: call.function.arguments });
     }
   }

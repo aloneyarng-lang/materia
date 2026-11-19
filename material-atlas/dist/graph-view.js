@@ -3,11 +3,13 @@ import {GRAPH_THEME_TOKENS,graphAppearance,nodeGeometry,edgeGeometry} from './gr
 import {CosmicBackdrop,cosmicNodeParts,cosmicPartNode} from './graph-cosmos.js';
 import {getGraphSymbols,graphSymbolNode,SymbolBackdrop} from './graph-symbols.js';
 import { createNetwork, stepNetwork, networkSnapshot, cleanLayout } from './force-layout.js';
+import {citationGeometry} from './citation-graph.js';
 import { GRAPH_DEFAULTS, cleanGraphSettings, placeNodeLabels,fitGraphViewport } from './graph-settings.js';
 import { PALETTE } from './palette.js';
 import {computeNaturalLayout,animateNaturalLayout} from './natural-layout-client.js';
 import { ASSOCIATION_KINDS } from './associations.js';
 import {primaryTag} from './tags.js';
+import {GraphOrbit} from './graph-orbit.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_FLOW_PATHS = 72;
@@ -25,19 +27,32 @@ export class StarMap {
     this.svg = svg; this.scale = 1; this.x = 0; this.y = 0;this.viewHeight=620;this.labelPositions=new Map();
     this.cache = {}; this.nodes = []; this.selected = ''; this.paused = false; this.preferences={...GRAPH_DEFAULTS};this.collections=[];this.cosmos=new CosmicBackdrop(svg);
     this.symbolBackdrop=new SymbolBackdrop(svg);this.bindInput();
+    this.orbit = new GraphOrbit(svg, {
+      onSelect: id => this.onSelect(id),
+      onCenter: id => this.focusOrbit(id),
+      onMenu: (...args) => this.onPaperMenu?.(...args),
+      onHover: (...args) => this.onHover(...args),
+      onClose: () => this.closeOrbit(),
+    });
     this.labelCanvas=document.createElement('canvas').getContext('2d');this.labelWidths=new Map();
     this.resizeObserver=new ResizeObserver(()=>{const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;this.bounds={width:r.width,height:r.height};const height=Math.max(430,Math.min(1200,1000*r.height/r.width));if(Math.abs(height-this.viewHeight)>1)this.cancelNaturalLayout();this.y+=(height-this.viewHeight)/2;this.viewHeight=height;svg.setAttribute('viewBox',`0 0 1000 ${height}`);this.cosmos.resize(height);this.symbolBackdrop.resize(height);this.transform();});this.resizeObserver.observe(svg);
   }
   configure(value,collections=[],associations=[]){this.preferences=cleanGraphSettings(value);this.collections=collections;this.associations=associations;}
-  setLayout(value) { this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
-  setData(papers, selected, allGroups = []) {
-    const dataKey=JSON.stringify([papers.map(p=>[p.id,p.title,p.abstract,p.tags,p.authors,p.authorDetails,p.journal,p.collection]),this.preferences,this.associations,allGroups,this.collections,this.options]);
+  setLayout(value) { this.closeOrbit(false);this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
+  setData(papers, selected, allGroups = [], orbitPapers = papers) {
+    this.orbitPapers = orbitPapers;
+    const citationsChanged=this.indexedCitations!==this.citations;
+    const {orbitRings, ...networkPreferences} = this.preferences;
+    const dataKey=JSON.stringify([papers.map(p=>[p.id,p.title,p.abstract,p.tags,p.authors,p.authorDetails,p.journal,p.collection]),networkPreferences,this.associations,allGroups,this.collections,this.options,this.citations]);
     if(this.network&&dataKey===this.dataKey){
       this.papers=papers.slice();const current=new Map(papers.map(p=>[p.id,p]));
       for(const item of this.nodes)if(item.node.type==='paper'){item.node.paper=current.get(item.node.paper.id);item.paper=item.node.paper;}
-      if(this.selected!==selected){this.selected=selected;this.highlight(selected);}return;
+      if(this.selected!==selected){this.selected=selected;this.highlight(selected);}
+      this.refreshOrbit();
+      return;
     }
     this.dataKey=dataKey;
+    this.indexedCitations=this.citations;
     const wasMoving=Boolean(this.frame);this.cancelNaturalLayout();
     if(this.dataMode&&this.dataMode!==this.preferences.mode){this.modeCaches??={};this.modeCaches[this.dataMode]={...this.cache,...networkSnapshot(this.network)};this.cache=this.modeCaches[this.preferences.mode]||{};this.network=null;this.naturalUndo=null;}this.dataMode=this.preferences.mode;
     cancelAnimationFrame(this.frame);
@@ -45,15 +60,16 @@ export class StarMap {
     this.svg.dataset.graphMoving='false';this.hitScale=null;
     if (this.network) Object.assign(this.cache, networkSnapshot(this.network));
     this.papers = papers.slice(); this.selected = selected; this.groups = allGroups;
-    this.network = createNetwork(this.papers, this.groups, this.cache,this.preferences.showRelations?this.associations:[],this.preferences.mode,this.preferences.neighbors,this.preferences.sharedTagThreshold,this.preferences);
+    this.network = createNetwork(this.papers, this.groups, this.cache,this.preferences.showRelations?this.associations:[],this.preferences.mode,this.preferences.neighbors,this.preferences.sharedTagThreshold,{...this.preferences,citations:this.citations});
     if(this.preferences.mode==='similarity'&&this.preferences.colorBy==='tag'){
       const allowed=new Set(allGroups.map(g=>g.name)),colors=new Map(allGroups.map(g=>[g.name,g.color]));
       for(const node of this.network.nodes)node.color=colors.get(primaryTag(node.paper,allowed))||'#829487';
     }
     const colorNames=[...new Set(this.papers.map(p=>this.preferences.colorBy==='journal'?p.journal||tr('期刊未填'):this.collections.find(c=>c.id===p.collection)?.name||tr('未分组')))].sort();
     for(const node of this.network.nodes){node.radius*=this.preferences.nodeSize;if(node.type==='paper'&&!['tag','community'].includes(this.preferences.colorBy)){const name=this.preferences.colorBy==='journal'?node.paper.journal||tr('期刊未填'):this.collections.find(c=>c.id===node.paper.collection)?.name||tr('未分组');node.color=PALETTE[colorNames.indexOf(name)%PALETTE.length];}if(node.type==='relation'&&!['tag','community'].includes(this.preferences.colorBy))node.color=node.color;}
-    this.svg.replaceChildren();
-    this.viewport = el('g'); this.svg.append(this.viewport);
+    this.viewport?.remove();
+    this.viewport = el('g', {class: 'graph-overview'});
+    this.svg.insertBefore(this.viewport, this.orbit.layer);
     this.edgeLayer = el('g', { 'aria-hidden': true, class: 'network-edges' });
     this.edgeLayer.style.display = this.options?.showEdges === false ? 'none' : '';
     this.viewport.append(this.edgeLayer);
@@ -79,7 +95,10 @@ export class StarMap {
       const isTag = node.type === 'relation', name = isTag ? node.tag : node.paper.title;
       const group = el('g', { class: `graph-node ${isTag ? 'relation-node relation-'+node.kind : 'paper-node'}`, tabindex: 0, role: 'button', 'aria-label': isTag ? msg`${ASSOCIATION_KINDS[node.kind]}关联 ${name}` : name, 'data-node-id': node.id, ...(isTag ? { 'data-association-id': node.id } : { 'data-paper-id': node.paper.id }) });
       group.style.setProperty('--node-color',node.color);
-      group.append(el('title', {}, (node.communityLabel ? node.communityLabel+'\n' : '')+msg`${name}\n拖动牵引，Shift 拖动固定，双击或 P 释放${isTag ? tr('；点击查看匹配，右键移除此关联节点') : tr('；右键打开文献操作')}`));
+      const hint = isTag
+        ? tr('拖动牵引，Shift 拖动固定，双击或 P 释放') + tr('；点击查看匹配，右键移除此关联节点')
+        : tr('拖动牵引，Shift 拖动固定，P 切换固定；双击或 Shift+Enter 聚焦文献');
+      group.append(el('title', {}, [node.communityLabel, name, hint].filter(Boolean).join('\n')));
       const hit=el('circle',{r:Math.max(14,node.radius+5),fill:'transparent',class:'node-hit-area'});group.append(hit);
       const ring = el('circle', { r: node.radius + 3, fill: 'none', stroke: node.color, 'stroke-width': .8, opacity: .3, class: 'node-ring' });
       const core = el('circle', { r:node.radius, fill: node.color, stroke: 'var(--canvas)', 'stroke-width': isTag ? 1.6 : 1.8, class: 'node-core' });
@@ -90,11 +109,23 @@ export class StarMap {
 
       const pin = el('circle', { cx: node.radius + 4, cy: -node.radius - 3, r: 2.4, fill: '#ad8d58', class: 'node-pin' }); group.append(pin);
       group.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); isTag ? this.onRelation?.(node.id) : this.onSelect(node.paper.id); }
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (isTag) this.onRelation?.(node.id);
+          else if (event.shiftKey && event.key === 'Enter') this.focusOrbit(node.paper.id);
+          else this.onSelect(node.paper.id);
+        }
         if (event.key === 'Delete') { event.preventDefault(); isTag ? this.onRemoveAssociation?.(node.id) : this.onHide?.(node.paper.id); }
         if (event.key.toLowerCase() === 'p') { node.pinned = !node.pinned; this.paint(); this.saveLayout(); if (!node.pinned) this.start(.4); }
       });
-      group.addEventListener('dblclick', event => { event.stopPropagation(); clearTimeout(this.clickTimer); node.pinned = false; this.start(.6); this.saveLayout(); });
+      group.addEventListener('dblclick', event => {
+        event.stopPropagation();
+        clearTimeout(this.clickTimer);
+        if (!isTag) { this.focusOrbit(node.paper.id); return; }
+        node.pinned = false;
+        this.start(.6);
+        this.saveLayout();
+      });
       group.addEventListener('contextmenu', event => { event.preventDefault(); isTag ? this.onRemoveAssociation?.(node.id) : this.onPaperMenu?.(node.paper.id,event,group); });
       group.addEventListener('pointerenter', event => {
         if (this.drag) return;
@@ -107,9 +138,39 @@ export class StarMap {
     });
     const allSaved=this.network.nodes.every(node=>this.cache[node.id]);
     if (first&&!allSaved) for (let i = 0; i < (this.batchedEdges?8:75); i++) stepNetwork(this.network, .8,this.preferences);
-    this.applyAppearance(); this.paint(); this.highlight(selected);if(first)this.fit();else this.transform();if(!allSaved||wasMoving)this.start(.6);
+    this.applyAppearance(); this.paint(); this.highlight(selected);
+    if(first)Object.assign(this,fitGraphViewport(this.network.nodes,1000,this.viewHeight));
+    this.transform();if(!allSaved||wasMoving||citationsChanged&&this.preferences.mode==='citations'&&this.network.edges.length)this.start(.6);
     this.naturalState();
     this.onStats?.({ papers: this.papers.length, tags: this.network.nodes.filter(node => node.type === 'relation').length, edges: this.network.edges.length, omittedTags: this.network.omittedTags, communities:new Set(this.network.nodes.filter(n=>n.clusterSize>1).map(n=>n.community)).size, layoutEdges:this.network.layoutEdges.length });
+  }
+  focusOrbit(id) {
+    if (!this.orbitPapers?.some(paper => paper.id === id)) return;
+    clearTimeout(this.clickTimer);
+    this.cancelNaturalLayout();
+    this.onHover(null);
+    this.orbitCenter = id;
+    this.onSelect(id, false);
+    this.refreshOrbit();
+    this.orbit.layer?.querySelector('.graph-orbit-center')?.focus({preventScroll: true});
+  }
+  refreshOrbit() {
+    if (!this.orbitCenter) return;
+    const center = this.orbitPapers.find(paper => paper.id === this.orbitCenter);
+    if (!center) { this.closeOrbit(false); return; }
+    this.orbit.render(center, this.orbitPapers, this.preferences.orbitRings, this.viewHeight, this.selected);
+  }
+  closeOrbit(restoreFocus = true) {
+    if (!this.orbitCenter) return false;
+    const center = this.orbitCenter;
+    this.orbitCenter = '';
+    this.orbit.clear();
+    this.onHover(null);
+    if (restoreFocus) {
+      const item = this.nodes.find(({paper}) => paper?.id === center) || this.nodes.find(({paper}) => paper?.id === this.selected);
+      item?.group.focus({preventScroll: true});
+    }
+    return true;
   }
   applyAppearance() {
     const style=getComputedStyle(document.documentElement),tokens=Object.fromEntries(Object.keys(GRAPH_THEME_TOKENS).map(key=>[key,style.getPropertyValue(key).trim()]));
@@ -169,7 +230,7 @@ export class StarMap {
     const batches=this.batchedEdges?[[],[],[]]:null;
     for (const edge of this.edgeNodes) {
       const a = edge.source, b = edge.target;
-      const d=edgeGeometry(a,b,this.appearance?.edgeStyle);
+      const d=this.preferences.mode==='citations'?citationGeometry(a,b):edgeGeometry(a,b,this.appearance?.edgeStyle);
       if(batches)batches[edge.batch].push(d);else edge.path.setAttribute('d',d);
       if(edge.pulse&&edge.pulse.getAttribute('d')!==d)edge.pulse.setAttribute('d',d);
     }
@@ -260,17 +321,17 @@ export class StarMap {
     const key=this.network?.nodes.map(n=>n.id).sort().join('|');if(key===previous.key&&Math.abs(this.viewHeight-previous.height)<1)Object.assign(this,previous.camera);else Object.assign(this,fitGraphViewport(this.network?.nodes||[],1000,this.viewHeight));
     this.naturalOverview=Boolean(previous.overview);this.paint();this.transform();this.highlightNode(previous.activeId||'');this.saveLayout();this.svg.dataset.naturalLayout='restored';this.naturalState();return true;
   }
-  select(id) { this.cancelNaturalLayout();this.naturalOverview=false;this.selected = id; this.highlight(id); }
+  select(id) { this.cancelNaturalLayout();this.naturalOverview=false;this.selected = id; this.highlight(id);this.orbit.select(id); }
   highlight(id) { this.highlightNode(this.naturalOverview?'':id?'paper:'+id:''); }
   highlightNode(key) {
     this.activeId=key;const active=this.network?.byId.get(key),tagIds=new Set();this.relatedIds=new Set(key?[key]:[]);
     if(active?.type==='relation')tagIds.add(active.id);
     else if(active)for(const neighbor of this.network.adjacency.get(active.id)||[]){tagIds.add(neighbor.id);this.relatedIds.add(neighbor.id);}
-    for(const edge of this.network?.edges||[])if(tagIds.has(edge.target.id)){this.relatedIds.add(edge.target.id);this.relatedIds.add(edge.source.id);}
+    if(this.preferences.mode!=='citations')for(const edge of this.network?.edges||[])if(tagIds.has(edge.target.id)){this.relatedIds.add(edge.target.id);this.relatedIds.add(edge.source.id);}
     for(const item of this.nodes){const chosen=item.node.id===key;item.group.classList.toggle('is-active',chosen);item.group.setAttribute('opacity',!key||chosen||!tagIds.size?1:this.relatedIds.has(item.node.id)?.9:.32);item.group.setAttribute('aria-pressed',String(item.node.type==='paper'&&item.node.paper.id===this.selected));item.ring.setAttribute('opacity',chosen?.8:0);}
     const appearance=this.appearance||{},base=appearance.edgeOpacity??.2;
     const edgeStyle=(path,batch)=>{path.setAttribute('stroke',batch===2?'var(--teal)':appearance.edgeColor&&appearance.edgeColor!=='auto'?appearance.edgeColor:'var(--muted)');path.setAttribute('opacity',!key||!tagIds.size?base:batch===2?Math.min(.95,base*3.4):batch===1?base*.8:base*.225);path.setAttribute('stroke-width',(batch===2?1.15:.65)*this.preferences.linkWidth*(appearance.edgeWidth||1));path.setAttribute('stroke-dasharray',appearance.edgeDash==='dashed'?'5 4':appearance.edgeDash==='dotted'?'1 4':'none');};
-    for(const edge of this.edgeNodes){const adjacent=edge.source.id===key||edge.target.id===key;edge.batch=adjacent?2:tagIds.has(edge.target.id)?1:0;if(edge.path)edgeStyle(edge.path,edge.batch);edge.pulse?.setAttribute('opacity',!key||!tagIds.size||edge.batch===2?.92:edge.batch===1?.58:.22);}
+    for(const edge of this.edgeNodes){const adjacent=edge.source.id===key||edge.target.id===key;edge.batch=adjacent?2:this.preferences.mode!=='citations'&&tagIds.has(edge.target.id)?1:0;if(edge.path)edgeStyle(edge.path,edge.batch);edge.pulse?.setAttribute('opacity',!key||!tagIds.size||edge.batch===2?.92:edge.batch===1?.58:.22);}
     if(this.batchedEdges){for(let i=0;i<3;i++)edgeStyle(this.edgeBatches[i],i);this.paint();}
     this.placeLabels();
   }
@@ -287,9 +348,9 @@ export class StarMap {
   point(event) { const matrix = this.svg.getScreenCTM(); return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : { x: 500, y: 300 }; }
   scenePoint(event) { const p = this.point(event); return { x: (p.x - this.x) / this.scale, y: (p.y - this.y) / this.scale }; }
   bindInput() {
-    this.svg.addEventListener('wheel', event => { event.preventDefault(); this.zoom(event.deltaY > 0 ? 1 / 1.12 : 1.12, this.point(event)); this.onHover(null); }, { passive: false });
+    this.svg.addEventListener('wheel', event => { if(this.orbitCenter)return;event.preventDefault(); this.zoom(event.deltaY > 0 ? 1 / 1.12 : 1.12, this.point(event)); this.onHover(null); }, { passive: false });
     this.svg.addEventListener('pointerdown', event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || this.orbitCenter) return;
       this.cancelNaturalLayout();
       clearTimeout(this.clickTimer);
       const key = event.target.closest('[data-node-id]')?.dataset.nodeId, node = this.network?.byId.get(key);
@@ -326,6 +387,6 @@ export class StarMap {
     const next = Math.max(.12, Math.min(3.5, this.scale * factor)), ratio = next / this.scale;
     this.x = point.x - (point.x - this.x) * ratio; this.y = point.y - (point.y - this.y) * ratio; this.scale = next; this.transform();
   }
-  fit() {this.cancelNaturalLayout();Object.assign(this,fitGraphViewport(this.network?.nodes||[],1000,this.viewHeight));this.transform();}
-  transform() { this.viewport?.setAttribute('transform', `translate(${this.x} ${this.y}) scale(${this.scale})`); this.onZoom?.(Math.round(this.scale * 100)); this.placeLabels();this.paintCommunityLabels(); }
+  fit() {if(this.closeOrbit())return;this.cancelNaturalLayout();Object.assign(this,fitGraphViewport(this.network?.nodes||[],1000,this.viewHeight));this.transform();}
+  transform() { this.viewport?.setAttribute('transform', `translate(${this.x} ${this.y}) scale(${this.scale})`); this.onZoom?.(Math.round(this.scale * 100)); this.placeLabels();this.paintCommunityLabels();this.refreshOrbit(); }
 }

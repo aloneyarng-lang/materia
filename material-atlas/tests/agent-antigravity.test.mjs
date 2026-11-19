@@ -4,7 +4,7 @@ import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
-import {AntigravityChatLinks,cleanAntigravityConfig,inspectAntigravity,createAntigravityCompletion,readAntigravityReply,discoverAntigravity} from '../desktop/agent-antigravity.mjs';
+import {AntigravityChatLinks,cleanAntigravityConfig,inspectAntigravity,createAntigravityCompletion,readAntigravityReply,discoverAntigravity,antigravityVisionModel} from '../desktop/agent-antigravity.mjs';
 import {AgentSettings,normalizeAgentConfig} from '../desktop/agent.mjs';
 import {agentCredentialIssue} from '../dist/agent-auth.js';
 import {runResearchAgent} from '../dist/ai-agent-core.js';
@@ -25,6 +25,40 @@ test('detection returns current model quotas without account identity, port or l
   assert.deepEqual(result.models,[{id:'client-model',name:'Client model',remaining:.75}]);
   assert.ok(!JSON.stringify(result).includes(userStatus.email));assert.ok(!JSON.stringify(result).includes(connection.token));assert.equal(result.port,undefined);
   await assert.rejects(inspectAntigravity({},{discover:async()=>[]}),/打开并登录/);
+});
+test('figure analysis selects an available vision model and sends ordered PNG attachments outside the prompt',async()=>{
+  const textModel=userStatus.cascadeModelConfigData.clientModelConfigs[0];
+  const visionModel={...textModel,modelId:'vision-model',supportsImages:true};
+  const clientStatus={userStatus:{cascadeModelConfigData:{clientModelConfigs:[textModel,visionModel]}}};
+  const images=['aW1hZ2Ux','aW1hZ2Uy'];
+  const messages=[{role:'user',content:[
+    {type:'text',text:'Compare the attached figures.'},
+    ...images.map(data=>({type:'image_url',image_url:{url:'data:image/png;base64,'+data}})),
+  ]}];
+  let started=0;
+  const options={discover,rpc:async(_,method,body)=>{
+    if(method==='GetUserStatus')return clientStatus;
+    if(method==='StartCascade'){
+      started++;
+      assert.equal(body.customAgentSpec.cascadeConfig.plannerConfig.toolConfig.forceDisableToolCalling,true);
+      return {cascadeId:'figure-analysis'};
+    }
+    if(method==='SendUserCascadeMessage'){
+      assert.deepEqual(body.media,images.map(inlineData=>({mimeType:'image/png',inlineData})));
+      assert.match(body.items[0].text,/Compare the attached figures/);
+      assert.ok(images.every(data=>!body.items[0].text.includes(data)));
+      return {};
+    }
+    if(method==='GetCascadeTrajectory')return {status:1,trajectory:{steps:[{plannerResponse:{response:'Compared both figures'}}]}};
+    throw Error('Unexpected RPC '+method);
+  }};
+  assert.equal(await antigravityVisionModel({},options),'vision-model');
+  await assert.rejects(createAntigravityCompletion({model:textModel.modelId},options)({messages}),/支持图片/);
+  assert.equal(started,0);
+  assert.deepEqual(await createAntigravityCompletion({},options)({messages}),{
+    content:'Compared both figures',tool_calls:[],model:'vision-model',
+  });
+  assert.equal(started,1);
 });
 test('process discovery uses a fixed command and filters unusable process records without returning raw commands',async()=>{
   const rows=await discoverAntigravity({exec:async(file,args,options)=>{
@@ -93,6 +127,37 @@ test('local adapter rejects unauthorized tool calls and malformed arguments inst
   assert.throws(()=>readAntigravityReply('{"content":"","tool_calls":[{"id":"1","name":"run_command","arguments":"{}"}]}',[]),/无效/);
   assert.throws(()=>readAntigravityReply('{"content":"","tool_calls":[{"id":"1","name":"read_papers","arguments":"[]"}]}',[{name:'read_papers'}]),/参数无效/);
   assert.equal(readAntigravityReply('普通中文回复').content,'普通中文回复');
+});
+test('innovation JSON uses one output format and can retry in the same isolated Antigravity session',async()=>{
+  const steps=[],prompts=[];
+  let started=0;
+  const options={jsonOutput:true,discover,rpc:async(_,method,body)=>{
+    if(method==='GetUserStatus')return status();
+    if(method==='StartCascade'){
+      started++;
+      assert.deepEqual(body.customAgentSpec.customTools,[]);
+      assert.equal(body.customAgentSpec.cascadeConfig.plannerConfig.toolConfig.forceDisableToolCalling,true);
+      return {cascadeId:'innovation-session'};
+    }
+    if(method==='SendUserCascadeMessage'){
+      prompts.push(body.items[0].text);
+      steps.push({plannerResponse:{response:prompts.length===1?'unfinished':'{"points":[]}'}});return {};
+    }
+    if(method==='GetCascadeTrajectory')return {status:1,trajectory:{steps:[...steps]}};
+    throw Error('Unexpected RPC '+method);
+  }};
+  const complete=createAntigravityCompletion({},options);
+  const messages=[{role:'system',content:'只输出 {"points":[]}。'},{role:'user',content:'{"title":"paper","pages":[]}'}];
+  assert.equal((await complete({messages})).content,'unfinished');
+  messages[0]={...messages[0],content:'校验失败。'+messages[0].content};
+  assert.equal((await complete({messages})).content,'{"points":[]}');
+  assert.equal(started,1);
+  assert.match(prompts[1],/^校验失败/);
+  for(const prompt of prompts){
+    assert.match(prompt,/\{"points":\[\]\}/);
+    assert.match(prompt,/"title":"paper"/);
+    assert.doesNotMatch(prompt,/tool_calls/);
+  }
 });
 test('voice translation uses the Antigravity text envelope and preserves line alignment',async()=>{
   const lines=['先确认实验条件。','再检查测量误差。'];

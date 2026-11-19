@@ -92,7 +92,13 @@ export function antigravityRPC(connection,method,body={},signal){
 }
 export function antigravityModels(status){
   const rows=status?.userStatus?.cascadeModelConfigData?.clientModelConfigs||[];
-  return rows.filter(row=>!row.disabled&&typeof row.label==='string'&&row.modelOrAlias&&(row.modelId||row.modelOrAlias.model||row.modelOrAlias.alias)).map(row=>({id:String(row.modelId||row.modelOrAlias.model||row.modelOrAlias.alias),name:row.label.slice(0,200),selector:row.modelOrAlias,remaining:typeof row.quotaInfo?.remainingFraction==='number'?Math.max(0,Math.min(1,row.quotaInfo.remainingFraction)):null}));
+  return rows.filter(row=>!row.disabled&&typeof row.label==='string'&&row.modelOrAlias&&(row.modelId||row.modelOrAlias.model||row.modelOrAlias.alias)).map(row=>({
+    id:String(row.modelId||row.modelOrAlias.model||row.modelOrAlias.alias),
+    name:row.label.slice(0,200),
+    selector:row.modelOrAlias,
+    remaining:typeof row.quotaInfo?.remainingFraction==='number'?Math.max(0,Math.min(1,row.quotaInfo.remainingFraction)):null,
+    supportsPng:row.supportedMimeTypes?.['image/png'] ?? (row.supportsImages === true),
+  }));
 }
 async function connect(value,options={}){
   const config=cleanAntigravityConfig(value),rpc=options.rpc||antigravityRPC;
@@ -123,7 +129,38 @@ async function connect(value,options={}){
 }
 export async function inspectAntigravity(value={},options={}){
   const {connection,models}=await connect(value,{...options,refresh:true});
-  return{ok:true,clientPath:connection.clientPath,models:models.map(({selector,...row})=>row),message:'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
+  return{ok:true,clientPath:connection.clientPath,models:models.map(({selector,supportsPng,...row})=>row),message:'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
+}
+
+function selectModel(models, id, vision){
+  const eligible=vision?models.filter(model=>model.supportsPng):models;
+  const selected=id?models.find(model=>model.id===id):eligible.find(model=>model.remaining!==0)||eligible[0];
+  if(id&&!selected)throw Error('所选反重力模型已不可用，请重新检测并选择模型。');
+  if(vision&&!selected?.supportsPng)throw Error('图解需要支持图片的反重力模型。请在「设置 → AI 服务」重新检测客户端并选择支持识图的模型。');
+  if(selected.remaining===0)throw Error('所选反重力模型的额度已用完，请更换模型或等待额度恢复。');
+  return selected;
+}
+
+export async function antigravityVisionModel(value, options={}){
+  const config=cleanAntigravityConfig(value);
+  const {models}=await connect(config,options);
+  return selectModel(models,config.model,true).id;
+}
+
+function separateAttachments(messages){
+  const media=[];
+  const textMessages=messages.map(message=>{
+    if(!Array.isArray(message.content))return message;
+    const parts=message.content.map(part=>{
+      if(part.type==='text')return part.text;
+      const png=part.type==='image_url'&&/^data:image\/png;base64,([A-Za-z0-9+/]+=*)$/.exec(part.image_url?.url||'');
+      if(!png)throw Error('反重力图解需要 PNG 图片。');
+      media.push({mimeType:'image/png',inlineData:png[1]});
+      return `[附件 ${media.length}]`;
+    });
+    return {...message,content:parts.join('\n')};
+  });
+  return {media,textMessages};
 }
 export function readAntigravityReply(text,tools=[]){
   let value;try{value=JSON.parse(text.trim().replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/,'$1'));}catch{
@@ -147,9 +184,10 @@ export function createAntigravityCompletion(value,options={}){
     const combined=AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(options.timeout||120000)]);
     let waiting=false;
     try{
+      let linked,id;
       if(!session){
-        let linked=await connect(config,{...options,signal:combined});
-        let id=options.previousId;
+        linked=await connect(config,{...options,signal:combined});
+        id=options.previousId;
         if(id){
           // Establish the baseline before sending. After a restart or canceled
           // turn the trajectory may contain steps Materia has not seen.
@@ -169,9 +207,13 @@ export function createAntigravityCompletion(value,options={}){
             }
           }catch(error){if(error.code!=='not_found')throw error;id=undefined;}
         }
-        const selected=config.model?linked.models.find(m=>m.id===config.model):linked.models.find(m=>m.remaining===null||m.remaining>0)||linked.models[0];
-        if(!selected)throw Error('所选反重力模型已不可用，请重新检测并选择模型。');
-        if(selected.remaining===0)throw Error('所选反重力模型的额度已用完，请更换模型或等待额度恢复。');
+      }
+      const turnMessages=sentCount&&!options.jsonOutput
+        ? messages.slice(sentCount+1)
+        : attached&&!options.fullContext?[messages[0],messages.at(-1)]:messages;
+      const {media,textMessages}=separateAttachments(turnMessages);
+      if(!session){
+        const selected=selectModel(linked.models,config.model,media.length>0);
         const cascadeConfig={plannerConfig:{requestedModel:selected.selector,toolConfig:{forceDisableToolCalling:true},customAgent:{toolNames:[]}}};
         if(!id){
           const started=await linked.rpc(linked.connection,'StartCascade',{source:'CORTEX_TRAJECTORY_SOURCE_CASCADE_CLIENT',customAgentSpec:{customTools:[],mcpServers:[],commandExecutionPolicy:'off',cascadeConfig}},combined);
@@ -180,15 +222,18 @@ export function createAntigravityCompletion(value,options={}){
           // Update the in-memory link immediately and save in the background.
           void options.remember?.(id);
         }
-        session={...linked,id,cascadeConfig};
+        session={...linked,id,cascadeConfig,selected};
       }
+      if(media.length&&!session.selected.supportsPng)throw Error('当前反重力对话使用的模型不支持图片。');
       const protocol='只输出 JSON 对象 {"content":"回答文本","tool_calls":[]}。直接回答时 tool_calls 留空。需要使用 Materia 工具时将调用写为 {"id":"唯一标识","name":"工具名","arguments":"JSON字符串"}，由 Materia 执行。不要使用客户端工具，不读写文件，不执行命令。';
-      const prompt=sentCount
-        ? '这是本轮 Materia 工具的结果。根据新结果继续，资料足够就回答。'+protocol+'\n'+JSON.stringify({messages:messages.slice(sentCount+1)})
-        : '按本轮 messages 的角色和顺序继续对话，system 为最高优先级。'+protocol+'\n'+JSON.stringify({messages:attached&&!options.fullContext?[messages[0],messages.at(-1)]:messages,tools});
+      const prompt=options.jsonOutput
+        ? textMessages[0].content+'\n禁止使用客户端工具、读取或写入文件以及执行命令。\n文献数据（JSON）：\n'+textMessages[1].content
+        : sentCount
+          ? '这是本轮 Materia 工具的结果。根据新结果继续，资料足够就回答。'+protocol+'\n'+JSON.stringify({messages:textMessages})
+          : '按本轮 messages 的角色和顺序继续对话，system 为最高优先级。'+protocol+'\n'+JSON.stringify({messages:textMessages,tools});
       if(Buffer.byteLength(prompt)>800000)throw Error('上下文过大，请新建对话或缩小文献范围。');
       waiting=true;
-      await session.rpc(session.connection,'SendUserCascadeMessage',{cascadeId:session.id,items:[{text:prompt}],cascadeConfig:session.cascadeConfig,blocking:false,clientType:1},combined);
+      await session.rpc(session.connection,'SendUserCascadeMessage',{cascadeId:session.id,items:[{text:prompt}],...(media.length?{media}:{}),cascadeConfig:session.cascadeConfig,blocking:false,clientType:1},combined);
       sentCount=messages.length;
       while(true){
         combined.throwIfAborted();
@@ -198,7 +243,11 @@ export function createAntigravityCompletion(value,options={}){
         if(errors.length)throw Error('反重力本次对话失败，请在客户端查看账号额度、模型及网络状态。');
         if(fresh.some(step=>/WAITING|PENDING_APPROVAL/.test(step.status||'')))throw Error('反重力正在等待客户端确认，请在反重力中处理后重试。');
         const responses=fresh.map(step=>step.plannerResponse?.modifiedResponse||step.plannerResponse?.response||'').filter(Boolean);
-        if(isIdle(state.status)&&responses.length){stepOffset=steps.length;waiting=false;return readAntigravityReply(responses.at(-1),tools);}
+        if(isIdle(state.status)&&responses.length){
+          stepOffset=steps.length;waiting=false;
+          const response=responses.at(-1);
+          return {...(options.jsonOutput?{content:response}:readAntigravityReply(response,tools)),model:session.selected.id};
+        }
         await delay(options.pollInterval||250,undefined,{signal:combined});
       }
     }catch(error){

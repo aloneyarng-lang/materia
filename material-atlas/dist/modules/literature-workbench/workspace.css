@@ -1,0 +1,11 @@
+#literature-workbench iframe {
+  display: block;
+  width: 100%;
+  height: max(480px, calc(100vh - 165px));
+  border: 0;
+  border-radius: var(--card-radius, var(--radius, 12px));
+}
+
+#literature-workbench > :is(p, button) {
+  margin: 16px;
+}

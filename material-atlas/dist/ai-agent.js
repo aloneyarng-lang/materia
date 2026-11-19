@@ -8,6 +8,7 @@ import { renderChatMarkdown } from './agent-markdown.js';
 import { cleanAgentHistory, emptyAgentHistory, chatTitle } from './agent-history.js';
 import {agentCredentialIssue} from './agent-auth.js';
 import {createAgentServiceSettings} from './agent-service-settings.js';
+import {agentServiceForm} from './agent-service-form.js';
 import {canonicalAgentUrl} from './agent-providers.js';
 import {createCharacterStage} from './agent-character.js';
 import {dialogueHistory} from './agent-choices.js';
@@ -25,7 +26,7 @@ export function createAgentController(options) {
   const native = globalThis.materiaDesktop;
   const desktop = Boolean(native?.agentRun);
   const ribbonButton=document.createElement('button'); ribbonButton.type='button'; ribbonButton.className='ribbon-button'; ribbonButton.dataset.action='ai-agent'; ribbonButton.title=tr('AI 研究助手'); ribbonButton.setAttribute('aria-label',tr('AI 研究助手')); ribbonButton.setAttribute('aria-controls','ai-agent-panel'); ribbonButton.setAttribute('aria-expanded','false'); ribbonButton.innerHTML=icon('assistant');
-  document.querySelector('.workspace-ribbon')?.insertBefore(ribbonButton,document.querySelector('.ribbon-spacer'));
+  document.querySelector('.workspace-ribbon')?.insertBefore(ribbonButton,document.querySelector('[data-ribbon-view], .ribbon-spacer'));
   bindStaticDOM(ribbonButton,{translated:true});
   const panel = document.createElement('aside');
   panel.id = 'ai-agent-panel'; panel.className = 'agent-panel'; panel.hidden = true;
@@ -36,31 +37,7 @@ export function createAgentController(options) {
     <details id="agent-settings" class="agent-settings"><summary class="agent-settings-heading">${icon('settings')}<span>设置</span>${icon('close')}</summary>
     <div class="agent-settings-inner">
     <div class="agent-settings-tabs" role="group" aria-label="伴侣设置"><button type="button" data-agent-settings-tab="service" aria-pressed="true" aria-controls="agent-service-page">${icon('network')} AI 服务</button><button type="button" data-agent-settings-tab="role" aria-pressed="false" aria-controls="agent-role-page">${icon('assistant')} 角色卡</button><button type="button" data-agent-settings-tab="language" aria-pressed="false" aria-controls="agent-language-page">${icon('speaker')} 语言</button><button type="button" data-agent-settings-tab="memory" aria-pressed="false" aria-controls="agent-memory-page">${icon('notes')} 记忆库</button><button type="button" data-agent-settings-tab="flow" aria-pressed="false" aria-controls="agent-flow-page">${icon('orbit')} 心流</button></div>
-    <section id="agent-service-page"><form id="agent-config-form"><div class="agent-config-fields">
-      <label>接入方式<select id="agent-connection"><option value="api">API 服务</option><option value="antigravity">本地反重力 · Antigravity</option></select></label>
-      <section id="agent-antigravity-settings" hidden>
-        <p class="agent-help">直接连接正在运行的反重力桌面客户端，使用客户端已登录账号的模型额度。无需 CLI，也无需在 Materia 填写 API 密钥；模型回复仍需要联网。</p>
-        <label>客户端程序<input id="agent-client-path" placeholder="自动查找 Antigravity.exe，也可选择程序" maxlength="2000" autocomplete="off" spellcheck="false"></label>
-        <div class="agent-local-actions"><button type="button" class="text-button" data-local-agent="open">启动反重力</button><button type="button" class="text-button" data-local-agent="choose">选择程序</button><button type="button" class="text-button" data-local-agent="test">测试对话</button></div>
-        <label>客户端可用模型<select id="agent-client-model"><option value="">使用客户端列表首个可用模型</option></select></label>
-        <p class="agent-help">保持反重力打开并登录 → 检测客户端 → 选择模型 → 保存。检测只读取模型及额度；“测试对话”会发送一句测试消息并使用少量额度。角色卡、历史、文献检索及阅读翻译均可继续使用。当前为客户端兼容接入，客户端升级后可能需要更新 Materia。</p>
-      </section>
-      <div id="agent-api-settings">
-      <label>AI 服务厂商<select id="agent-provider" aria-describedby="agent-provider-hint"></select></label>
-      <p id="agent-provider-hint" class="agent-help"></p>
-      <div id="agent-custom-settings"><label>API 地址<input id="agent-base-url" type="url" placeholder="https://api.example.com/v1" autocomplete="off"></label><label>API 协议<select id="agent-protocol"><option value="chat">Chat Completions</option><option value="responses">Responses</option><option value="anthropic">Claude Messages</option></select></label></div>
-      <div class="agent-settings-columns"><div class="agent-settings-field-group">
-      <label>API 密钥<input id="agent-key" type="password" placeholder="填写所选厂商的 API Key" maxlength="4096" autocomplete="off" spellcheck="false"></label>
-      <label class="agent-remember"><input id="agent-remember" type="checkbox">用系统加密记住密钥（仅桌面版）</label>
-      </div><div class="agent-settings-field-group">
-      <label id="agent-model-picker-field">可用模型<select id="agent-model-select" aria-describedby="agent-connection-status"></select></label>
-      <label id="agent-manual-model-field">模型名称<input id="agent-model" placeholder="填写服务提供的模型 ID" maxlength="200" autocomplete="off"></label>
-      <label class="agent-remember"><input id="agent-model-manual" type="checkbox">手动填写模型 ID</label>
-      </div></div>
-      <p class="agent-help">研究对话需模型支持工具调用，翻译无需。自动获取仅查询模型列表，不产生对话。本机服务可使用 http://localhost 地址。密钥不写入文献库或备份。</p>
-      </div>
-      </div><div class="agent-config-actions"><button type="button" class="text-button" data-agent-action="forget">清除密钥</button><button class="primary" type="submit">保存设置</button></div>
-    </form><p id="agent-data-notice" class="agent-data-notice"></p></section>
+    <section id="agent-service-page">${agentServiceForm()}<p id="agent-data-notice" class="agent-data-notice"></p></section>
     <section id="agent-role-page" class="agent-character-editor" hidden></section>
     <section id="agent-language-page" class="agent-memory-page" hidden>
       <label id="agent-reply-language-setting">回复语言<select id="agent-reply-language"><option value="zh-CN">简体中文</option><option value="en">English</option><option value="ja">日本語</option></select></label>
@@ -76,7 +53,7 @@ export function createAgentController(options) {
       <p id="agent-voice-language-help" class="agent-help" hidden>当前 AI 服务同时生成回复和朗读稿。台词随语音显示，完整回复保存在记录中。</p>
     </section>
     <section id="agent-memory-page" class="agent-memory-page" hidden></section>
-    <section id="agent-flow-page" hidden><button type="button" class="outline-button" data-character="flow">${icon('orbit')} 国际象棋</button></section>
+    <section id="agent-flow-page" hidden><button type="button" class="outline-button" data-character="flow">${icon('orbit')} 国际象棋</button> <button type="button" class="outline-button" data-character="flow-go">${icon('orbit')} 和红莉栖下围棋</button></section>
     </div></details>
     <div id="agent-tools-menu" class="ui-action-popover" popover="auto" role="menu" aria-label="工具"><button type="button" data-agent-action="note">${icon('notes')} AI 笔记</button><button type="button" data-agent-action="reader">${icon('speaker')} 朗读器</button></div>
     <section id="agent-history" class="agent-history" aria-label="历史聊天记录" hidden><div class="agent-history-heading"><strong>历史聊天记录</strong><button type="button" class="text-button" data-agent-action="back">返回对话</button></div><input id="agent-history-search" type="search" placeholder="搜索标题或聊天内容" aria-label="搜索聊天历史"><div id="agent-history-list" class="agent-history-list"></div></section>
@@ -331,6 +308,7 @@ export function createAgentController(options) {
     getEntries:()=>entries,getCharacter:()=>activeChat()?.character,onChange:async()=>{await reset();await loadVoiceSetting();prepareVoice();},onChoice:submitChoice,
     onPauseAutoplay:()=>pauseAutoplay(),onOpenRole:()=>showSettings('role'),getSpeech:()=>voiceSubtitle});
   const voiceButton=$('[data-character="voice"]');
+  let flowGo;
   const settings=$('#agent-settings'),log=$('#agent-log'),logButton=$('[data-character=log]'),settingsButton=$('[data-character=settings]');
   logButton.setAttribute('aria-controls',log.id);
   logButton.setAttribute('aria-expanded','false');
@@ -556,6 +534,7 @@ export function createAgentController(options) {
     notice(); (agentCredentialIssue(config)?(config.model?$('#agent-key'):modelField()):$('#agent-question')).focus();
   }
   function close() {
+    flowGo?.hide();
     noteEditor.hide();
     reader.hide();
     panel.classList.remove('agent-ui-hidden');
@@ -593,25 +572,29 @@ export function createAgentController(options) {
     stopVoice();
     chats.activeId=id;entries=chat.entries;contextIdentity=JSON.stringify(chat.scopeIds);$('#agent-scope').value=chat.scopeIds===null?'all':'selected';showHistory(false);render();notice();await persistHistory();status(tr('已恢复历史聊天，可以继续提问。'));$('#agent-question').focus();
   }
-  async function saveConfig(clearKey=false) {
-    const value={...serviceSettings.draft(),clearKey};
+  async function persistServiceConfig(value) {
     if(value.connection!=='antigravity'){
       if (!value.model) throw new Error(tr('请选择模型，或勾选“手动填写模型 ID”。'));
       value.baseUrl=canonicalAgentUrl(value.baseUrl);
     }else if(!desktop)throw Error(tr('本地反重力接入请使用 Materia 桌面版。'));
     if (desktop) config=await native.agentSaveConfig(value);
     else {
-      const nextKey=clearKey?'':(value.apiKey || (config.baseUrl===value.baseUrl?browserKey:''));
+      const nextKey=value.clearKey?'':(value.apiKey || (config.baseUrl===value.baseUrl?browserKey:''));
       const prefs={provider:value.provider,baseUrl:value.baseUrl,model:value.model,protocol:value.protocol};
       await options.setSetting('agentPreferences',prefs); browserKey=nextKey;
       config={...prefs,hasKey:Boolean(browserKey),canRememberKey:false,rememberKey:false};
     }
+    window.dispatchEvent(new Event('materia-ai-service-changed'));
+    return config;
+  }
+  async function saveConfig(clearKey=false) {
+    await persistServiceConfig({...serviceSettings.draft(),clearKey});
     await reset(); fillConfig();const issue=agentCredentialIssue(config);settings.open=Boolean(issue);status(clearKey?tr('密钥已清除。'):issue||tr('设置已保存，可以开始提问。'));
   }
   async function testConnection(){return serviceSettings.refresh();}
-  async function completeInPreview({messages,signal,noteEdit,noteCatalog},companion=false){
+  async function completeInPreview({messages,signal,noteEdit,noteCatalog,innovation},companion=false){
     const provider={provider:config.provider,baseUrl:config.baseUrl,model:config.model,protocol:config.protocol,apiKey:browserKey};
-    const response=await fetch('/api/ai-agent/complete',{method:'POST',headers:{'Content-Type':'application/json','X-Materia-Agent':'1'},body:JSON.stringify({config:provider,messages,companion,noteEdit,noteCatalog}),signal});
+    const response=await fetch('/api/ai-agent/complete',{method:'POST',headers:{'Content-Type':'application/json','X-Materia-Agent':'1'},body:JSON.stringify({config:provider,messages,companion,noteEdit,noteCatalog,innovation}),signal});
     let data;try{data=await response.json();}catch{throw new Error(tr('预览服务不支持 AI 请求，请使用 npm run preview 启动本项目。'));}
     if(!response.ok)throw new Error(data.error||tr('AI 服务请求失败，请重试。'));
     return data;
@@ -867,6 +850,17 @@ export function createAgentController(options) {
     if(link && desktop){event.preventDefault();native.agentOpenLink(link.href).catch(()=>status(tr('链接未能打开，请稍后重试。')));return;}
     const button=event.target.closest('button');if(!button)return;
     const action=button.dataset.agentAction;
+    if(button.dataset.character==='flow-go'){
+      button.disabled=true;
+      import('./flow-go.js').then(({createFlowGo})=>{
+        if(panel.hidden)return;
+        flowGo??=createFlowGo(panel);
+        pauseAutoplay();
+        stopVoice();
+        flowGo.show();
+      }).catch(()=>status(tr('围棋暂时无法打开。'))).finally(()=>{button.disabled=false;});
+      return;
+    }
     if(button.dataset.character==='autoplay'){
       setAutoplayMode(autoMode==='paused'?'auto':autoMode==='auto'?'step':'paused');
       return;
@@ -955,7 +949,24 @@ export function createAgentController(options) {
       return result.body;
     }finally{signal?.removeEventListener('abort',cancel);}
   }
+  async function extractInnovations(innovation,{signal}={}){
+    signal?.throwIfAborted();
+    if(!desktop){
+      return (await completeInPreview({innovation,signal})).points;
+    }
+    const id=crypto.randomUUID();
+    const cancel=()=>{native.agentCancel(id).catch(()=>{});};
+    signal?.addEventListener('abort',cancel,{once:true});
+    try{
+      const result=await native.agentRun({id,innovation});
+      signal?.throwIfAborted();
+      if(result.error)throw Error(result.error);
+      if(!Array.isArray(result.points))throw Error(tr('请重新启动 Materia。'));
+      return result.points;
+    }finally{signal?.removeEventListener('abort',cancel);}
+  }
   async function openSettings(){await open();if(panel.hidden)return;showSettings('service');(config.model&&!config.hasKey?$('#agent-key'):modelField()).focus();}
   function refreshLanguage(){syncGapSlider();render({refreshLog:true});notice();chatbar();serviceSettings.sync();panel.setAttribute('aria-label',tr('AI 研究助手'));}
-  return {open,close,setMinimalMode,reset,changeLibrary,serviceStatus,translate,editNote,openSettings,refreshLanguage,isBusy:()=>busy};
+  return {open,close, async getSharedServiceConfig(){await serviceStatus();return config;}, getBrowserKey:()=>browserKey,
+    async saveSharedServiceConfig(value){await persistServiceConfig(value);fillConfig();return config;},setMinimalMode,reset,changeLibrary,serviceStatus,translate,editNote,extractInnovations,openSettings,refreshLanguage,isBusy:()=>busy};
 }

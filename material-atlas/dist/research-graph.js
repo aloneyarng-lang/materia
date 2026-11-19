@@ -1,3 +1,4 @@
+import {tagFacet} from './tag-facets.js';
 // Weighted tag space, independent layout/display graphs, and multilevel Louvain.
 const normalize = value => String(value || '').normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
 let cache;
@@ -35,18 +36,40 @@ export function louvain(count, edges, resolution = 1) {
   const result=Array(count);members.sort((a,b)=>Math.min(...a)-Math.min(...b)).forEach((row,c)=>row.forEach(i=>result[i]=c));return result;
 }
 
-export function researchGraph(papers,{neighbors=3,similarityThreshold=.2,mutualKnn=false,resolution=1}={}){
-  const rows=papers.map(p=>[...new Set((p.tags||[]).map(normalize).filter(Boolean))].sort());
-  const key=JSON.stringify([papers.map((p,i)=>[p.id,rows[i],p.tags]),similarityThreshold,resolution]);
+export function researchGraph(papers,{neighbors=3,similarityThreshold=.2,mutualKnn=false,resolution=1,clusterBasis='combined'}={}){
+  const facets=new Map();
+  const rows=papers.map(p=>[...new Set((p.tags||[]).map(normalize).filter(Boolean))].sort().filter(tag=>{
+    const info=tagFacet(tag);facets.set(tag,info);
+    return info.weight>0&&(clusterBasis==='combined'||info.facet===clusterBasis);
+  }));
+  const key=JSON.stringify([papers.map((p,i)=>[p.id,rows[i],p.tags]),similarityThreshold,resolution,clusterBasis,[...facets]]);
   if(cache?.key!==key){
     const index=new Map();rows.forEach((tags,i)=>tags.forEach(t=>{if(!index.has(t))index.set(t,[]);index.get(t).push(i);}));
     const weights=new Map([...index].map(([t,list])=>[t,Math.log(1+papers.length/list.length)]));
-    const sums=rows.map(tags=>tags.reduce((s,t)=>s+weights.get(t),0));
+    const sums=rows.map(tags=>{
+      const result=new Map();
+      for(const tag of tags){const f=facets.get(tag).facet;result.set(f,(result.get(f)||0)+weights.get(tag));}
+      return result;
+    });
+    const facetWeights=new Map([...facets.values()].map(info=>[info.facet,info.weight]));
     const layoutEdges=[];
     rows.forEach((tags,source)=>{
       const overlap=new Map();
-      for(const t of tags)for(const target of index.get(t))if(target>source)overlap.set(target,(overlap.get(target)||0)+weights.get(t));
-      for(const [target,common] of overlap){const similarity=common/(sums[source]+sums[target]-common||1);if(similarity>0&&similarity>=similarityThreshold)layoutEdges.push({source,target,similarity});}
+      for(const t of tags)for(const target of index.get(t))if(target>source){
+        if(!overlap.has(target))overlap.set(target,new Map());
+        const common=overlap.get(target),f=facets.get(t).facet;
+        common.set(f,(common.get(f)||0)+weights.get(t));
+      }
+      for(const [target,common] of overlap){
+        let score=0,total=0;
+        for(const [f,sum] of sums[source]){
+          if(!sums[target].has(f))continue;
+          const weight=facetWeights.get(f),shared=common.get(f)||0;
+          total+=weight;score+=weight*(shared/(sum+sums[target].get(f)-shared||1));
+        }
+        const similarity=total?Math.min(1,Math.max(0,score/total)):0;
+        if(similarity>0&&similarity>=similarityThreshold)layoutEdges.push({source,target,similarity});
+      }
     });
     layoutEdges.sort((a,b)=>a.source-b.source||a.target-b.target);
     const communities=louvain(papers.length,layoutEdges,resolution);

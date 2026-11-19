@@ -2,7 +2,7 @@ import {cleanStudy,cleanVocabulary,cleanTranslationCache,cleanTranslationPrefere
 import {cleanMaterialSelection} from '../dist/material-selection.js';
 import {cleanMaterialGroups,mergeMaterialGroups} from '../dist/material-list-model.js';
 import { normalizeNotes, cleanReaderState, cleanReaderDrafts } from '../dist/note-model.js';
-import { mkdir, readFile, writeFile, rename, copyFile, stat, access } from 'node:fs/promises';
+import { mkdir, open, readFile, writeFile, rename, copyFile, stat, access } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { normalizeAuthors, numericImpact, mergeMetrics, parseMetrics } from '../dist/catalog.js';
@@ -108,6 +108,11 @@ export class LocalLibrary {
       value={version:1,disabled:[...new Set(value.disabled)]};
     }
     if(moduleData){const text=JSON.stringify(value);if(typeof text!=='string'||Buffer.byteLength(text)>5*1024*1024)throw Error('模块数据格式无效或超过 5 MB，请使用独立存储服务。');value=JSON.parse(text);}
+    if(key==='module:innovation-sea'){
+      const operation=this.queue.then(()=>this.save({...this.data,settings:{...this.data.settings,[key]:value}}));
+      this.queue=operation.catch(()=>{});
+      return operation;
+    }
     if(key==='vocabulary')value=cleanVocabulary(value);
     if(key==='translationCache')value=cleanTranslationCache(value);
     if(key==='translationPreferences')value=cleanTranslationPreferences(value);
@@ -208,6 +213,28 @@ export class LocalLibrary {
   }
   async pdfPath(id) { let paper=this.data.papers.find(p=>p.id===id);if(!paper?.pdfPath)throw new Error('找不到 PDF 文件。');let file=resolveInside(this.root,paper.pdfPath);try{await access(file);}catch(error){if(error.code!=='ENOENT')throw error;await this.syncFolders();paper=this.data.papers.find(p=>p.id===id);file=resolveInside(this.root,paper.pdfPath);try{await access(file);}catch{throw new Error('PDF 已被移出文献库；文献信息仍保留。将文件放回 papers 文件夹后会自动重新关联。');}}return file; }
   async readPdf(id) { return new Uint8Array(await readFile(await this.pdfPath(id))); }
+  async readPdfRange(id, range) {
+    const file = await open(await this.pdfPath(id),'r');
+    try {
+      const {size,mtimeMs,ctimeMs} = await file.stat();
+      const revision = [size,mtimeMs,ctimeMs].join('/');
+      if (!range) return {length:size,revision};
+      const {begin,end} = range;
+      if (revision !== range.revision) throw Error('PDF 已更换，请重新提取。');
+      if (!Number.isSafeInteger(begin) || !Number.isSafeInteger(end) || begin < 0 || end <= begin ||
+          end > size || end - begin > 4 * 1024 * 1024) throw Error('PDF 读取范围无效。');
+      const bytes = new Uint8Array(end - begin);
+      let offset = 0;
+      while (offset < bytes.length) {
+        const {bytesRead} = await file.read(bytes,offset,bytes.length - offset,begin + offset);
+        if (!bytesRead) throw Error('PDF 在读取期间发生了变化，请重新提取。');
+        offset += bytesRead;
+      }
+      return bytes;
+    } finally {
+      await file.close();
+    }
+  }
   getStudy(){return cleanStudy({vocabulary:this.data.settings.vocabulary,cache:this.data.settings.translationCache,preferences:this.data.settings.translationPreferences});}
   updateStudy(operation){return this.mutate(data=>applyStudyOperation(data.settings,operation));}
   async mergeBackup(backup) {

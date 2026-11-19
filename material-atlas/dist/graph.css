@@ -65,10 +65,57 @@ html[data-theme-mode="dark"] #star-map[data-graph-appearance="flow"] .graph-node
 html[data-theme-mode="light"] #star-map .graph-node[data-cosmic-shape="nova"] .node-core{fill:color-mix(in srgb,var(--node-color) 72%,#173a42);stroke:var(--node-color)}
 html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var(--node-color) 72%,#173a42)}
 
+#star-map[data-orbit-focus] {
+  background-image: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--teal) 13%, transparent), transparent 66%);
+}
+#star-map[data-orbit-focus] .graph-overview,
+.graph-wrap:has(#star-map[data-orbit-focus]) .graph-controls { display: none; }
+.graph-orbit-toolbar {
+  position: absolute;
+  z-index: 2;
+  inset: 16px 18px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: none;
+}
+.graph-orbit-toolbar > div { min-width: 0; max-width: 54ch; }
+.graph-orbit-toolbar strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font: 600 1rem/1.4 var(--serif);
+  color: var(--ink);
+}
+.graph-orbit-toolbar small { display: block; margin-top: 3px; color: var(--muted); }
+.graph-orbit-toolbar button { pointer-events: auto; white-space: nowrap; flex-shrink: 0; background: var(--surface); }
+.graph-orbit-scene { animation: graph-orbit-reveal .22s ease-out; }
+.graph-orbit-rear, .graph-orbit-front { fill: none; stroke: var(--teal); }
+.graph-orbit-rear { opacity: .26; stroke-width: 1; }
+.graph-orbit-front { opacity: .62; stroke-width: 1.5; }
+.graph-orbit-planet { cursor: pointer; outline: none; }
+.graph-orbit-sphere { fill: color-mix(in srgb, var(--teal) 56%, #7eacfb); }
+.graph-orbit-center .graph-orbit-sphere {
+  fill: color-mix(in srgb, var(--teal) 56%, #6d9cfc);
+  filter: drop-shadow(0 0 13px color-mix(in srgb, var(--teal) 48%, transparent));
+}
+.graph-orbit-target { fill: transparent; stroke: transparent; stroke-width: 2; }
+.graph-orbit-planet:is(:hover, :focus-visible, [aria-pressed="true"]) .graph-orbit-target { stroke: var(--teal); }
+.graph-orbit-planet:focus-visible .graph-orbit-target { stroke: var(--ink); stroke-dasharray: 3 3; }
+@keyframes graph-orbit-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media(prefers-reduced-motion:reduce) { .graph-orbit-scene { animation: none; } }
+
 .graph-mode-help{flex:0 0 auto;margin:0;padding:0 22px 8px;color:var(--muted);font-size:.75rem;line-height:1.5}
 #graph-mode{max-width:150px;min-width:0;padding:6px 8px;font-size:.78rem}
 .graph-mode-bar{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;padding:0 15px 8px;flex-wrap:wrap}
 .graph-mode-bar .graph-mode-help{padding:0;flex:1 1 260px}
+#citation-controls:not([hidden]){display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+#citation-status{color:var(--muted)}
+.citation-entry{display:grid;justify-items:start;margin:.4rem 0}
+.citation-entry button{text-align:start;overflow-wrap:anywhere;max-inline-size:100%}
 .graph-neighbors-control{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.75rem;white-space:nowrap}
 .graph-neighbors-control select{width:58px;min-width:0;padding:4px 6px}
 .graph-neighbors-control input{width:64px;min-width:0;padding:4px 6px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px}

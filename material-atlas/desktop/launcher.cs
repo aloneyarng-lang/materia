@@ -3,8 +3,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using System.Reflection;
 
-// A portable root entry point. Electron and its resources stay together below release/current.
+[assembly: AssemblyTitle("Materia")]
+[assembly: AssemblyProduct("Materia")]
+[assembly: AssemblyDescription("Materia · 材料文献星图")]
+[assembly: AssemblyCompany("Materia")]
+
+// A branded portable entry point for the current source workspace or a packaged install.
 internal static class MateriaLauncher
 {
     private static string Quote(string value)
@@ -25,8 +31,11 @@ internal static class MateriaLauncher
     private static int Main(string[] args)
     {
         string root = AppDomain.CurrentDomain.BaseDirectory;
+        string source = Path.Combine(root, "material-atlas");
+        string runtime = Path.Combine(source, "node_modules", "electron", "dist", "electron.exe");
+        bool fromSource = File.Exists(runtime) && File.Exists(Path.Combine(source, "desktop", "main.mjs")) && File.Exists(Path.Combine(source, "package.json"));
         string target = Path.Combine(root, "material-atlas", "release", "current", "Materia-win32-x64", "Materia.exe");
-        bool installed = File.Exists(target) && File.Exists(Path.Combine(Path.GetDirectoryName(target), "resources", "app", "package.json"));
+        bool installed = fromSource || (File.Exists(target) && File.Exists(Path.Combine(Path.GetDirectoryName(target), "resources", "app", "package.json")));
         if (args.Length == 1 && args[0] == "--check-install") return installed ? 0 : 2;
         if (!installed)
         {
@@ -36,9 +45,15 @@ internal static class MateriaLauncher
         try
         {
             string[] quoted = Array.ConvertAll(args, Quote);
-            Process.Start(new ProcessStartInfo(target, String.Join(" ", quoted)) {
-                WorkingDirectory = Path.GetDirectoryName(target), UseShellExecute = false
-            });
+            var start = new ProcessStartInfo(fromSource ? runtime : target,
+                (fromSource ? Quote(source) + " " : "") + String.Join(" ", quoted)) {
+                WorkingDirectory = fromSource ? source : Path.GetDirectoryName(target), UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            if (fromSource && String.IsNullOrEmpty(Environment.GetEnvironmentVariable("MATERIA_PROFILE_DIR")))
+                start.EnvironmentVariables["MATERIA_PROFILE_DIR"] = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Materia");
+            start.EnvironmentVariables.Remove("ELECTRON_RUN_AS_NODE");
+            Process.Start(start);
             return 0;
         }
         catch (Exception error)

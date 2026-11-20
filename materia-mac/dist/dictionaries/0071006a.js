@@ -1,0 +1,1 @@
+export default {"qj":[["ecdict","abbr. Jet Airways 喷气机航空公司（代码）; queue jockey 候话音乐播放师",""]]};

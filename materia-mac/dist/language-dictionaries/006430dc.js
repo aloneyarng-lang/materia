@@ -1,0 +1,1 @@
+export default {"dボタン":[["jmdict","[noun (common) (futsuumeishi)] d button; data button; button on a TV remote control for accessing programme information, weather, traffic, etc.","ディーボタン","ja","en"]]};

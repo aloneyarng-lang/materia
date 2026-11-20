@@ -1,0 +1,1 @@
+export default {"nz":[["ecdict","[计] 非零\n[经] 新西兰",""]],"nzima":[["ecdict","n. 恩济马语(西非国家加纳的一种语言)","n'zi:mә"]],"nzo":[["ecdict","abbr. Nzoia, Kenya 肯尼亚，恩佐亚机场（代码）",""]],"nzrfu":[["ecdict","abbr. New Zealand Rugby Football Union 新西兰橄榄球联盟",""]]};

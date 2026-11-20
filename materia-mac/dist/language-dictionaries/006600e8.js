@@ -1,0 +1,1 @@
+export default {"fève (small ceramic figurine hidden inside a galette des rois)":[["jmdict","フェーヴ；フェーブ [フェーヴ・フェーブ] — fève (small ceramic figurine hidden inside a galette des rois)","","en","ja"]],"fève":[["jmdict","フェーヴ；フェーブ [フェーヴ・フェーブ] — fève (small ceramic figurine hidden inside a galette des rois)","","en","ja"]]};

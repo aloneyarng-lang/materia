@@ -1,0 +1,1 @@
+export default {"m&a":[["jmdict","[noun (common) (futsuumeishi)] M&A; mergers and acquisitions","エム・アンド・エー・エムアンドエー","ja","en"],["jmdict","Ｍ＆Ａ [エム・アンド・エー・エムアンドエー] — M&A","","en","ja"]],"m&a geschäft":[["ding","mergers and acquisitions /M&A/","","de","en"]]};

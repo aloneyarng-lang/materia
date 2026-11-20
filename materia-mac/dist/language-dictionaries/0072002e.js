@@ -1,0 +1,1 @@
+export default {"r.p.m. counter":[["ding","Drehzahlmesser {m} [auto]","","en","de"]],"r.p.m. counters":[["ding","Drehzahlmesser {pl}","","en","de"]],"r.m.s./":[["ding","Königliches Postschiff [naut.]","","en","de"]],"r.h. side view":[["ding","rechte Seitenansicht","","en","de"]],"r.p.m./":[["ding","Umdrehungen pro Minute (U/min)","","en","de"]]};

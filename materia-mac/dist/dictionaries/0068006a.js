@@ -1,0 +1,1 @@
+export default {"hj":[["ecdict","abbr. （拉）hic jacet",""]],"hjelle":[["ecdict"," [地名] [挪威] 耶勒",""]],"hjelmite":[["ecdict","钙钽钇矿(原译名钙铌钽矿)","'jel,mait"]],"hjelmslevian":[["ecdict","a. (20世纪丹麦语言学家) 叶尔姆斯莱夫","hjelmz'leviәn"]],"hjort":[["ecdict"," [人名] 约尔特",""]]};

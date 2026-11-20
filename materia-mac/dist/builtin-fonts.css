@@ -1,0 +1,13 @@
+/* Local app resources; no font downloads at runtime. */
+@font-face{font-family:'Materia SF Pro';src:url('./fonts/apple/SF-Pro.ttf') format('truetype');font-weight:1 1000;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia SF Pro';src:url('./fonts/apple/SF-Pro-Italic.ttf') format('truetype');font-weight:1 1000;font-style:italic;font-display:swap}
+@font-face{font-family:'Materia SF Mono';src:url('./fonts/apple/SFMono-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia SF Mono';src:url('./fonts/apple/SFMono-Semibold.otf') format('opentype');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia SF Mono';src:url('./fonts/apple/SFMono-RegularItalic.otf') format('opentype');font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:'Materia SF Mono';src:url('./fonts/apple/SFMono-SemiboldItalic.otf') format('opentype');font-weight:600;font-style:italic;font-display:swap}
+@font-face{font-family:'Materia New York';src:url('./fonts/apple/NewYork.ttf') format('truetype');font-weight:400 1000;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia New York';src:url('./fonts/apple/NewYorkItalic.ttf') format('truetype');font-weight:400 1000;font-style:italic;font-display:swap}
+@font-face{font-family:'Materia Inter';src:url('./fonts/InterVariable.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia Source Han Sans';src:url('./fonts/SourceHanSansCN-VF.otf.woff2') format('woff2');font-weight:250 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Materia Source Code Pro';src:url('./fonts/SourceCodePro-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+html{font-optical-sizing:auto}

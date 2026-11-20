@@ -1,0 +1,48 @@
+:root{--canvas:#fafcf7;--panel:#f0f4ec;--on-accent:#fff;--warning:#9b7946;--warning-soft:#f5efdf;--danger:#a15d54;--danger-soft:#f7ece8;--shadow:#18362c1c;--radius:6px}
+/* UI type uses rem; document annotations and chart exports keep their own sizes. */
+html{font-size:calc(16px * var(--ui-font-scale,1));background:var(--paper);color-scheme:light}body{background:var(--paper);color:var(--ink)}
+.library-surface,.modal,.filter-drawer,.settings-card,.theme-card{border-radius:var(--radius)}
+.primary,.outline-button,.theme-tools button,input:not([type=checkbox]):not([type=range]),select,textarea{border-radius:var(--radius)}
+.graph-wrap{background:var(--canvas)}.graph-node .node-label,.graph-node .tag-node-label{stroke:var(--canvas);fill:var(--muted)}
+.paper-title,.paper-row h3{color:var(--ink)}.toast{color:var(--on-accent)}.toast.error{color:var(--danger)}
+.modal::backdrop,.filter-drawer::backdrop{background:var(--shadow)}
+.relation-node .node-core{fill:var(--surface)}.paper-node .node-core{stroke:var(--canvas)}
+.brand-symbol svg,.brand-symbol circle{stroke:var(--brand-mark,var(--teal))}.brand-symbol circle{fill:none}.brand-symbol .brand-satellite{fill:var(--brand-mark,var(--teal));stroke:none}
+.theme-intro p,.theme-format-note{font-size:0.6875rem;line-height:1.9;color:var(--muted);margin:0 0 17px}
+.theme-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}.theme-tools button{font-size:0.6875rem;padding:8px 12px}
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-height:min(490px,45vh);overflow:auto;padding:3px}
+.theme-card{position:relative;min-width:0;border:1px solid var(--line);background:var(--surface);overflow:hidden}
+.theme-card.is-selected{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.theme-choice{display:block;text-align:left;width:100%;padding:14px}.theme-choice:hover{background:var(--panel)}
+.theme-choice:focus-visible{outline:2px solid var(--teal);outline-offset:-3px}
+.theme-preview{display:block;position:relative;height:110px;border:1px solid var(--preview-line);border-radius:4px;overflow:hidden;background:var(--preview-bg)}
+.theme-preview-rail{position:absolute;inset:0 auto 0 0;width:16px;border-right:1px solid var(--preview-line);background:var(--preview-surface)}
+.theme-preview-panel{position:absolute;inset:0 0 0 auto;width:27%;padding:15px 10px;background:var(--preview-surface);border-left:1px solid var(--preview-line)}
+.theme-preview-panel b{display:block;height:3px;background:var(--preview-ink);opacity:.4;margin:0 0 8px}.theme-preview-panel b:nth-child(2){width:70%}.theme-preview-panel b:nth-child(3){margin-top:21px;opacity:.15}
+.theme-preview-dot{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--preview-accent);box-shadow:0 0 0 5px color-mix(in srgb,var(--preview-accent) 8%,transparent)}
+.theme-preview-dot.d1{left:28%;top:34%}.theme-preview-dot.d2{left:52%;top:59%}.theme-preview-dot.d3{left:38%;top:75%;opacity:.6}.theme-preview-dot.d4{left:63%;top:22%;opacity:.7}
+.theme-card-name{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;color:var(--ink)}.theme-card-name strong{font-size:0.8125rem;font-weight:500}.theme-card-name small{font-size:0.625rem;color:var(--teal);white-space:nowrap}
+.theme-card-description{display:block;font-size:0.625rem;line-height:1.7;color:var(--muted);margin-top:4px;padding-right:10px}
+.theme-delete{position:absolute;right:6px;top:6px;font-size:1.125rem;width:26px;height:26px;border-radius:50%;background:var(--surface);color:var(--muted);border:1px solid var(--line)}.theme-delete:hover{color:var(--danger);background:var(--danger-soft)}
+.theme-format-note{font-size:0.625rem;margin:17px 0 0}.modal:has(.theme-grid){width:min(780px,calc(100vw - 34px))}
+@media(max-width:600px){.theme-grid{grid-template-columns:1fr}.theme-preview{height:95px}}
+.theme-fonts{border:1px solid var(--line);border-radius:var(--radius);padding:13px;margin:0 3px 20px;background:var(--surface)}.theme-fonts-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.theme-fonts-heading strong{font-size:0.75rem;font-weight:500}.theme-fonts-heading button{font-size:0.625rem}.theme-font-selects{display:grid;grid-template-columns:1fr 1fr;gap:14px}.theme-font-selects label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:0.625rem}.theme-font-selects select{width:100%;padding:7px 9px;color:var(--ink);border:1px solid var(--line);background:var(--paper);font:0.75rem var(--sans)}.theme-font-preview{border-top:1px solid var(--line);margin-top:13px;padding-top:12px}.theme-font-preview strong{font:400 1.1875rem/1.5 var(--serif);color:var(--ink)}.theme-font-preview p{font:0.75rem/1.8 var(--sans);color:var(--ink);margin:5px 0 9px}.theme-fonts>small{display:block;color:var(--muted);font-size:0.5625rem;line-height:1.7}#theme-font-status{display:block;font-size:0.5625rem;color:var(--teal);min-height:14px;margin-top:4px}.modal:has(.theme-fonts) .theme-grid{max-height:min(360px,35vh)}
+.theme-preview-article{position:absolute;inset:13px 31% 12px 28px;font-style:normal}.theme-preview-article strong{display:block;border-bottom:1px solid var(--preview-line);font:17px/1.6 Georgia,serif;color:var(--preview-ink)}.theme-preview-article em{display:block;font:8px/1.8 Arial,sans-serif;color:var(--preview-accent);margin:3px 0}.theme-preview-article b{display:block;width:95%;height:2px;background:var(--preview-line);margin-top:6px}.theme-preview-article b:last-child{width:63%}.theme-preview-wiki .theme-preview-dot{display:none}
+html[data-theme-style=encyclopedia] .library-surface,html[data-theme-style=encyclopedia] .modal,html[data-theme-style=encyclopedia] .paper-row{box-shadow:none;border-radius:2px}html[data-theme-style=encyclopedia] .paper-title{padding-bottom:12px;border-bottom:1px solid var(--line)}html[data-theme-style=encyclopedia] .paper-row h3,html[data-theme-style=encyclopedia] .paper-journal button,html[data-theme-style=encyclopedia] .related-paper strong,html[data-theme-style=encyclopedia] .performance-parameter-link{color:var(--teal)}html[data-theme-style=encyclopedia] .paper-journal button:hover,html[data-theme-style=encyclopedia] .paper-row h3:hover,html[data-theme-style=encyclopedia] .related-paper:hover strong,html[data-theme-style=encyclopedia] .performance-parameter-link:hover{text-decoration:underline}html[data-theme-style=encyclopedia] .nav-item.active,html[data-theme-style=encyclopedia] .collection-item.active{background:var(--teal-light);border-radius:2px}html[data-theme-style=encyclopedia] .tag{color:var(--teal);border:1px solid var(--line);border-radius:2px;background:var(--surface)}
+@media(max-width:600px){.theme-font-selects{grid-template-columns:1fr}.theme-font-preview strong{font-size:1.0625rem}}
+
+.modal:has(.theme-fonts) .theme-grid{padding:6px}
+.theme-font-size{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.theme-font-size>div{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.theme-font-size label{font-size:.75rem;color:var(--ink)}
+.theme-font-size output{display:inline-block;min-width:3.5em;margin-left:8px;color:var(--teal);font-variant-numeric:tabular-nums}
+.theme-font-size input{display:block;width:100%;margin:12px 0;accent-color:var(--teal)}
+.theme-font-size small{font-size:.625rem;color:var(--muted);line-height:1.7}
+.theme-fonts-heading{gap:12px;flex-wrap:wrap}.theme-font-preview{overflow-wrap:anywhere}
+.theme-font-selects{grid-template-columns:repeat(2,minmax(0,1fr))}.theme-font-selects select{min-width:0}
+/* Let text controls grow with their type, without scaling PDF or canvas geometry. */
+.sidebar .brand-word{font-size:29px}.sidebar .brand-word small{white-space:normal;letter-spacing:1px}
+.app-shell>.sidebar{overflow-y:auto}.sidebar .brand{flex-wrap:wrap;row-gap:12px}
+.surface-toolbar .quick-sort,.quick-filters>select,.graph-setting-section select,.figure-settings input,.figure-settings select{height:auto;min-height:2.5em}
+.theme-card-name{flex-wrap:wrap}.theme-card-name small{white-space:normal}
+@media(max-width:600px){.theme-font-selects{grid-template-columns:1fr}}

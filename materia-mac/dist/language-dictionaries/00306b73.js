@@ -1,0 +1,1 @@
+export default {"0歳":[["jmdict","[noun (common) (futsuumeishi)] under 1 year old (of a baby); 0 years old","ゼロさい・れいさい","ja","en"]],"0歳児":[["jmdict","[noun (common) (futsuumeishi)] child under a year old","ゼロさいじ・れいさいじ","ja","en"]]};

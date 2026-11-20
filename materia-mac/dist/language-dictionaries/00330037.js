@@ -1,0 +1,1 @@
+export default {"375 grams (100 monme)":[["jmdict","百匁 [ひゃくもんめ・ひゃくめ] — 375 grams (100 monme)","","en","ja"],["jmdict","百目 [ひゃくめ] — 375 grams (100 monme)","","en","ja"]],"375 grams":[["jmdict","百匁 [ひゃくもんめ・ひゃくめ] — 375 grams (100 monme)","","en","ja"],["jmdict","百目 [ひゃくめ] — 375 grams (100 monme)","","en","ja"]]};

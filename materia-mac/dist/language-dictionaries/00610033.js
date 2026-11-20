@@ -1,0 +1,1 @@
+export default {"a3":[["jmdict","[noun (common) (futsuumeishi)] A3 (paper size)","エーさん","ja","en"],["jmdict","Ａ３ [エーさん] — A3 (paper size)","","en","ja"]],"a3 (paper size)":[["jmdict","Ａ３ [エーさん] — A3 (paper size)","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"a型肝炎":[["jmdict","[noun (common) (futsuumeishi)] hepatitis A","エーがたかんえん","ja","en"]],"a型":[["jmdict","[noun (common) (futsuumeishi)] type A (blood, influenza, hepatitis, etc.)","エーがた","ja","en"]]};

@@ -14,3 +14,17 @@ export function noteBody(value){
 }
 
 export const noteName=id=>id.split('/').at(-1).replace(/\.md$/i,'');
+
+export function dailyTipName(date = new Date()){
+  const pad = value => String(value).padStart(2, '0');
+  return `tip_${pad(date.getFullYear() % 100)}${pad(date.getMonth() + 1)}${pad(date.getDate())}.md`;
+}
+
+export function appendTipBody(previous, entry){
+  const text = noteBody(entry).trim();
+  if(!text)throw Error('请输入随记内容。');
+  if(!previous.trim())return noteBody(previous + text + '\n');
+  const newline = previous.includes('\r\n') ? '\r\n' : '\n';
+  const separator = /\r?\n\r?\n$/.test(previous) ? '' : previous.endsWith('\n') ? newline : newline + newline;
+  return noteBody(previous + separator + '---' + newline + newline + text.replace(/\r?\n/g, newline) + newline);
+}

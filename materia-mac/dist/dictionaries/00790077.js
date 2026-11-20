@@ -1,0 +1,1 @@
+export default {"yw":[["ecdict","abbr. 基督教女青年会（Young Women's Christian Association）",""]],"ywca":[["ecdict","基督教女青年会",""]],"ywcas":[["ecdict","abbr. Young Women's Christian Association 基督教女青年会",""]],"ywha":[["ecdict","abbr. 希伯来教女青年会（Young Women's Hebrew Association）",""]],"ywis":[["ecdict","adv. <古>=iwis","i'wis"]]};

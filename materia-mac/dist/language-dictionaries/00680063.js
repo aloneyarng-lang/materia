@@ -1,0 +1,1 @@
+export default {"hcai":[["jmdict","院内感染 [いんないかんせん] — HCAI","","en","ja"]],"hcfc":[["jmdict","ハイドロクロロフルオロカーボン [ハイドロクロロフルオロカーボン] — HCFC","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] hydrochlorofluorocarbon; HCFC","エイチ・シー・エフ・シー・エイチシーエフシー・エッチシーエフシー","ja","en"],["jmdict","ＨＣＦＣ [エイチ・シー・エフ・シー・エイチシーエフシー・エッチシーエフシー] — HCFC","","en","ja"]]};

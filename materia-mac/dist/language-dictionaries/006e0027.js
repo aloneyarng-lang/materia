@@ -1,0 +1,1 @@
+export default {"n'djamena (chad)":[["jmdict","ンジャメナ；ヌジャメナ；ウンジャメナ；エンジャメナ [ンジャメナ・ヌジャメナ・ウンジャメナ・エンジャメナ] — N'Djamena (Chad)","","en","ja"]],"n'djamena":[["jmdict","ンジャメナ；ヌジャメナ；ウンジャメナ；エンジャメナ [ンジャメナ・ヌジャメナ・ウンジャメナ・エンジャメナ] — N'Djamena (Chad)","","en","ja"],["ding","N'Djamena (capital of Chad)","","de","en"],["ding","N'Djamena (Hauptstadt von Tschad) [geogr.]","","en","de"]]};

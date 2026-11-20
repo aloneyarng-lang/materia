@@ -1,0 +1,1 @@
+export default {"3d radar":[["wordnet","n. radar that will report altitude as well as azimuth and distance of a target",""]],"3d":[["wordnet","n. having a three-dimensional form or appearance; \"aren't dreams always in 3-D?\"",""],["wordnet","n. a movie with images having three dimensional form or appearance",""]]};

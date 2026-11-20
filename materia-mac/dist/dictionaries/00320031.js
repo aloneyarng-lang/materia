@@ -1,0 +1,1 @@
+export default {"21":[["ecdict"," twenty-one; [电影]决胜21点",""],["wordnet","s. being one more than twenty",""],["wordnet","n. the cardinal number that is the sum of twenty and one",""]],"21st":[["wordnet","s. coming next after the twentieth in position",""]]};

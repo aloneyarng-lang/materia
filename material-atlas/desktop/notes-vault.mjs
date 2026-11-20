@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {lstat,mkdir,readdir,readFile,rename,unlink,writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {NOTE_LIMIT,notePath,noteBody} from '../dist/notes-vault-model.js';
+import {NOTE_LIMIT,notePath,noteBody,dailyTipName,appendTipBody} from '../dist/notes-vault-model.js';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inspect=async file=>lstat(file).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
@@ -77,14 +77,25 @@ export class NotesVault {
     await scan(root,'',0);
     return {notes,skipped};
   }
-  save(payload){
-    const id=notePath(payload?.id),body=noteBody(payload?.body),expected=payload?.revision;
-    if(expected!==null&&!/^[a-f\d]{64}$/.test(expected))throw Error('笔记版本无效，请刷新。');
+  appendTip(entry){
+    return this.save({id:dailyTipName(),body:entry},true);
+  }
+  save(payload,appendTip=false){
+    const id=notePath(payload?.id),entry=noteBody(payload?.body);
+    let expected=payload?.revision;
+    if(!appendTip&&expected!==null&&!/^[a-f\d]{64}$/.test(expected))throw Error('笔记版本无效，请刷新。');
     const operation=this.queue.then(async()=>{
       const parts=id.split('/'),name=parts.pop();
-      const parent=await this.directory(parts,expected===null);
+      const parent=await this.directory(parts,appendTip||expected===null);
       if(!parent)throw Error('笔记目录已移除，请刷新笔记列表。');
       const file=path.join(parent,name);
+      let body=entry;
+      if(appendTip){
+        const info=await inspect(file);
+        const previous=info ? await this.read(file,id,info) : null;
+        expected=previous?.revision??null;
+        body=appendTipBody(previous?.body??'',entry);
+      }
       if(expected===null){
         try{await writeFile(file,body,{encoding:'utf8',flag:'wx'});}
         catch(error){if(error.code==='EEXIST')throw Error('已有同名笔记，请换一个名称。');throw error;}

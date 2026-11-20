@@ -1,0 +1,1 @@
+export default {"a3":[["ecdict","n. A3号纸（尺寸为420×297mm的）",""]]};

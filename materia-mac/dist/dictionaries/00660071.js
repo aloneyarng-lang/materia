@@ -1,0 +1,1 @@
+export default {"fq":[["ecdict","abbr. 会计季度（fiscal quarter）",""]],"fqdn":[["ecdict","[计] 主机域名全称, 完全限定域名",""]],"fqpa":[["ecdict","abbr. food quality and protection act 食品质量与保护法规; Food Quality Protection Act 食品质量保护法",""]]};

@@ -1,0 +1,1 @@
+export default {"hh blood group":[["jmdict","ボンベイブラッド；ボンベイ・ブラッド [ボンベイブラッド・ボンベイ・ブラッド] — Hh blood group","","en","ja"],["jmdict","ボンベイ型 [ボンベイがた] — hh blood group","","en","ja"]],"hhs":[["jmdict","ホリデーハート症候群 [ホリデーハートしょうこうぐん] — HHS","","en","ja"]],"hhoj":[["ding","Haha, war ja nur Spaß!","","en","de"]],"hhok/":[["ding","Haha, war ja nur Spaß!","","en","de"]]};

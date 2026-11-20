@@ -1,0 +1,1 @@
+export default {"s級":[["jmdict","[noun, used as a prefix; nouns which may take the genitive case particle 'no'; noun (common) (futsuumeishi)] superior; special class; higher than A class; extraordinary","エスきゅう","ja","en"]]};

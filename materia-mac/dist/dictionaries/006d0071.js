@@ -1,0 +1,1 @@
+export default {"mq":[["ecdict","abbr. 乘数-商寄存器（Memory Quotient）；[域]马提尼克岛（法属）（Martinique）",""]],"mqorality":[["ecdict","道德, 道义","mә'ræliti"]],"mqr":[["ecdict"," [计]= Multiplier-Quotient Register,乘商寄存器",""]],"mqt":[["ecdict","[化] 多量子跃迁",""]]};

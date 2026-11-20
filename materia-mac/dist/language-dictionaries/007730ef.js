@@ -1,0 +1,1 @@
+export default {"wワーク":[["jmdict","[noun (common) (futsuumeishi)] holding two jobs concurrently; having a side job in addition to one's regular job; moonlighting","ダブルワーク・ダブル・ワーク","ja","en"]],"wワーカー":[["jmdict","[noun (common) (futsuumeishi)] person with a side job; moonlighter","ダブルワーカー・ダブル・ワーカー","ja","en"]]};

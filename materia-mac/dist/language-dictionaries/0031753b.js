@@ -1,0 +1,1 @@
+export default {"1画":[["jmdict","[noun (common) (futsuumeishi)] one plot (of land); one (city) block; one area; one lot\n[noun (common) (futsuumeishi)] one brush stroke; one kanji stroke","いっかく","ja","en"]]};

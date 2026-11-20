@@ -1,0 +1,41 @@
+{
+  "papers": [
+    {
+      "filename": "your-paper.pdf",
+      "title": "请替换为完整文献标题",
+      "authors": [
+        {
+          "name": "作者一",
+          "affiliations": [
+            "所属机构一",
+            "所属机构二"
+          ]
+        },
+        {
+          "name": "作者二",
+          "affiliations": [
+            "所属机构二"
+          ]
+        }
+      ],
+      "journal": "期刊完整名称",
+      "year": "2025",
+      "doi": "",
+      "tags": [
+        "材料体系",
+        "研究方法"
+      ],
+      "impactFactor": null,
+      "impactYear": "",
+      "materials": [
+        {
+          "id": "material-1",
+          "name": "请替换为材料名称",
+          "composition": "",
+          "description": "",
+          "measurements": []
+        }
+      ]
+    }
+  ]
+}

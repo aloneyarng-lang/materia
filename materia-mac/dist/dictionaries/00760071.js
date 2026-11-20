@@ -1,0 +1,1 @@
+export default {"vqr":[["ecdict","abbr. vendor qualification report 供应商质量认证报告",""]]};

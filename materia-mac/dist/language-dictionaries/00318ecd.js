@@ -1,0 +1,1 @@
+export default {"1軍":[["jmdict","[noun (common) (futsuumeishi)] an army\n[noun (common) (futsuumeishi)] the whole army; the entire force\n[noun (common) (futsuumeishi)] first team; first-string players\n[noun (common) (futsuumeishi)] the cool kids; the popular kids","いちぐん","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"4次元":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] fourth dimension; four dimensions; 4D","よじげん・しじげん","ja","en"]],"4次方程式":[["jmdict","[noun (common) (futsuumeishi)] quartic equation","よじほうていしき","ja","en"]]};

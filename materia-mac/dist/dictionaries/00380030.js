@@ -1,0 +1,1 @@
+export default {"80":[["ecdict"," eighty",""],["wordnet","s. being ten more than seventy",""],["wordnet","n. the cardinal number that is the product of ten and eight",""]],"800 number":[["ecdict","【电信学】受话人付费业务(指前3位数字为800的电话号码)",""]],"800 pound gorilla":[["ecdict","因强大而无需顾忌其他的人或物",""]],"80th":[["wordnet","s. the ordinal number of eighty in counting order",""]]};

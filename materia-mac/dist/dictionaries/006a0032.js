@@ -1,0 +1,1 @@
+export default {"j2ee":[["ecdict","abbr. JAVA平台环境（Java 2 Platform Enterprise Edition）",""]],"j2me":[["ecdict","abbr. Java语言2精简版（Java 2 Micro Edition）",""]],"j2se":[["ecdict","abbr. Java 2 标准版（Java 2 Standard Edition）",""]]};

@@ -10,6 +10,7 @@ import {createMaterialList} from './material-list.js';
 import {createWorkspaceModules} from './workspace-modules.js';
 import {agentServiceForm} from './agent-service-form.js';
 import {createAgentServiceSettings} from './agent-service-settings.js';
+import {createQuickTip} from './quick-tip.js';
 import {createWorkspaceChrome} from './workspace-chrome.js';
 import {createObservatory,observatorySettingsHTML} from './observatory.js';
 import { paperMaterials, paperMeasurements, normalizePaperMaterials } from './materials.js';
@@ -628,7 +629,7 @@ function helpModal() {
   showModal(tr('从阅读，到连接'), tr('一个安静、专注的材料文献研究空间。'), html`<div class="guide-step"><span>1</span><div><strong>收录原始 PDF</strong><p>选择或拖入多份 PDF；相同文件自动去重。桌面版将文件保存至本地文献库文件夹，可在设置里更换位置。</p></div></div><div class="guide-step"><span>2</span><div><strong>补充完整信息</strong><p>编辑标题、全部作者与机构、期刊和标签，或导入其他 AI 整理的 JSON。年度影响因子可通过 CSV / JSON 导入。</p></div></div><div class="guide-step"><span>3</span><div><strong>让思考彼此连接</strong><p>点击标题或标签，分别添加多条笔记。使用 [[完整标题]] 和 [[#标签]] 互相跳转，目标处会显示反向链接。</p></div></div><div class="guide-step"><span>4</span><div><strong>搜索与探索</strong><p>搜索标题、标签、作者、机构和笔记。过滤支持多标签、期刊、年份与 IF 范围，星图和列表同步更新，IF 支持升降序排列。</p></div></div><div class="guide-step"><span>译</span><div><strong>对照翻译与生词复习</strong><p>在 PDF 中选中文字后，点击弹窗「翻译」才会发送请求；译文出现后点击「添加批注」贴到原文附近。也可在右侧「译文」主动翻译当前页或整篇。短词可保存到生词本，记录原句与页码，左侧字典图标可搜索、复习与导出。</p></div></div><div class="guide-step"><span>5</span><div><strong>把积累带走</strong><p>导出完整备份，包含 PDF、笔记、作者机构、期刊指标、生词本和译文；可在其他设备恢复。桌面版也可直接复制整个文献库文件夹。</p></div></div><div class="info-box">所有文献信息由你填写或导入，PDF 文件留在本地。主动翻译时会把选文或页面文字发给已配置的 AI 服务；程序不自动生成标签或影响因子。</div><div class="modal-footer"><button class="primary" data-action="close-modal">开始探索</button></div>`, 'help');
 }
 function shortcutsModal() {
-  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>快速操作</span><kbd>Ctrl / ⌘ K</kbd></div><div class="shortcut-row"><span>切换主要视图</span><kbd>Ctrl / ⌘ 1–6</kbd></div><div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
+  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>快速操作</span><kbd>Ctrl / ⌘ K</kbd></div><div class="shortcut-row"><span>快速随记</span><kbd>Ctrl+Alt+N / ⌘⌥N</kbd></div><div class="shortcut-row"><span>切换主要视图</span><kbd>Ctrl / ⌘ 1–6</kbd></div><div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
 }
 
 function renderGraphPreferences(){
@@ -990,6 +991,7 @@ workspaceModules=createWorkspaceModules({native,openAISettings:()=>aiServiceSett
  builtins:{graph:{render(){}},list:{render:()=>renderList(visiblePapers())},materials:{render:()=>materialList.render()},notes:{render:()=>{const filtered=visiblePapers(),count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=count===null?tr('本地 Markdown 笔记'):msg`${count} 条笔记 · ${filtered.length} 篇文献`;}}},
 
 });
+createQuickTip({flushNotes:()=>notes.flush(),toast});
 workspaceChrome=createWorkspaceChrome({$,getState:()=>state,getViews:()=>workspaceModules.views(),getPapers:papers,toast,canOpen:()=>state.ready&&!state.storageError&&!document.querySelector('dialog[open]')&&!reader?.isOpen()&&!researchCanvas?.isOpen(),runAction:id=>actions[id]?.(),showAgent:()=>!minimalMode,
  clearSearch:()=>{clearTimeout(searchTimer);state.query='';state.listLimit=100;$('#search').value='';render();},
  selectPaper:id=>{state.lobbyOpen=false;resetFilters(false);state.nav='library';state.view='list';state.selected=id;state.detailOpen=true;render();selectPaper(id,true);}

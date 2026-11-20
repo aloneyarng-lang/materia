@@ -1,0 +1,1 @@
+export default {"3ヶ年":[["jmdict","[noun or verb acting prenominally] triennial","さんかねん","ja","en"]],"3ヶ月コリック":[["jmdict","[noun (common) (futsuumeishi)] baby colic (in infants around 3 months old)","さんかげつコリック","ja","en"]]};

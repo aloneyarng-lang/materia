@@ -1,0 +1,1 @@
+export default {"1ヶ月":[["jmdict","[noun (common) (futsuumeishi)] one month","いっかげつ","ja","en"]],"1ヶ所":[["jmdict","[noun (common) (futsuumeishi)] one place; (all in) the same place; one spot; one location; one part; one passage","いっかしょ","ja","en"]],"1ヶ月検診":[["jmdict","[noun (common) (futsuumeishi)] 1-month checkup (of a baby)","いっかげつけんしん","ja","en"]]};

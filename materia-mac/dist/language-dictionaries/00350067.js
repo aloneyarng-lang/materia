@@ -1,0 +1,1 @@
+export default {"5g":[["jmdict","[noun (common) (futsuumeishi)] 5G; fifth generation (of wireless cellular technology)","ファイブジー・ごジー","ja","en"],["jmdict","５Ｇ [ファイブジー・ごジー] — 5G","","en","ja"]],"5g mobile network":[["ding","Mobilfunknetz der fünften Generation","","en","de"]]};

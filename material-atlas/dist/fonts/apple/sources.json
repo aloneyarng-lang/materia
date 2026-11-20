@@ -1,0 +1,67 @@
+{
+  "scope": "private local application copy",
+  "officialSource": "https://developer.apple.com/fonts/",
+  "downloads": [
+    "https://devimages-cdn.apple.com/design/resources/download/SF-Pro.dmg",
+    "https://devimages-cdn.apple.com/design/resources/download/SF-Mono.dmg",
+    "https://devimages-cdn.apple.com/design/resources/download/NY.dmg"
+  ],
+  "fontDataModified": false,
+  "files": [
+    {
+      "file": "New-York-LICENSE.rtf",
+      "bytes": 12739,
+      "sha256": "12c9f3b3ef14f24c0e898c1ea06eac65a3f9889e99cd4245b69224faa674df03"
+    },
+    {
+      "file": "NewYork.ttf",
+      "bytes": 380580,
+      "sha256": "436cd9d9a9e7bf27b2240ed13f804725654ee5de1d5d936cad68eaa013c49744"
+    },
+    {
+      "file": "NewYorkItalic.ttf",
+      "bytes": 405524,
+      "sha256": "adc356b12b9fd90480ec46f12eaf09d460596ca3d33342c32749f1a6c0a164fa"
+    },
+    {
+      "file": "SF-Mono-LICENSE.rtf",
+      "bytes": 12455,
+      "sha256": "6f76db0a39aa77bcdeac7a7228ed07d7da42d7d97d9b4061fc77588598f47d36"
+    },
+    {
+      "file": "SF-Pro-Italic.ttf",
+      "bytes": 20114096,
+      "sha256": "9c80b0d5ec685fc6408c40f8698f7c5f6f8115be3981a5c23e00f11726b20c5f"
+    },
+    {
+      "file": "SF-Pro-LICENSE.rtf",
+      "bytes": 12517,
+      "sha256": "bf30ff9f7478b67dfb2cc663649b687dd0fd912f5eaa84b31606f2cb175f5011"
+    },
+    {
+      "file": "SF-Pro.ttf",
+      "bytes": 21373376,
+      "sha256": "7270e1593be7b88597d8ab302e4d156a33084c85b8161e042ff6510cdaf10e10"
+    },
+    {
+      "file": "SFMono-Regular.otf",
+      "bytes": 109692,
+      "sha256": "d7186273849a922b3eafbbdd8289d1e708a2c7f7893ec90961d382353c872d49"
+    },
+    {
+      "file": "SFMono-RegularItalic.otf",
+      "bytes": 102308,
+      "sha256": "9fe5176e31a1ba9ba685ea3c3fab97f76c51574829bb06f2ab47c561a55dbecc"
+    },
+    {
+      "file": "SFMono-Semibold.otf",
+      "bytes": 110060,
+      "sha256": "ed5c7934c102d382ecee3406197ad3c74fbd1ba969d838698b0b74a80ea2021b"
+    },
+    {
+      "file": "SFMono-SemiboldItalic.otf",
+      "bytes": 102204,
+      "sha256": "5cb2de9ddbdf41faba67d04c76f984db540d05069b41c0f2bb56d5921f82bc81"
+    }
+  ]
+}

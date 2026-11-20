@@ -1,0 +1,81 @@
+{
+  "format": "materia-theme",
+  "schemaVersion": 2,
+  "name": "实验蓝图 · Blueprint",
+  "description": "可导入示例：嵌入等宽字体、技术式面板与自定义助手图标",
+  "tokens": {
+    "--paper": "#edf2f4",
+    "--surface": "#ffffff",
+    "--canvas": "#f6fafb",
+    "--panel": "#e6f0f4",
+    "--sidebar": "#e5edf1",
+    "--ink": "#213b4a",
+    "--muted": "#526c79",
+    "--line": "#b9d0da",
+    "--teal": "#176482",
+    "--teal-light": "#dfedf4",
+    "--on-accent": "#ffffff"
+  },
+  "typography": {
+    "body": {
+      "family": "'Materia Lab Mono', 'Microsoft YaHei', sans-serif",
+      "size": 13,
+      "weight": 400,
+      "lineHeight": 1.75
+    },
+    "heading": {
+      "family": "Georgia, KaiTi, SimSun, serif",
+      "scale": 1.04,
+      "weight": 400,
+      "lineHeight": 1.5
+    },
+    "mono": {
+      "family": "'Materia Lab Mono', Consolas, monospace"
+    },
+    "numeric": {
+      "family": "'Materia Lab Mono', Consolas, monospace"
+    }
+  },
+  "ui": {
+    "style": "technical",
+    "density": 0.94,
+    "radius": 2,
+    "buttonRadius": 2,
+    "cardRadius": 2,
+    "menuRadius": 2,
+    "borderWidth": 1.2,
+    "sidebarWidth": 212,
+    "controlHeight": 33,
+    "cardPadding": 13,
+    "menuPadding": 7,
+    "cardGap": 9,
+    "buttonStyle": "outlined",
+    "cardStyle": "outlined",
+    "sidebarStyle": "ruled",
+    "shadow": "none"
+  },
+  "icons": {
+    "style": "technical",
+    "strokeWidth": 1.7,
+    "size": 19,
+    "overrides": {
+      "assistant": {
+        "file": "icons/assistant.json"
+      }
+    }
+  },
+  "assets": {
+    "fonts": [
+      {
+        "id": "lab-mono",
+        "family": "Materia Lab Mono",
+        "format": "ttf",
+        "file": "fonts/SourceCodePro-Regular.ttf",
+        "weight": "400",
+        "style": "normal",
+        "licenseFile": "fonts/LICENSE.md",
+        "source": "https://github.com/adobe-fonts/source-code-pro"
+      }
+    ]
+  }
+}

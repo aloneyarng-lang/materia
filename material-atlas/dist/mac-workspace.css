@@ -33,3 +33,10 @@
 .workspace-command-empty{padding:32px;text-align:center;font-size:.8rem;color:var(--muted)}
 @media(max-width:850px){.workspace-command-dialog{top:8vh}}
 @media(prefers-reduced-transparency:reduce){.workspace-command-dialog{background:var(--surface);backdrop-filter:none}}
+
+#quick-tip-dialog{width:min(420px,calc(100% - 32px))}
+#quick-tip-form{padding:20px}
+#quick-tip-form h2{margin:0}
+#quick-tip-filename{font-family:var(--mono,monospace)}
+#quick-tip-body{display:block;width:100%;min-height:120px;resize:vertical}
+#quick-tip-status:empty{display:none}

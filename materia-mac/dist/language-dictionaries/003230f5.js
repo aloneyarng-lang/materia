@@ -1,0 +1,1 @@
+export default {"2ヵ国語":[["jmdict","[nouns which may take the genitive case particle 'no'] bilingual; in two languages","にかこくご","ja","en"]],"2ヵ年":[["jmdict","[noun or verb acting prenominally] biennial","にかねん","ja","en"]]};

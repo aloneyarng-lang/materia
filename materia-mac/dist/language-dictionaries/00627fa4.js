@@ -1,0 +1,1 @@
+export default {"b群溶血性レンサ球菌":[["jmdict","[noun (common) (futsuumeishi)] group B streptococcus; group B strep","ビーぐんようけつせいれんさきゅうきん","ja","en"]],"b群溶血性連鎖球菌":[["jmdict","[noun (common) (futsuumeishi)] group B streptococcus; group B strep","ビーぐんようけつせいれんさきゅうきん","ja","en"]]};

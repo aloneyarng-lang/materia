@@ -1,0 +1,1 @@
+export default {"s.":[["jmdict","聖 [せい] — S.","","en","ja"]],"s.l.":[["jmdict","出版地不明 [しゅっぱんちふめい] — s.l.","","en","ja"]],"s.s./":[["ding","Dampfschiff {n}; Dampfer {m}","","en","de"]],"s., s. and s.c. lathe":[["ding","Leit- und Zugspindeldrehmaschine {f}","","en","de"]],"s.i. units":[["ding","SI-Einheiten {pl}","","en","de"]]};

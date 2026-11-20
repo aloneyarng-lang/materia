@@ -1,0 +1,1 @@
+export default {"2":[["ecdict"," two",""],["wordnet","s. being one more than one; \"he received two messages\"",""],["wordnet","n. the cardinal number that is the sum of one and one or a numeral representing this number",""]]};

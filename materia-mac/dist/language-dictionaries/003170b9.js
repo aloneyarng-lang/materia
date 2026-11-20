@@ -1,0 +1,1 @@
+export default {"1点":[["jmdict","[noun (common) (futsuumeishi)] point; dot; speck\n[noun (common) (futsuumeishi)] one point; one matter; one detail\n[noun (common) (futsuumeishi)] one point (in a game, exam, etc.); one mark\n[noun (common) (futsuumeishi)] one item; one article; one piece\n[noun (common) (futsuumeishi)] slightest bit; trace; speck","いってん","ja","en"]]};

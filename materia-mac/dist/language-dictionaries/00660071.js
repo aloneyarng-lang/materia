@@ -1,0 +1,1 @@
+export default {"fqdn":[["jmdict","[noun (common) (futsuumeishi)] fully qualified domain name; FQDN","エフ・キュー・ディー・エヌ・エフキューディーエヌ","ja","en"],["jmdict","ＦＱＤＮ [エフ・キュー・ディー・エヌ・エフキューディーエヌ] — FQDN","","en","ja"],["jmdict","完全修飾ドメイン名 [かんぜんしゅうしょくドメインめい] — FQDN","","en","ja"]],"fq":[["jmdict","会計四半期 [かいけいしはんき] — FQ","","en","ja"]]};

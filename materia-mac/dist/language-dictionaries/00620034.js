@@ -1,0 +1,1 @@
+export default {"b4判":[["jmdict","[noun (common) (futsuumeishi)] B4 paper size (257 mm x 364 mm)","ビーよんばん","ja","en"]],"b4 paper size (257 mm x 364 mm)":[["jmdict","Ｂ４判；Ｂ四判 [ビーよんばん] — B4 paper size (257 mm x 364 mm)","","en","ja"]],"b4 paper size":[["jmdict","Ｂ４判；Ｂ四判 [ビーよんばん] — B4 paper size (257 mm x 364 mm)","","en","ja"]]};

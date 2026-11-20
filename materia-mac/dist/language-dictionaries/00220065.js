@@ -1,0 +1,1 @@
+export default {"\"ear hanging\" scallop spat, i.e. piercing the resilium to string them":[["jmdict","耳釣り [みみつり] — \"ear-hanging\" scallop spat, i.e. piercing the resilium to string them","","en","ja"]],"\"empty/loaded\" braking system":[["ding","Bremsartstellung {f} „leer/beladen“ (Bahn)","","en","de"]]};

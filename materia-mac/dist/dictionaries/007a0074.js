@@ -1,0 +1,1 @@
+export default {"zt":[["ecdict","abbr. 区时（zone time）",""]],"zte":[["ecdict","abbr. 中兴通讯（公司名）",""]],"ztr":[["ecdict","abbr. zircon, tourmaline and rutile 锆石，电气石和金红石",""]],"zts":[["ecdict"," [医][=zymosan-treated serum]酵母多糖处理血清",""]]};

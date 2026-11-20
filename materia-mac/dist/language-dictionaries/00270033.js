@@ -1,0 +1,1 @@
+export default {"'33 augenblicke des glücks'":[["ding","'33 Moments of Happiness' (by Schulze / work title)","","de","en"]],"'33 moments of happiness'":[["ding","'33 Augenblicke des Glücks' (von Schulze / Werktitel) [lit.]","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"3g":[["jmdict","[noun (common) (futsuumeishi)] 3G; third generation (of wireless cellular technology)","スリージー","ja","en"],["jmdict","３Ｇ [スリージー] — 3G","","en","ja"]],"3g mobile network":[["ding","Mobilfunknetz der dritten Generation","","en","de"]]};

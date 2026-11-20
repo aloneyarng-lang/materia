@@ -1,0 +1,1 @@
+export default {"y2k compliant":[["wordnet","s. prepared to accurately process date and time data between and into the 20th and 21st centuries",""]],"y2k":[["wordnet","n. the year 2000 in the Gregorian calendar",""]]};

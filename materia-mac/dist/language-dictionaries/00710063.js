@@ -1,0 +1,1 @@
+export default {"qc":[["jmdict","精度管理 [せいどかんり] — QC","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] quality control; QC","キュー・シー・キューシー","ja","en"],["jmdict","ＱＣ [キュー・シー・キューシー] — QC","","en","ja"],["jmdict","クイックチャージ；クイック・チャージ [クイックチャージ・クイック・チャージ] — QC","","en","ja"]]};

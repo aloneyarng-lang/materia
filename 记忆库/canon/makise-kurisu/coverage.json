@@ -1,0 +1,41 @@
+{
+  "records": 19772,
+  "byKind": {
+    "dialogue": 16636,
+    "anime_subtitle_window": 375,
+    "fan_vn_pair": 2761
+  },
+  "bySourceLanguage": {
+    "ja": 10229,
+    "en": 7068,
+    "zh": 374,
+    "de": 735,
+    "fr": 591,
+    "es": 775
+  },
+  "translations": {
+    "zh-CN": {
+      "machine": 23311,
+      "sharedNonlexical": 260,
+      "original": 374,
+      "revised": 5
+    },
+    "en": {
+      "machine": 14113,
+      "original": 9829,
+      "sharedNonlexical": 3,
+      "revised": 5
+    },
+    "ja": {
+      "original": 11646,
+      "machine": 12047,
+      "sharedNonlexical": 257
+    }
+  },
+  "translationModel": {
+    "model": "facebook/nllb-200-distilled-600M",
+    "checkpoint": "Adom4600/nllb-200-distilled-600M-ct2-int8",
+    "revision": "45fca03263f41d49e258f2092fef27009a6705fe",
+    "decoding": "greedy; beam-4 fallback"
+  }
+}

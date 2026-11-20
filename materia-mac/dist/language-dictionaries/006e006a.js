@@ -1,0 +1,1 @@
+export default {"njnu":[["jmdict","南京師範大学 [なんきんしはんだいがく] — NJNU","","en","ja"]],"njomberötel":[["ding","iringa akelat","","de","en"]],"njombecistensänger":[["ding","churring cisticola","","de","en"]]};

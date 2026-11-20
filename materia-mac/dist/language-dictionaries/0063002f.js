@@ -1,0 +1,1 @@
+export default {"c/o":[["jmdict","気付；気付け；気附 [きづけ] — c/o","","en","ja"],["jmdict","気付け；気付；気つけ [きつけ] — c/o","","en","ja"],["jmdict","様方 [さまかた・さまがた] — c/o","","en","ja"]],"c/n ratio":[["ding","Kohlenstoff-Stickstoff-Verhältnis {n} [chem.]","","en","de"]]};

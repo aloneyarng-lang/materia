@@ -1,0 +1,1 @@
+export default {"wj":[["ecdict","abbr. 结构性投资工具（Whistle Jacket）；周刊少年JUMP（Weekly Jump）；兵工民品行业标准",""]],"wjr":[["ecdict","abbr. Wajir, Kenya 肯尼亚，瓦衣尔机场（代码）",""]]};

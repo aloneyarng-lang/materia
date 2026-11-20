@@ -1,0 +1,1 @@
+export default {"kchlüpli":[["ding","clothes peg [Br.]; peg [Br.]; clothespin [Am.]","","de","en"]],"kchlüpperli":[["ding","clothes peg [Br.]; peg [Br.]; clothespin [Am.]","","de","en"]],"kchlüplis":[["ding","clothes pegs; pegs; clothespins","","de","en"]],"kchlüpperlis":[["ding","clothes pegs; pegs; clothespins","","de","en"]]};

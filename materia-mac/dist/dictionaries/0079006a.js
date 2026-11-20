@@ -1,0 +1,1 @@
+export default {"yj":[["ecdict","abbr. radar homing beacon 归航雷达信标（代号）","'ədʒ"]]};

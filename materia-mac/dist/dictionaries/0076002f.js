@@ -1,0 +1,1 @@
+export default {"v/m":[["ecdict"," [医][=volts per minute]伏特/分",""]],"v/stol":[["ecdict","abbr. 垂直短距离起落（vertical or short takeoff and landing）","'vi:stɔ:l"]],"v/v":[["ecdict"," [医]（溶质）容量/（溶剂）溶量",""]]};

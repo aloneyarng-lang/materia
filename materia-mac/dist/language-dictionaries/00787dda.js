@@ -1,0 +1,1 @@
+export default {"x線":[["jmdict","[noun (common) (futsuumeishi)] X-ray","エックスせん","ja","en"]],"x線撮影":[["jmdict","[noun (common) (futsuumeishi)] x-ray photography","エックスせんさつえい","ja","en"]],"x線回折":[["jmdict","[noun (common) (futsuumeishi)] x-ray diffraction","エックスせんかいせつ","ja","en"]],"x線検査":[["jmdict","[noun (common) (futsuumeishi)] X-ray examination","エックスせんけんさ","ja","en"]]};

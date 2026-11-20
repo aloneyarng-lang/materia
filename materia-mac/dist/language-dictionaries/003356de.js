@@ -1,0 +1,1 @@
+export default {"3回":[["jmdict","[noun (common) (futsuumeishi)] three times","さんかい","ja","en"]],"3回生":[["jmdict","[noun (common) (futsuumeishi)] third year (college) student; junior","さんかいせい","ja","en"]]};

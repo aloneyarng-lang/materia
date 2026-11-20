@@ -1,0 +1,1 @@
+export default {"c/a":[["ecdict","往来账, 资本账",""]],"c/f":[["ecdict","转下页",""]],"c/g":[["ecdict"," [医][=curie per gram]居里/克，每克居里数",""]],"c/o":[["ecdict","由...转交","kәj"]],"c/p/":[["ecdict","[化] 化学纯",""]],"c/s":[["ecdict","[医] 每秒周[波]数",""]]};

@@ -1,0 +1,1 @@
+export default {"vhs tape":[["jmdict","ビデオ；ヴィデオ [ビデオ・ヴィデオ] — VHS tape","","en","ja"]],"vhf":[["jmdict","[noun (common) (futsuumeishi)] very high frequency; VHF","ブイ・エイチ・エフ・ブイエイチエフ・ブイエッチエフ","ja","en"],["jmdict","ＶＨＦ [ブイ・エイチ・エフ・ブイエイチエフ・ブイエッチエフ] — VHF","","en","ja"]]};

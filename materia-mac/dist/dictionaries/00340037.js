@@ -1,0 +1,1 @@
+export default {"47":[["ecdict"," forty-seven",""],["wordnet","s. being seven more than forty",""]],"47th":[["ecdict","[网络] 第47号",""],["wordnet","s. the ordinal number of forty-seven in counting order",""]]};

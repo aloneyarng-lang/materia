@@ -1,0 +1,1 @@
+export default {"d/a":[["ecdict","n. (缩)承兑交单",""]],"d/a converter":[["ecdict","[计] 数字-模拟转换器",""]],"d/d":[["ecdict","即期汇票",""]],"d/n quotient":[["ecdict","[医] D/N比值(葡萄糖和尿氮比值)",""]],"d/t":[["ecdict"," [医][=date of treatment]治疗日期",""]]};

@@ -1,0 +1,46 @@
+{
+  "workshopId": "3730489622",
+  "title": "Reze",
+  "sourceDirectory": "E:/Steam/steamapps/workshop/content/431960/3730489622",
+  "scene": {
+    "width": 2048,
+    "height": 1152,
+    "portrait": {
+      "width": 1110,
+      "height": 1077,
+      "originX": 1036.01001,
+      "originY": 538.48499
+    }
+  },
+  "textures": [
+    {
+      "file": "portrait.png",
+      "source": "\u56fe\u5c42 0 \u62f7\u8d1d.tex",
+      "width": 1110,
+      "height": 1077,
+      "sha256": "f3db0812a2dbe7dedcb998837a1a369156c0aa6f952f52e9dd68f90b957ee2e9"
+    },
+    {
+      "file": "background.png",
+      "source": "\u56fe\u5c42 0 \u62f7\u8d1d 2.tex",
+      "width": 2048,
+      "height": 1152,
+      "sha256": "3c0f2895bb94c4a0dce7e4e112f2461d7ea9508c75f881fa07e13f9d53b760ec"
+    },
+    {
+      "file": "foliage-mask.png",
+      "source": "masks/foliagesway_mask_0c265075.tex",
+      "width": 555,
+      "height": 538,
+      "sha256": "8ac22feafac8283e4c310bc6e45b94cad6fdf931b45122670b3d53cfcfaeb32f"
+    },
+    {
+      "file": "flow-mask.png",
+      "source": "masks/shake_mask_f9b41c3c.tex",
+      "width": 555,
+      "height": 538,
+      "sha256": "216726c6cbdcf19317e3927c7d4cb0e82fdaf2c68c194eb3317242bf8c4e5a68"
+    }
+  ],
+  "notes": "Original textures and masks extracted locally; renderer approximates foliage and flow effects. Workshop scripts, clock, calendar and soundtrack are not executed."
+}

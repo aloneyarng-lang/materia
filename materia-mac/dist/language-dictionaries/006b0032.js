@@ -1,0 +1,1 @@
+export default {"k2":[["ding","K2; Savage Mountain (the world's second-highest mountain on the border between China and Pakistan)","","de","en"],["ding","K2 {m} (zweithöchster Berg der Welt an der Grenze zwischen China und Pakistan)","","en","de"]]};

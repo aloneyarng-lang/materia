@@ -1,0 +1,1 @@
+export default {"1局":[["jmdict","[noun (common) (futsuumeishi)] one game (of go, shogi, etc.)\n[noun (common) (futsuumeishi)] one board (go, shogi, etc.)\n[noun (common) (futsuumeishi)] one office (of a broadcasting station, post office, etc.)","いっきょく","ja","en"]]};

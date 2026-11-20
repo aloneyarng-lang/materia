@@ -1,0 +1,1 @@
+export default {"3年":[["jmdict","[noun (common) (futsuumeishi)] three years\n[noun (common) (futsuumeishi)] third school year (e.g. of high school)","さんねん","ja","en"]],"3年生":[["jmdict","[noun (common) (futsuumeishi)] third-year student; third-year pupil","さんねんせい","ja","en"]]};

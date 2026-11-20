@@ -1,0 +1,1 @@
+export default {"kūdō (martial art form)":[["jmdict","空道 [くうどう] — kūdō (martial art form)","","en","ja"]],"kūdō":[["jmdict","空道 [くうどう] — kūdō (martial art form)","","en","ja"]],"kūkō line":[["jmdict","空港線 [くうこうせん] — Kūkō Line","","en","ja"]]};

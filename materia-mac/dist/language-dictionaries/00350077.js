@@ -1,0 +1,1 @@
+export default {"5w1h":[["jmdict","[noun (common) (futsuumeishi)] the five Ws and one H (who, what, when, where, why and how); 5W1H","ごダブリューいちエイチ・ごダブリューいちエッチ","ja","en"],["jmdict","５Ｗ１Ｈ [ごダブリューいちエイチ・ごダブリューいちエッチ] — 5W1H","","en","ja"]]};

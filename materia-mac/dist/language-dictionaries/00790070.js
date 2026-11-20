@@ -1,0 +1,1 @@
+export default {"ypsilon":[["ding","letter y; wye","","de","en"],["ding","Upsilon","","de","en"]],"ypecaharalle":[["ding","giant wood rail","","de","en"]],"ypirangaammer":[["ding","lesser grass finch","","de","en"]]};

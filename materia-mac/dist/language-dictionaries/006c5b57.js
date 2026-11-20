@@ -1,0 +1,1 @@
+export default {"l字溝":[["jmdict","[noun (common) (futsuumeishi)] L-shaped gutter; L-shaped drain","エルじこう","ja","en"]],"l字型":[["jmdict","[nouns which may take the genitive case particle 'no'; noun (common) (futsuumeishi)] L-shaped","エルじがた","ja","en"]]};

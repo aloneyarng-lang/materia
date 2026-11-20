@@ -1,0 +1,1 @@
+export default {"s'more (sweet snack)":[["jmdict","スモア [スモア] — s'more (sweet snack)","","en","ja"]],"s'more":[["jmdict","スモア [スモア] — s'more (sweet snack)","","en","ja"]],"s' isch net":[["ding","'tain't [coll.]; tain't [coll.]","","de","en"]]};

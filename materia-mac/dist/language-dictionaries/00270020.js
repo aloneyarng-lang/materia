@@ -1,0 +1,1 @@
+export default {"' girl of the golden west'":[["ding","'Das Mädchen aus dem goldenen Westen' (von Puccini / Werktitel) [mus.]","","en","de"]],"' journeys and discoveries in africa by three englishmen'":[["ding","'Fünf Wochen im Ballon' (von Jules Verne / Werktitel) [lit.]","","en","de"]]};

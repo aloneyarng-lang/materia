@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
   openLiteratureWorkbench: () => ipcRenderer.invoke('literature-workbench:open'),
+  appendDailyTip: entry => ipcRenderer.invoke('notes-vault:append-tip',entry),
+  onQuickTip: callback => {const listener=()=>callback();ipcRenderer.on('notes-vault:quick-tip',listener);return()=>ipcRenderer.removeListener('notes-vault:quick-tip',listener);},
   notesVaultList: () => ipcRenderer.invoke('notes-vault:list'),
   notesVaultSave: payload => ipcRenderer.invoke('notes-vault:save',payload),
   notesVaultImage: payload => ipcRenderer.invoke('notes-vault:image',payload),

@@ -1,0 +1,1 @@
+export default {"75":[["ecdict"," seventy-five",""],["wordnet","s. being five more than seventy",""]],"75th":[["ecdict","[网络] 第75号",""],["wordnet","s. the ordinal number of seventy-five in counting order",""]]};

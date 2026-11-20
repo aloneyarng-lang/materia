@@ -1,0 +1,1 @@
+export default {"2本立て映画":[["jmdict","[noun (common) (futsuumeishi)] double feature (movie)","にほんだてえいが","ja","en"]],"2本":[["jmdict","[noun (common) (futsuumeishi)] two (long cylindrical things)","にほん","ja","en"]],"2本足":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] two legs","にほんあし","ja","en"]]};

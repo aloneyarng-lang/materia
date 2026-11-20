@@ -1,0 +1,1 @@
+export default {" fold":[["jmdict","重 [え] — -fold","","en","ja"],["jmdict","倍 [ばい] — -fold","","en","ja"],["jmdict","重 [じゅう] — -fold","","en","ja"]]," focused":[["jmdict","中心 [ちゅうしん] — -focused","","en","ja"]]," figure":[["ding","…stellig {adj} (bei Geldbeträgen)","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"22":[["ecdict"," twenty-two",""],["wordnet","s. being two more than twenty",""],["wordnet","n. the cardinal number that is the sum of twenty-one and one",""]],"22nd":[["wordnet","s. coming next after the twenty-first in position",""]],"22 karat gold":[["wordnet","n. an alloy that contains 87 per cent gold",""]]};

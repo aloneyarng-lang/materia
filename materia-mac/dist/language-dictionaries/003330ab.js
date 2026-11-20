@@ -1,0 +1,1 @@
+export default {"3カードモンテ":[["jmdict","[noun (common) (futsuumeishi)] three-card monte (game)","スリーカードモンテ","ja","en"]],"3カ年":[["jmdict","[noun or verb acting prenominally] triennial","さんかねん","ja","en"]]};

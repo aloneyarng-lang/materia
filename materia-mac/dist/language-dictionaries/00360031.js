@@ -1,0 +1,1 @@
+export default {"61 prozent der wähler stimmten für die gesetzesänderung.":[["ding","61 per cent of the electorate voted for the change in the law.","","de","en"]],"61 per cent of the electorate voted for the change in the law.":[["ding","61 Prozent der Wähler stimmten für die Gesetzesänderung.","","en","de"]]};

@@ -1,0 +1,1 @@
+export default {"3密":[["jmdict","[noun (common) (futsuumeishi)] three Cs; three conditions that facilitate the transmission of infectious diseases (closed spaces, crowds, and close contact)\n[noun (common) (futsuumeishi)] three mysteries (Buddha's body, speech and mind)","さんみつ","ja","en"]]};

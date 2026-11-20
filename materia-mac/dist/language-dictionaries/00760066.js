@@ -1,0 +1,1 @@
+export default {"vfr flight":[["jmdict","有視界飛行 [ゆうしかいひこう] — VFR flight","","en","ja"]],"vfx":[["jmdict","視覚効果 [しかくこうか] — VFX","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] visual effects; VFX","ブイ・エフ・エックス・ブイエフエックス","ja","en"],["jmdict","ＶＦＸ [ブイ・エフ・エックス・ブイエフエックス] — VFX","","en","ja"]]};

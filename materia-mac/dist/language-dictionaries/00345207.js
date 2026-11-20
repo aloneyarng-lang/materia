@@ -1,0 +1,1 @@
+export default {"4切":[["jmdict","[noun (common) (futsuumeishi)] cutting into four; quarter\n[noun (common) (futsuumeishi)] photograph size 254mm x 305 mm","よつぎり","ja","en"]],"4切り":[["jmdict","[noun (common) (futsuumeishi)] cutting into four; quarter\n[noun (common) (futsuumeishi)] photograph size 254mm x 305 mm","よつぎり","ja","en"]]};

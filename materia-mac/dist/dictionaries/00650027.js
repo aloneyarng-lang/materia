@@ -1,0 +1,1 @@
+export default {"e'en":[["ecdict","adv. (=even)恰好, 即使,甚至","i:n"],["wordnet","r. even",""]],"e'er":[["ecdict","adv. (=ever)曾经, 到底","eә"],["wordnet","r. at all times; all the time and on every occasion; \"I will always be there to help you\"; \"always arrives on time\"; \"there is always some pollution in the air\"; \"ever hoping to strike it rich\"; \"ever busy\"",""]]};

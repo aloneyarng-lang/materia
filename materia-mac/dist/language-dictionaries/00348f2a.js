@@ -1,0 +1,1 @@
+export default {"4輪駆動車":[["jmdict","[noun (common) (futsuumeishi)] four-wheel-drive car; 4WD car","よんりんくどうしゃ","ja","en"]],"4輪駆動":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] four-wheel drive; 4WD","よんりんくどう","ja","en"]]};

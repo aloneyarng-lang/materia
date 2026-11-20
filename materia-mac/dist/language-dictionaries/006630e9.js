@@ -1,0 +1,1 @@
+export default {"fラン":[["jmdict","[noun (common) (futsuumeishi)] bottom-tier university with low entry requirements","エフラン","ja","en"]],"fランク大学":[["jmdict","[noun (common) (futsuumeishi)] bottom-tier university with low entry requirements","エフランクだいがく","ja","en"]]};

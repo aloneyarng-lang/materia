@@ -1,0 +1,144 @@
+{
+  "id": "interval-trend",
+  "name": "界带 · 区间趋势",
+  "category": "趋势分析",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "从全量参考库筛选的绘图结构。封面与数据为合成示例。 论文样式「细框内刻度」参考 0337 Fig. 5 的衬线字、细边框、内向主次刻度、实色异形标记与图内图例。",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "x",
+      "label": "横坐标",
+      "type": "number"
+    },
+    {
+      "key": "y",
+      "label": "中心值",
+      "type": "number"
+    },
+    {
+      "key": "lower",
+      "label": "下限",
+      "type": "number"
+    },
+    {
+      "key": "upper",
+      "label": "上限",
+      "type": "number"
+    },
+    {
+      "key": "group",
+      "label": "系列",
+      "type": "string"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "figureStyle",
+      "label": "论文样式",
+      "type": "select",
+      "default": "Figura 默认",
+      "options": [
+        "Figura 默认",
+        "细框内刻度"
+      ]
+    },
+    {
+      "key": "paperLegend",
+      "label": "细框样式图例位置",
+      "type": "select",
+      "default": "自动",
+      "options": [
+        "自动",
+        "左上",
+        "右上",
+        "左下",
+        "右下"
+      ]
+    },
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 界带 · 区间趋势"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "Process setting"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Response"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "markerSize",
+      "label": "散点半径",
+      "type": "number",
+      "default": 4,
+      "min": 1,
+      "max": 10
+    },
+    {
+      "key": "display",
+      "label": "区间画法",
+      "type": "select",
+      "default": "误差棒",
+      "options": [
+        "误差棒",
+        "带状包络"
+      ]
+    }
+  ],
+  "dataDescription": "每个系列的 X 不可重复，下限 ≤ 中心值 ≤ 上限。上下限是坐标值，由用户提供；请在图注说明区间含义。带状包络在相邻观测之间线性连接。"
+}

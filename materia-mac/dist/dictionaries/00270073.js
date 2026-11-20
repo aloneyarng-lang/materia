@@ -1,0 +1,1 @@
+export default {"'s gravenhage":[["ecdict","[荷兰语]海牙(= Hague)",",skrɑ:vən'hɑ:ɡə"],["wordnet","n. the site of the royal residence and the de facto capital in the western part of the Netherlands; seat of the International Court of Justice",""]]};

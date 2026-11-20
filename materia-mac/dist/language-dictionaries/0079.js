@@ -1,0 +1,1 @@
+export default {"y":[["jmdict","[noun (common) (futsuumeishi)] Y; y\n[noun (common) (futsuumeishi)] yellow\n[noun (common) (futsuumeishi)] short grain (paper)","ワイ","ja","en"],["jmdict","Ｙ；ｙ [ワイ] — Y","","en","ja"],["jmdict","Ｙ；ｙ [ワイ] — y","","en","ja"]]};

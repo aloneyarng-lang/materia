@@ -1,0 +1,1 @@
+export default {"2k":[["jmdict","[noun (common) (futsuumeishi)] 2K (resolution)","にケー","ja","en"],["jmdict","２Ｋ [にケー] — 2K (resolution)","","en","ja"]],"2k (resolution)":[["jmdict","２Ｋ [にケー] — 2K (resolution)","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"ojt":[["jmdict","[noun (common) (futsuumeishi)] on-the-job training; OJT","オー・ジェー・ティー・オージェーティー・オージェイティー","ja","en"],["jmdict","ＯＪＴ [オー・ジェー・ティー・オージェーティー・オージェイティー] — OJT","","en","ja"]]};

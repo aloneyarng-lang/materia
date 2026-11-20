@@ -1,0 +1,1 @@
+export default {"78":[["ecdict"," seventy-eight",""],["wordnet","s. being eight more than seventy",""],["wordnet","n. a shellac based phonograph record that played at 78 revolutions per minute",""],["wordnet","n. the cardinal number that is the sum of seventy and eight",""]]};

@@ -1,0 +1,1 @@
+export default {"g5":[["jmdict","[noun (common) (futsuumeishi)] Group of Five (senior financial officials from the United States, United Kingdom, West Germany, Japan and France)","ジー・ファイブ・ジーファイブ","ja","en"]]};

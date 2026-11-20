@@ -4,7 +4,7 @@ import {mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {NotesVault} from '../desktop/notes-vault.mjs';
-import {notePath} from '../dist/notes-vault-model.js';
+import {notePath,dailyTipName} from '../dist/notes-vault-model.js';
 import {noteReferences,renderNoteMarkdown,resolveNoteLink} from '../dist/notes-markdown.js';
 import {editNoteMarkdown,noteCommandAt} from '../dist/note-edit.js';
 
@@ -72,4 +72,14 @@ test('Markdown renders offline math without enabling active HTML, and indexes on
   const notes=[{id:'实验/测量.md'},{id:'讨论.md'}];
   assert.deepEqual(resolveNoteLink('实验/测量','草稿/材料.md',notes),{id:'实验/测量.md',heading:''});
   assert.deepEqual(resolveNoteLink('../%E8%AE%A8%E8%AE%BA.md#%E7%BB%93%E6%9E%9C','草稿/材料.md',notes,false),{id:'讨论.md',heading:'结果'});
+});
+
+test('daily tips use the local date and append concurrent entries without overwriting the note',async t=>{
+  assert.equal(dailyTipName(new Date(2026,10,20,0,1)),'tip_261120.md');
+  const root=await mkdtemp(path.join(os.tmpdir(),'materia-tip-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const vault=new NotesVault(root),id=dailyTipName();
+  await vault.save({id,body:'原有内容\r\n',revision:null});
+  await Promise.all([vault.appendTip('第一条'),vault.appendTip('第二条')]);
+  assert.equal(await readFile(path.join(root,id),'utf8'),'原有内容\r\n\r\n---\r\n\r\n第一条\r\n\r\n---\r\n\r\n第二条\r\n');
 });

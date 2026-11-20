@@ -1,0 +1,1 @@
+export default {"5百":[["jmdict","[numeric] 500; five hundred\n[noun (common) (futsuumeishi)] many","ごひゃく","ja","en"]],"5百円玉":[["jmdict","[noun (common) (futsuumeishi)] 500 yen coin","ごひゃくえんだま","ja","en"]]};

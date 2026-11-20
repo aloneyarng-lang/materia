@@ -1,0 +1,1 @@
+export default {"vga":[["jmdict","[noun (common) (futsuumeishi)] VGA; video graphics array","ブイ・ジー・エー・ブイジーエー","ja","en"],["jmdict","ＶＧＡ [ブイ・ジー・エー・ブイジーエー] — VGA","","en","ja"]],"vga monitor":[["ding","VGA monitor","","de","en"],["ding","VGA-Monitor {m}","","en","de"]]};

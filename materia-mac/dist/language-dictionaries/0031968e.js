@@ -1,0 +1,1 @@
+export default {"1階":[["jmdict","[noun (common) (futsuumeishi)] first floor; ground floor\n[noun (common) (futsuumeishi)] one floor; one storey\n[noun (common) (futsuumeishi)] one rank","いっかい","ja","en"]]};

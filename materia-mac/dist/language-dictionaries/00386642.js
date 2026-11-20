@@ -1,0 +1,1 @@
+export default {"8時間労働制":[["jmdict","[noun (common) (futsuumeishi)] eight-hour working day system","はちじかんろうどうせい","ja","en"]],"8時間制":[["jmdict","[noun (common) (futsuumeishi)] eight-hour day","はちじかんせい","ja","en"]],"8時":[["jmdict","[noun (common) (futsuumeishi)] eight o'clock","はちじ","ja","en"]]};

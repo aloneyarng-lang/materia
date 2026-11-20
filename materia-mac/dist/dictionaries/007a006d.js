@@ -1,0 +1,1 @@
+export default {"zm":[["ecdict","[计] 调零; 零调制",""]],"zma":[["ecdict"," [医][=zinc meta-arsenite,insecticide]偏亚砷酸锌",""]],"zmeskal":[["ecdict"," [人名] 兹梅斯卡尔",""]],"zmodem":[["ecdict","[计] Zmodem协议",""]],"zmud":[["ecdict"," zMUD是互联网上最好的 MUD 客户端程序之一。它除了一般的功能以外，还提供很多实用的功能，是 MUD 玩家的必备软件。",""]]};

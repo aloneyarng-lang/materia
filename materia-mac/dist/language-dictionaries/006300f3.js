@@ -1,0 +1,1 @@
+export default {"córdoba (currency of nicaragua)":[["jmdict","コルドバ [コルドバ] — córdoba (currency of Nicaragua)","","en","ja"]],"córdoba":[["jmdict","コルドバ [コルドバ] — córdoba (currency of Nicaragua)","","en","ja"],["ding","Córdoba (city in Argentina)","","de","en"],["ding","Córdoba (Stadt in Argentinien) [geogr.]","","en","de"],["ding","Cordoba (city in Spain)","","de","en"]]};

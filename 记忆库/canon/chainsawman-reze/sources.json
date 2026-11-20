@@ -1,0 +1,83 @@
+[
+  {
+    "id": "official-character",
+    "url": "https://chainsawman.dog/movie_reze/character/",
+    "title": "官方人物介绍",
+    "type": "官方一手",
+    "use": "蕾塞姓名、CV、咖啡店、与电次相遇",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "official-story",
+    "url": "https://chainsawman.dog/movie_reze/story/",
+    "title": "官方故事简介",
+    "type": "官方一手",
+    "use": "相遇背景与关系开端",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "reina-mantan",
+    "url": "https://mantan-web.jp/article/20251010dog00m200085000c.html",
+    "title": "上田麗奈 蕾塞访谈（2025-10-11）",
+    "type": "当事人访谈",
+    "use": "表演方向与后半状态；演员解释不等于唯一原作真相",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "reina-newtype",
+    "url": "https://webnewtype.com/report/cast/entry-38079.html",
+    "title": "声优奖官方访谈（2026-04-10）",
+    "type": "当事人访谈",
+    "use": "开朗表层与双面性，如何推动电次",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "official-trailer",
+    "url": "https://www.youtube.com/watch?v=pv8A7eubPQQ",
+    "title": "MAPPA CHANNEL 本预告",
+    "type": "官方音视频",
+    "use": "蕾塞短参考音频，保留时间位置",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "ganyu-official",
+    "url": "https://genshin.hoyoverse.com/ja/character/liyue?char=2",
+    "title": "原神 璃月角色介绍",
+    "type": "官方一手",
+    "use": "甘雨日语CV上田麗奈",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "hf-model",
+    "url": "https://huggingface.co/AI-Hobbyist/GPT-SoVits-V2-models",
+    "title": "AI-Hobbyist GPT-SoVITS v2 模型",
+    "type": "发布者一手",
+    "use": "JA5.1配套权重与模型使用说明",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "gsv-upstream",
+    "url": "https://github.com/RVC-Boss/GPT-SoVITS",
+    "title": "GPT-SoVITS 项目",
+    "type": "官方项目",
+    "use": "推理工程，权重不能独立运行",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "shueisha-v6",
+    "url": "https://www.shueisha.co.jp/books/items/contents.html?isbn=978-4-08-882224-2",
+    "title": "集英社 电锯人第6卷",
+    "type": "出版社一手",
+    "use": "后续合法精读入口；本包未转录整卷",
+    "accessed": "2026-11-08"
+  },
+  {
+    "id": "wiki-plot",
+    "url": "https://en.wikipedia.org/w/index.php?title=Reze_(Chainsaw_Man)&oldid=1381800481",
+    "title": "Reze — Appearances",
+    "type": "二手剧情摘要",
+    "use": "补充背景与篇章结尾；尚未逐页核对漫画，检索时低于官方资料",
+    "accessed": "2026-11-08",
+    "license": "CC BY-SA 4.0"
+  }
+]

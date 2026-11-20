@@ -1,0 +1,1 @@
+export default {"3p":[["jmdict","[noun (common) (futsuumeishi)] threesome (sexual activity)","さんピー","ja","en"]],"3pl":[["jmdict","サードパーティーロジスティクス；サード・パーティー・ロジスティクス [サードパーティーロジスティクス・サード・パーティー・ロジスティクス] — 3PL","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] third-party logistics; 3PL","スリーピーエル・さんピーエル","ja","en"],["jmdict","３ＰＬ [スリーピーエル・さんピーエル] — 3PL","","en","ja"]]};

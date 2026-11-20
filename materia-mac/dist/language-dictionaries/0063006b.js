@@ -1,0 +1,1 @@
+export default {"ck":[["jmdict","[noun (common) (futsuumeishi)] corner kick (soccer)","シー・ケー・シーケー・シーケイ","ja","en"]],"ckw rotation":[["ding","Rechtslauf {m}; Rechtsdrehung {f}; Umdrehung {f} im Uhrzeigersinn /mul/ (mit Uhrzeiger laufend)","","en","de"]]};

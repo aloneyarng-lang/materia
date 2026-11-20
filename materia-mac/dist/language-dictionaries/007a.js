@@ -1,0 +1,1 @@
+export default {"z":[["jmdict","[noun (common) (futsuumeishi)] Z; z","ゼット・ゼッド","ja","en"],["jmdict","Ｚ；ｚ [ゼット・ゼッド] — Z","","en","ja"],["jmdict","Ｚ；ｚ [ゼット・ゼッド] — z","","en","ja"],["ding","Z; Zed [Br.]; Zee [Am.]","","de","en"],["ding","Z {n} (Buchstabe)","","en","de"]]};

@@ -1,0 +1,19 @@
+[data-reading-status=unread]{--reading-color:#8b939c;--reading-fill:#e1e5e9}
+[data-reading-status=reading]{--reading-color:#9a6e04;--reading-fill:#f0c94e}
+[data-reading-status=studied]{--reading-color:#20764a;--reading-fill:#46b879}
+[data-reading-status=archived]{--reading-color:#7950ac;--reading-fill:#b58ae8}
+html[data-theme-mode=dark] [data-reading-status=unread]{--reading-color:#bfc5cd;--reading-fill:#969fa9}
+html[data-theme-mode=dark] [data-reading-status=reading]{--reading-color:#f2d36e;--reading-fill:#edc94a}
+html[data-theme-mode=dark] [data-reading-status=studied]{--reading-color:#7cdaa6;--reading-fill:#50c587}
+html[data-theme-mode=dark] [data-reading-status=archived]{--reading-color:#d1adff;--reading-fill:#b38ce8}
+.reading-status-dot{display:inline-block;width:8px;height:8px;min-width:8px;border:1px solid color-mix(in srgb,var(--reading-color) 65%,transparent);border-radius:50%;background:var(--reading-fill);box-shadow:inset 0 1px 1px #ffffff55;flex-shrink:0}
+#reading-status-filter{min-width:140px}
+.reading-status-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid var(--line);border-radius:14px;line-height:1.45;font-size:.625rem;color:var(--reading-color);background:var(--glass-field,var(--panel));white-space:nowrap}
+.reading-status-chip small{font-size:.625rem;opacity:.65;margin-left:2px}.reading-status-chip:hover{border-color:var(--reading-color)}
+html[data-liquid-glass=true] .reading-status-chip>span{background:transparent;padding:0;font-size:inherit;color:inherit;border:0}
+.detail-reading-status{margin:10px 0 13px}.detail-reading-status .reading-status-chip{padding:5px 10px;font-size:.6875rem}
+.reading-status-menu{inset:auto;margin:0;width:190px;max-height:calc(100vh - 16px)}
+.reading-status-menu-label{display:inline-flex;align-items:center;gap:9px}.reading-status-menu [aria-checked=true]{background:var(--glass-field,var(--panel));color:var(--ink)}
+.reading-status-menu button{font-size:.75rem;min-height:34px}
+.reading-status-feedback{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.paper-status-heading{display:flex;align-items:center;gap:8px;padding:16px 3px 9px;color:var(--reading-color);font-size:.75rem}.paper-status-heading strong{font-weight:600}.paper-status-heading small{margin-left:auto;font-family:var(--numeric);color:var(--muted);font-size:.625rem}

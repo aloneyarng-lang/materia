@@ -1,0 +1,1 @@
+export default {"vw":[["ecdict","abbr. 大众汽车（Volkswagen）",""]],"vwp":[["ecdict","abbr. variable width pulse 可变宽度脉冲","'vi:d'əbəlju:p'i:"]],"vws":[["ecdict","abbr. ventilated wet suit 透气式湿潜水服; very well sorted 分选极好的; vibrating-wire stressmeter(s) 振动有线应力计",""]]};

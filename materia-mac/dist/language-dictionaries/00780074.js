@@ -1,0 +1,1 @@
+export default {"xterm":[["jmdict","Ｘ端末 [エックスたんまつ] — Xterm","","en","ja"]],"xterminal":[["jmdict","Ｘ端末 [エックスたんまつ] — Xterminal","","en","ja"]],"xtc":[["ding","methylenedioxymethamphetamine /MDMA/; ecstasy; XTC","","de","en"],["ding","Methylendioxymethamphetamin {n} /MDMA/; Ecstasy {n}; XTC {n} [pharm.]","","en","de"]]};

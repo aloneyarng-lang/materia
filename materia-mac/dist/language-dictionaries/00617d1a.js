@@ -1,0 +1,1 @@
+export default {"a級戦犯":[["jmdict","[noun (common) (futsuumeishi)] class-A war criminal","エーきゅうせんぱん","ja","en"]],"a級":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] class-A; A class; A grade","エーきゅう","ja","en"]]};

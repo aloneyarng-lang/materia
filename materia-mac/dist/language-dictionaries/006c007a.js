@@ -1,0 +1,1 @@
+export default {"lzh":[["jmdict","[noun (common) (futsuumeishi)] LZH; Lempel-Ziv and Haruyasu compression algorithm","エル・ゼット・エイチ・エルゼットエイチ・エルゼットエッチ","ja","en"],["jmdict","ＬＺＨ [エル・ゼット・エイチ・エルゼットエイチ・エルゼットエッチ] — LZH","","en","ja"]],"lz":[["jmdict","ランディングゾーン；ランディング・ゾーン [ランディングゾーン・ランディング・ゾーン] — LZ","","en","ja"]]};

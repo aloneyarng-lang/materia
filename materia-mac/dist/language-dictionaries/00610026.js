@@ -1,0 +1,1 @@
+export default {"a&e":[["jmdict","緊急救命室 [きんきゅうきゅうめいしつ] — A&E","","en","ja"]],"a&e hospital":[["ding","Unfallkrankenhaus {n}; Unfallklinik {f}; Unfallklinikum {n}; Unfallspital {n} [Ös.] [Schw.] [med.]","","en","de"]],"a&e hospitals":[["ding","Unfallkrankenhäuser {pl}; Unfallkliniken {pl}; Unfallklinika {pl}; Unfallspitale {pl}","","en","de"]]};

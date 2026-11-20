@@ -1,0 +1,1 @@
+export default {"qb":[["jmdict","[noun (common) (futsuumeishi)] quarterback","キュー・ビー・キュービー","ja","en"]],"qbk":[["jmdict","[noun (common) (futsuumeishi)] missed scoring opportunity (in soccer)","キュー・ビー・ケー・キュービーケー・キュービーケイ","ja","en"]],"qbit":[["jmdict","キュビット；キュービット；キュビト；クビット [キュビット・キュービット・キュビト・クビット] — qbit","","en","ja"]]};

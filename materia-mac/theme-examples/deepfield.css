@@ -1,0 +1,58 @@
+/* @name: 远星航图 · CSS 精简版 */
+/* Materia 主题：颜色、字体和星图形态；只修改 :root 中的变量。 */
+:root {
+  --paper: #080e1d;
+  --surface: #111b30;
+  --canvas: #060b19;
+  --panel: #18243b;
+  --sidebar: #0b1325;
+  --ink: #e7efff;
+  --muted: #a2b4d0;
+  --line: #30425e;
+  --teal: #c8e1ff;
+  --teal-light: #233754;
+  --on-accent: #0c1c30;
+  --warning: #efc98d;
+  --warning-soft: #373022;
+  --danger: #ffadbf;
+  --danger-soft: #3b263b;
+  --shadow: #00040e70;
+  --theme-mode: dark;
+  --sans: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --serif: Georgia, 'STZhongsong', SimSun, serif;
+  --numeric: 'Source Code Pro', Consolas, monospace;
+  --mono: 'Source Code Pro', Consolas, 'Microsoft YaHei', monospace;
+  --font-size: 13px;
+  --font-weight: 400;
+  --line-height: 1.8;
+  --heading-weight: 400;
+  --heading-scale: 1.05;
+  --heading-line-height: 1.6;
+  --graph-node-shape: star;
+  --graph-relation-shape: planet;
+  --graph-node-fill: solid;
+  --graph-edge-style: straight;
+  --graph-edge-dash: solid;
+  --graph-background: nebula;
+  --graph-color-mode: accent;
+  --graph-node-scale: 1.05;
+  --graph-node-stroke: 0.5;
+  --graph-edge-width: 1.4;
+  --graph-edge-opacity: 0.32;
+  --graph-label-scale: 1.06;
+  --graph-label-halo: 4px;
+  --graph-glow: 5.5px;
+  --graph-edge-color: #829fc7;
+  --graph-label-color: #ccd9ef;
+  --graph-star-density: 1.35;
+  --graph-star-opacity: 0.72;
+  --graph-star-color: #d5e6ff;
+  --graph-nebula-intensity: 0.72;
+  --graph-nebula-color: #7354ba;
+  --graph-nebula-color-secondary: #247f9b;
+  --graph-orbit-scale: 1.85;
+  --graph-orbit-tilt: 28;
+  --graph-twinkle: subtle;
+  --graph-seed: 214;
+  --radius: 7px;
+}

@@ -1,0 +1,1 @@
+export default {"qos":[["jmdict","サービス品質 [サービスひんしつ] — QOS","","en","ja"]],"qol":[["jmdict","[noun (common) (futsuumeishi)] quality of life; QOL","キュー・オー・エル・キューオーエル","ja","en"],["jmdict","ＱＯＬ [キュー・オー・エル・キューオーエル] — QOL","","en","ja"],["jmdict","生活の質 [せいかつのしつ] — QOL","","en","ja"]]};

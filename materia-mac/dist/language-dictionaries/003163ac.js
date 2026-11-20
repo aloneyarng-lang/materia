@@ -1,0 +1,1 @@
+export default {"1掬い":[["jmdict","[noun (common) (futsuumeishi)] one scoop (e.g. of ice cream); one scoopful; one spoonful (e.g. of soup)\n[noun (common) (futsuumeishi)] small ornamental spoon","ひとすくい","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"2号園児":[["jmdict","[noun (common) (futsuumeishi)] full-day child (aged 3-5; at a certified center for early childhood education and care); preschooler requiring childcare","にごうえんじ","ja","en"]]};

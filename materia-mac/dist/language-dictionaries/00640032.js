@@ -1,0 +1,1 @@
+export default {"d2 abstandsmaßzahl":[["ding","D²-statistic; Mahalanobis' generalized distance","","de","en"]],"d2 statistic":[["ding","D²-Abstandsmaßzahl {f}; verallgemeinerter Abstand nach Mahalanobis","","en","de"]]};

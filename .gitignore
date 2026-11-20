@@ -6,12 +6,15 @@ node_modules/
 release/
 **/release/
 *.exe
+!/Materia.exe
 *.zip
 *.tar
 *.tar.gz
 *.tgz
 *.nvg
+!/hud-ex-blue.nvg
 /*preview.png
+!/hud-ex-blue-preview.png
 *.mp4
 
 # Local environments & test results
@@ -49,24 +52,15 @@ backups/
 .trash/
 *.log
 
-# Apple font binaries in this user's private local build
-**/dist/fonts/apple/
-
 # Machine-specific shortcuts and generated theme previews
 *.lnk
 *.tar.gz
 *.tgz
-*.nvg
-/*preview.png
 /scratch/
 **/theme-examples/*preview.png
 **/theme-examples/*comparison.png
 
-# Local role corpus and private relationship indexes
-/记忆库/
+# Personal research data vaults
 /笔记库/
 AI 工作室库/
 /AI 工作室库/
-materia-mac/
-/materia-mac/
-

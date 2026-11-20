@@ -1,0 +1,1 @@
+export default {"0距離射撃":[["jmdict","[noun (common) (futsuumeishi)] point-blank shot; close-range shot","ゼロきょりしゃげき・れいきょりしゃげき","ja","en"]],"0距離":[["jmdict","[noun (common) (futsuumeishi)] very close range; close quarters","ゼロきょり・れいきょり","ja","en"]]};

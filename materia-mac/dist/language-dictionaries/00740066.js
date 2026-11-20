@@ -1,0 +1,1 @@
+export default {"tft":[["jmdict","薄膜トランジスタ；薄膜トランジスター [うすまくトランジスタ・はくまくトランジスタ] — TFT","","en","ja"]],"tfr":[["jmdict","合計特殊出生率 [ごうけいとくしゅしゅっしょうりつ] — TFR","","en","ja"]],"tfam":[["jmdict","東京富士美術館 [とうきょうふじびじゅつかん] — TFAM","","en","ja"]],"tfcc injury/lesion":[["ding","Diskusverletzung {f} / Diskusläsion {f} am Handgelenk; Läsion {f} des Diskus ulnokarpalis [med.]","","en","de"]]};

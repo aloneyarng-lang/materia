@@ -1,0 +1,1 @@
+export default {"70":[["ecdict"," seventy",""],["wordnet","s. being ten more than sixty",""],["wordnet","n. the cardinal number that is the product of ten and seven",""]],"70th":[["wordnet","s. the ordinal number of seventy in counting order",""]]};

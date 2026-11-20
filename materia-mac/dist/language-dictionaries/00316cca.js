@@ -1,0 +1,1 @@
+export default {"1泊":[["jmdict","[noun (common) (futsuumeishi); noun or participle which takes the aux. verb suru; intransitive verb] (staying) one night; overnight stay\n[noun (common) (futsuumeishi)] overnight rental; per-night rental","いっぱく","ja","en"]]};

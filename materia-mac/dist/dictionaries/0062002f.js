@@ -1,0 +1,1 @@
+export default {"b/f":[["ecdict","结转",""]],"b/l":[["ecdict","n. (缩)提单",""]],"b/l copy":[["ecdict","[经] 提货单副本",""]],"b/l original":[["ecdict","[经] 提货单正本",""]],"b/l to be issued at":[["ecdict","[经] 提货单签发者",""]],"b/w":[["ecdict"," 黑白",""]]};

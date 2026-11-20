@@ -1,0 +1,1 @@
+export default {"34% der waren, die der zoll im vergangenen jahr beschlagnahmte, waren zigaretten.":[["ding","34% of the goods which customs seized in the last year were cigarettes.","","de","en"]],"34% of the goods which customs seized in the last year were cigarettes.":[["ding","34% der Waren, die der Zoll im vergangenen Jahr beschlagnahmte, waren Zigaretten.","","en","de"]]};

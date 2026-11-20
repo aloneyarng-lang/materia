@@ -1,0 +1,1 @@
+export default {"d2o":[["ecdict","[医] 氧化氘, 重水",""]],"d2u":[["ecdict","[计] Netware DOS文本文件到UNIX文本文件转换程序",""]]};

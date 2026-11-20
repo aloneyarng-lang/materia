@@ -1,0 +1,1 @@
+export default {"49":[["ecdict"," forty-nine",""],["wordnet","s. being nine more than forty",""]],"49th":[["ecdict","[网络] 第49号",""],["wordnet","s. the ordinal number of forty-nine in counting order",""]]};

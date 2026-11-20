@@ -1,0 +1,1 @@
+export default {"l":[["jmdict","[noun (common) (futsuumeishi)] L; l\n[noun (common) (futsuumeishi)] liter; litre; L; l","エル","ja","en"],["jmdict","Ｌ；ｌ；ℓ [エル] — L","","en","ja"],["jmdict","Ｌ；ｌ；ℓ [エル] — l","","en","ja"]]};

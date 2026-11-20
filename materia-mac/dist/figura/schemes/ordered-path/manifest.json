@@ -1,0 +1,136 @@
+{
+  "id": "ordered-path",
+  "name": "循迹 · 顺序回线",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "通用数据绘图方案；封面与数据为合成示例，非原论文结果。",
+  "category": "轨迹与回线",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "x",
+      "label": "横坐标",
+      "type": "number"
+    },
+    {
+      "key": "y",
+      "label": "纵坐标",
+      "type": "number"
+    },
+    {
+      "key": "group",
+      "label": "系列名称",
+      "type": "string"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "title",
+      "label": "图标题",
+      "type": "text",
+      "default": "合成示例 · 循迹 · 顺序回线"
+    },
+    {
+      "key": "xLabel",
+      "label": "X 轴名称",
+      "type": "text",
+      "default": "X"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": "Y"
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 900,
+      "min": 400,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 300,
+      "max": 1800
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Arial",
+      "options": [
+        "Arial",
+        "Times New Roman",
+        "Microsoft YaHei"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 14,
+      "min": 8,
+      "max": 30
+    },
+    {
+      "key": "palette",
+      "label": "配色",
+      "type": "select",
+      "default": "学术",
+      "options": [
+        "学术",
+        "色觉友好"
+      ]
+    },
+    {
+      "key": "lineWidth",
+      "label": "线宽",
+      "type": "number",
+      "default": 2,
+      "min": 0.5,
+      "max": 8
+    },
+    {
+      "key": "markerSize",
+      "label": "标记半径",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "max": 10
+    },
+    {
+      "key": "order",
+      "label": "连线顺序",
+      "type": "select",
+      "default": "表格顺序",
+      "options": [
+        "表格顺序"
+      ]
+    },
+    {
+      "key": "xScale",
+      "label": "X 坐标尺度",
+      "type": "select",
+      "default": "线性",
+      "options": [
+        "线性"
+      ]
+    },
+    {
+      "key": "yScale",
+      "label": "Y 坐标尺度",
+      "type": "select",
+      "default": "线性",
+      "options": [
+        "线性"
+      ]
+    }
+  ],
+  "dataDescription": "按各组在表格中的采集顺序连接，允许横坐标往返；不自动闭合，不计算矫顽力、损耗面积或物性。"
+}

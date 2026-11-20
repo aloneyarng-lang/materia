@@ -1,0 +1,32 @@
+{
+  "format": "materia-character-source-manifest",
+  "version": 1,
+  "characterId": "chainsawman-reze",
+  "importedAt": "2026-11-08",
+  "corpusSHA256": "c0c2dc4391ca5c4b56beda6fad6f51ceccfbbb1a38bfeafbc7807bfee8ea37a6",
+  "sourceArchive": "C:\\Users\\alone\\OneDrive\\Desktop\\materia\\material-atlas\\.local\\canon-import-20261108\\sources",
+  "statistics": {
+    "originalQuoteRecords": 23,
+    "primaryVerified": 0,
+    "secondaryTranscriptionRecords": 23,
+    "assistantTranslatedLanguages": [
+      "zh-CN",
+      "en"
+    ],
+    "chapterConflicts": 1
+  },
+  "sources": [
+    {
+      "file": "reze-quotes-ja.html",
+      "url": "https://mangakawiki.com/archives/15241",
+      "bytes": 148765,
+      "sha256": "360dfa78c55800eb0ca0863675133a2a5b4d2bd8d2a5d6fef8e5164b1d6d52b8"
+    },
+    {
+      "file": "reze-crosscheck-ja.html",
+      "url": "https://saikyou-plus.com/reze-lines/",
+      "bytes": 226096,
+      "sha256": "f2f33fc0e2f6530d26dc5bc8b06c189bf5824545a4564c77af777c07b415da59"
+    }
+  ]
+}

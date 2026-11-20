@@ -1,0 +1,1 @@
+export default {"p/c":[["ecdict","小额现金收入, 零用现金, 小额现金支出, 市价表",""]],"p/e":[["ecdict","abbr. 价格利润比（Price/Earnings Ratio）；装载港（Port of Embarkation）",""]],"p/f":[["ecdict","[计] 探询/结束位",""]],"p/e ratio":[["wordnet","n. (stock market) the price of a stock divided by its earnings",""]]};

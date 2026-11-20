@@ -1,0 +1,1 @@
+export default {"a/c":[["ecdict","公元前, 往来帐户, 活期存款帐户",""]],"a/d":[["ecdict","abbr. 模拟数字转换（Analog to Digital）",""]],"a/d converter controller":[["ecdict","[电] 类比数位转换控制器",""]],"a/o":[["ecdict","(=account of) 帐上","o,a"]],"a/r/":[["ecdict","[化] 分析纯; 二级纯",""]],"a/ux":[["ecdict","[计] A/UX操作系统",""]],"a/v":[["ecdict","abbr. 按价（ad valorem）；音频/视频（audio/video）",""]]};

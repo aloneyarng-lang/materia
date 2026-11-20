@@ -1,0 +1,1 @@
+export default {"\"keep it simple, stupid\" principle":[["ding","Prinzip \"Halte es möglichst einfach!\"","","en","de"]],"\"keep it sophisticatedly simple\" principle /kiss/":[["ding","Prinzip \"Halte es möglichst einfach!\"","","en","de"]]};

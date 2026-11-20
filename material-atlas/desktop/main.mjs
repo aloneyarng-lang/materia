@@ -144,6 +144,12 @@ async function start() {
   });
   Menu.setApplicationMenu(null);
   mainWindow.on('close',event=>{if(canvasCloseReady&&!canvasAllowClose){event.preventDefault();mainWindow.webContents.send('canvas:prepare-close');}});
+  mainWindow.webContents.on('before-input-event',(event,input)=>{
+    const modifier=process.platform==='darwin' ? input.meta&&!input.control : input.control&&!input.meta;
+    if(input.type!=='keyDown'||input.isComposing||!modifier||!input.alt||input.shift||input.code!=='KeyN')return;
+    event.preventDefault();
+    if(!input.isAutoRepeat)mainWindow.webContents.send('notes-vault:quick-tip');
+  });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', (event, url) => { if (url !== mainWindow.webContents.getURL()) event.preventDefault(); });
   mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
@@ -152,6 +158,7 @@ async function start() {
     return fn(...args);
   });
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
+  handle('notes-vault:append-tip',entry=>notesVault.appendTip(entry));
   handle('notes-vault:list',()=>notesVault.list());
   handle('notes-vault:save',payload=>notesVault.save(payload));
   handle('notes-vault:image',({note,reference})=>notesVault.image(note,reference));

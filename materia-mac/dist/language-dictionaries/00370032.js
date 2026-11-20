@@ -1,0 +1,1 @@
+export default {"720ml bottle (of alcohol)":[["jmdict","四合瓶 [しごうびん・よんごうびん] — 720ml bottle (of alcohol)","","en","ja"]],"720ml bottle":[["jmdict","四合瓶 [しごうびん・よんごうびん] — 720ml bottle (of alcohol)","","en","ja"]]};

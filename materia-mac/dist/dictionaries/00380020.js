@@ -1,0 +1,1 @@
+export default {"8 membered":[["ecdict","[网络] 8元",""],["wordnet","s. of a chemical compound having a ring with eight members",""]],"8 may 1945":[["wordnet","n. the date of Allied victory in Europe, World War II",""]]};

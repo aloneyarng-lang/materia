@@ -1,0 +1,1 @@
+export default {"gマーク":[["jmdict","[noun (common) (futsuumeishi)] G-Mark; mark indicating that a product has received a Good Design Award from the Japan Institute of Design Promotion","ジーマーク","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"yn":[["ecdict","abbr. 云南（Yun Nan）",""]],"ynambu":[["ecdict"," 棕鹊",""]],"ynamine":[["ecdict","[化] 炔胺",""]],"yngve":[["ecdict","n. (Yngve)人名；(芬、瑞典)英韦",""]],"ynp":[["ecdict","abbr. Yellowstone National Park <美国>黄石公园; Yosemite NP (California) 约塞米蒂国家公园（美国加利福尼亚州中部）; Youth National Party 国际青年党",""]]};

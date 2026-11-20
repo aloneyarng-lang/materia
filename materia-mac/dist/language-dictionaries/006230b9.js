@@ -1,0 +1,1 @@
+export default {"bスプライン関数":[["jmdict","[noun (common) (futsuumeishi)] B-spline","ビースプラインかんすう","ja","en"]],"bスイッチ":[["jmdict","[noun (common) (futsuumeishi)] simple on-off switch; one-way switch (UK); two-way switch (US)","ビースイッチ","ja","en"]]};

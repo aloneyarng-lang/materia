@@ -1,0 +1,2 @@
+import {svg,bounds,scale,axes,series,legend,palette} from '../gallery-utils.js';
+export function render({data,params:p}){const b=bounds(p),colors=palette(p),groups=[...new Set(data.map(d=>d.group))],x=scale(data.map(d=>d.x),b.l,b.r,p.xScale==='对数'),y=scale(data.map(d=>d.y),b.b,b.t,p.yScale==='对数');let s=axes(b,x,y,p);groups.forEach((g,i)=>{const rows=data.filter(d=>d.group===g);if(p.order==='横坐标排序')rows.sort((a,b)=>a.x-b.x);s+=series(rows,x,y,colors[i%colors.length],p);});return svg(p,s+legend(b,groups,colors));}

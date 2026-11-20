@@ -1,0 +1,1 @@
+export default {"1限目":[["jmdict","[noun (common) (futsuumeishi)] first period (e.g. first class in school day)","いちげんめ","ja","en"]],"1限":[["jmdict","[noun (common) (futsuumeishi)] first period (e.g. first class in school day)","いちげん","ja","en"]]};

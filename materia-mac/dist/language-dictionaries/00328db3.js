@@ -1,0 +1,1 @@
+export default {"2足":[["jmdict","[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] two legs; two feet\n[noun (common) (futsuumeishi); nouns which may take the genitive case particle 'no'] two pairs","にそく","ja","en"]]};

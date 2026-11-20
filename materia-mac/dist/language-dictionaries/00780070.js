@@ -1,0 +1,1 @@
+export default {"xp":[["jmdict","経験値 [けいけんち] — XP","","en","ja"],["jmdict","[noun (common) (futsuumeishi)] XP; exp; experience point\n[noun (common) (futsuumeishi)] extreme programming; XP","エックス・ピー・エックスピー","ja","en"],["jmdict","ＸＰ [エックス・ピー・エックスピー] — XP","","en","ja"]]};

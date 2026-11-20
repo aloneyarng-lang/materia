@@ -1,0 +1,1 @@
+export default {"lq":[["ecdict","abbr. 液体（liquid）；最下弦（lowest quartile）；线性计量器（linear quantifier）",""]],"lql":[["ecdict","abbr. limiting quality level 极限质量水平",""]],"lqs":[["ecdict","abbr. lot quality standard 批量质量标准; quartz spot light （石英）聚光灯（代号）",""]],"lqtm":[["ecdict","暗自发笑（缩写）",""]],"lqts":[["ecdict"," [医][=long QT syndrome]QT间期延长综合征，长QT综合征",""]]};

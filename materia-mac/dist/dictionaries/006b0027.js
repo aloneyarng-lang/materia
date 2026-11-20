@@ -1,0 +1,1 @@
+export default {"k'ung futzu":[["ecdict","[网络] 康德祖",""],["wordnet","n. Chinese philosopher whose ideas and sayings were collected after his death and became the basis of a philosophical doctrine known a Confucianism (circa 551-478 BC)",""]]};

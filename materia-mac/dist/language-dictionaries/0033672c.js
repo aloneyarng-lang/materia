@@ -1,0 +1,1 @@
+export default {"3本":[["jmdict","[noun (common) (futsuumeishi)] three (long cylindrical things)\n[noun (common) (futsuumeishi)] three-of-a-kind (in a dealt hand)","さんぼん","ja","en"]],"3本立て":[["jmdict","[noun (common) (futsuumeishi)] triple feature (e.g. movie)","さんぼんだて","ja","en"]]};

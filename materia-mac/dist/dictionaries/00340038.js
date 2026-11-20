@@ -1,0 +1,1 @@
+export default {"48":[["ecdict"," forty-eight",""],["wordnet","s. being eight more than forty",""]],"48th":[["ecdict","[网络] 第48号",""],["wordnet","s. the ordinal number of forty-eight in counting order",""]]};

@@ -1,0 +1,1 @@
+export default {"mg":[["jmdict","ミリグラム [ミリグラム] — mg","","en","ja"]],"mgu":[["jmdict","モスクワ大学 [モスクワだいがく] — MGU","","en","ja"]],"mg feuerstoß":[["ding","machine-gun burst","","de","en"]],"mg schütze":[["ding","machine-gunner; machine gun operator","","de","en"]],"mg schützen":[["ding","machine-gunners; machine gun operators","","de","en"]]};

@@ -1,0 +1,1 @@
+export default {"t字路":[["jmdict","[noun (common) (futsuumeishi)] T junction","ティーじろ","ja","en"]],"t字型":[["jmdict","[nouns which may take the genitive case particle 'no'; noun (common) (futsuumeishi)] T-shaped","ティーじがた","ja","en"]]};

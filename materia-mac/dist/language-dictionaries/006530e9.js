@@ -1,0 +1,1 @@
+export default {"eラーニング":[["jmdict","[noun (common) (futsuumeishi)] e-learning","イーラーニング","ja","en"]],"eライン":[["jmdict","[noun (common) (futsuumeishi)] E-line (line drawn from the tip of the nose to the jaw); esthetic plane","イーライン","ja","en"]]};

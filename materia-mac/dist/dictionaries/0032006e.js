@@ -1,0 +1,1 @@
+export default {"2nd":[["ecdict"," 第二(second)",""],["wordnet","s. coming next after the first in position in space or time or degree or magnitude",""]],"2nd lieutenant":[["wordnet","n. a commissioned officer in the Army or Air Force or Marine Corps holding the lowest rank",""]]};

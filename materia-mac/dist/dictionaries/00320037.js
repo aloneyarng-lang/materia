@@ -1,0 +1,1 @@
+export default {"27":[["ecdict"," twenty-seven",""],["wordnet","s. being seven more than twenty",""],["wordnet","n. the cardinal number that is the sum of twenty-six and one",""]],"27th":[["wordnet","s. coming next after the twenty-sixth in position",""]]};

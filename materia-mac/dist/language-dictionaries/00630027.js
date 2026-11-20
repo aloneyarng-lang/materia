@@ -1,0 +1,1 @@
+export default {"c'mon":[["jmdict","何れ [どれ] — c'mon","","en","ja"],["jmdict","何れ何れ [どれどれ] — c'mon","","en","ja"]],"c'est la vie":[["jmdict","しゃあない；しゃーない [しゃあない・しゃーない] — c'est la vie","","en","ja"],["jmdict","セラヴィ；セラビ；セ・ラ・ヴィ；セ・ラ・ビ [セラヴィ・セラビ・セ・ラ・ヴィ・セ・ラ・ビ] — c'est la vie","","en","ja"]],"c'mon!":[["jmdict","オラオラ；おらおら [オラオラ・おらおら] — c'mon!","","en","ja"]]};

@@ -1,0 +1,1 @@
+export default {"2階":[["jmdict","[noun (common) (futsuumeishi)] second floor; upstairs","にかい","ja","en"]],"2階建て":[["jmdict","[noun (common) (futsuumeishi)] two-storied building","にかいだて","ja","en"]],"2階建":[["jmdict","[noun (common) (futsuumeishi)] two-storied building","にかいだて","ja","en"]]};

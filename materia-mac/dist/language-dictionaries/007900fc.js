@@ -1,0 +1,1 @@
+export default {"yüan dynasty":[["jmdict","元 [げん] — Yüan dynasty","","en","ja"],["jmdict","元朝 [げんちょう] — Yüan dynasty","","en","ja"],["jmdict","元代 [げんだい] — Yüan dynasty","","en","ja"]],"yünnansibia":[["ding","Austen's barwing","","de","en"]],"yünnankleiber":[["ding","yunnan nuthatch","","de","en"]]};

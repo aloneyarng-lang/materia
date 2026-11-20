@@ -2,7 +2,7 @@ import {html,msg,t} from './i18n.js';
 import {icon} from './icons.js';
 import {actionMenu} from './action-menus.js';
 import {getSetting,setSetting} from './storage.js';
-import {NOTE_LIMIT,notePath,noteName,noteBody} from './notes-vault-model.js';
+import {NOTE_LIMIT,notePath,noteName,noteBody,dailyTipName,appendTipBody} from './notes-vault-model.js';
 import {createNoteEditDialog} from './note-edit-dialog.js';
 import {noteCommandAt} from './note-edit.js';
 import {renderNoteMarkdown,noteReferences,resolveNoteLink} from './notes-markdown.js';
@@ -24,6 +24,14 @@ export async function saveNote(payload){
   const saved={id,body,revision:crypto.randomUUID(),updatedAt:Date.now()};
   await setSetting(browserKey,[...notes.filter(note=>note!==old),saved]);
   return saved;
+}
+
+export async function appendDailyTip(entry){
+  if(native?.appendDailyTip)return native.appendDailyTip(entry);
+  const id=dailyTipName();
+  const {notes}=await readIndex();
+  const previous=notes.find(note=>note.id.toLowerCase()===id);
+  return saveNote({id,body:appendTipBody(previous?.body??'',entry),revision:previous?.revision??null});
 }
 
 const tool=(action,label,glyph)=>html`<button type="button" class="icon-button" data-vault-action="${action}" aria-label="${t(label)}" title="${t(label)}">${icon(glyph)}</button>`;
@@ -358,6 +366,12 @@ export function createNotesVault(host,{saveText,editNote,escape,toast}){
     if(!ready)return;
     const note=event.detail;
     records.set(note.id,note);
+    referenceCache.delete(note.id);
+    if(active?.id===note.id&&editor.value===active.body.replace(/\r\n?/g,'\n')){
+      active=note;
+      editor.value=note.body;
+      renderPreview();
+    }
     if(active){renderList();renderDetails();}
     else select(note);
   });

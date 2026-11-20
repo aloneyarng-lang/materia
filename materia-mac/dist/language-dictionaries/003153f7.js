@@ -1,0 +1,1 @@
+export default {"1号":[["jmdict","[noun (common) (futsuumeishi)] number one; item 1","いちごう","ja","en"]],"1号園児":[["jmdict","[noun (common) (futsuumeishi)] short-hour child (aged 3-5; at a certified center for early childhood education and care); preschooler","いちごうえんじ","ja","en"]]};

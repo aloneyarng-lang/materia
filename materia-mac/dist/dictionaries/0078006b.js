@@ -1,0 +1,1 @@
+export default {"xkcd":[["ecdict","与网络漫画xkcd相关的各种古怪行为（戏称）",""]]};

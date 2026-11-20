@@ -1,0 +1,11 @@
+x,y,group,label,zoneXMin,zoneXMax,zoneYMin,zoneYMax
+0.04,8,Fe based,,0.028,0.095,2,17
+0.07,10,Fe based,,,,,
+0.055,14,Fe based,,,,,
+0.35,5,FeNi,,0.14,0.85,1,16
+0.52,9,FeNi,,,,,
+0.22,12,FeNi,,,,,
+2.4,23,Multicomponent,,1.1,5.2,6,33
+3.9,28,Multicomponent,,,,,
+1.7,17,Multicomponent,,,,,
+1.35,66,Candidate,Sample X,,,,

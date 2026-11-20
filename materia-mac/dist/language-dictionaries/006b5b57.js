@@ -1,0 +1,1 @@
+export default {"k字回復":[["jmdict","[noun (common) (futsuumeishi)] K-shaped recovery (parts of the economy recovering from recession at different rates, times or magnitudes)","ケーじかいふく・ケイじかいふく","ja","en"]]};

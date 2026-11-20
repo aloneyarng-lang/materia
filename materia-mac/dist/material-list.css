@@ -1,0 +1,73 @@
+#material-list {
+  flex:1;min-height:0;overflow:auto;padding:18px 20px;scrollbar-gutter:stable;
+}
+.material-library-tools {
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;
+}
+.material-library-search {
+  display:flex;align-items:center;gap:8px;flex:1 1 240px;min-width:0;
+  padding:8px 11px;border:1px solid var(--glass-edge,var(--line));border-radius:var(--button-radius,6px);
+  background:var(--glass-field,var(--surface));
+}
+.material-library-search:focus-within {outline:2px solid var(--teal);outline-offset:2px;}
+.material-library-search input {
+  min-width:0;width:100%;border:0;background:none;color:var(--ink);font-size:.75rem;box-shadow:none!important;
+}
+.material-library-search input:focus-visible {outline:none;}
+.material-library-tools>:is(.outline-button,.primary),.material-library-tools .ui-action-menu>button {
+  display:inline-flex;align-items:center;gap:6px;min-height:34px;font-size:.6875rem;white-space:nowrap;
+}
+.material-library-tools svg {width:15px;height:15px;flex-shrink:0;}
+.material-library-search svg {color:var(--muted);}
+#material-list-filter-count {color:var(--teal);font-variant-numeric:tabular-nums;}
+#material-list-filter-dialog .filter-grid {grid-template-columns:minmax(0,1fr);}
+.material-library-selection,.material-library-status {
+  margin:0 0 10px;color:var(--muted);font-size:.6875rem;line-height:1.8;
+}
+.material-library-tools .material-library-selection{margin:0;max-width:360px;text-wrap:pretty}
+.material-library-selection:empty,
+.material-library-status:has([data-material-save-status]:empty):has([data-material-retry][hidden]) {display:none;}
+.material-library-status .is-error {color:var(--danger);}
+
+.material-library-row {
+  display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:12px;
+  padding:18px;margin-bottom:10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--card-radius,7px);
+}
+.material-library-row.is-selected {border-color:var(--teal);}
+.material-library-check {display:flex;padding:5px 3px;cursor:pointer;}
+.material-library-check input,.material-library-cohort input {
+  width:16px;height:16px;accent-color:var(--teal);cursor:pointer;flex-shrink:0;
+}
+.material-library-row summary {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;
+}
+.material-library-row summary::-webkit-details-marker {display:none;}
+.material-library-row summary svg {width:16px;height:16px;color:var(--muted);flex-shrink:0;}
+.material-library-row details[open]>summary svg {transform:rotate(180deg);}
+.material-library-heading {min-width:0;}
+.material-library-title,.material-library-citation {
+  display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+}
+.material-library-title {font:500 calc(1rem * var(--heading-scale,1))/1.5 var(--serif);}
+.material-library-citation {margin-top:4px;color:var(--muted);font-size:.6875rem;line-height:1.7;}
+.material-library-detail {
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:.75rem;line-height:1.7;
+  color:var(--muted);overflow-wrap:anywhere;
+}
+.material-library-detail p {margin:0 0 8px;}
+.material-library-description {white-space:pre-wrap;}
+.material-library-source {margin-bottom:8px;}
+.material-library-source button {padding:0;text-align:left;color:var(--teal);}
+.material-library-source button:hover {text-decoration:underline;}
+.material-library-source small {display:block;}
+.material-library-cohort {
+  display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer;
+}
+.material-library-cohort small {display:block;margin-top:3px;}
+.material-group-include {display:flex;align-items:center;gap:7px;margin-top:16px;font-size:.6875rem;line-height:1.8;color:var(--muted);}
+#material-group-form input[name=name],#material-group-assign-form select {display:block;width:100%;margin-top:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px;border-radius:var(--button-radius,5px);}
+.material-group-include input {accent-color:var(--teal);}
+@media(max-width:1150px) {
+  #material-list {padding:14px;}
+  .material-library-row {padding:16px 14px;}
+}

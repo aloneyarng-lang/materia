@@ -1,0 +1,1 @@
+export default {"kf":[["ecdict","abbr. 知识模块（knowledge fusion）；关键帧（KeyFrame）",""]],"kfc":[["ecdict","abbr. 肯德基（Kentucky Fried Chicken, 快餐连锁店品牌）",""]],"kfd":[["ecdict"," [医][=Kyasanur Forest disease]基亚萨努森林病（南印度）",""]],"kft":[["ecdict","n. [冒险岛]KoreanFolkTown",""]],"kfw":[["ecdict","abbr. Kreditanstalt fur Wiederaufbau （德语）复兴信贷银行",""]]};

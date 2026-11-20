@@ -1,0 +1,1 @@
+export default {"kjellmaniella gyrata (species of kelp)":[["jmdict","とろろ昆布；薯蕷昆布 [とろろこんぶ・とろろこぶ・トロロコンブ・トロロコブ] — Kjellmaniella gyrata (species of kelp)","","en","ja"]],"kjellmaniella gyrata":[["jmdict","とろろ昆布；薯蕷昆布 [とろろこんぶ・とろろこぶ・トロロコンブ・トロロコブ] — Kjellmaniella gyrata (species of kelp)","","en","ja"]]};

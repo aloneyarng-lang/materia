@@ -1,0 +1,1 @@
+export default {"3度":[["jmdict","[noun (common) (futsuumeishi)] three times; thrice\n[noun (common) (futsuumeishi)] third (interval)","さんど","ja","en"]],"3度目の正直":[["jmdict","[expressions (phrases, clauses, etc.); noun (common) (futsuumeishi)] third time lucky; third time's the charm","さんどめのしょうじき","ja","en"]]};

@@ -1,0 +1,89 @@
+/* Graph geometry is generated from validated theme tokens; forces remain independent. */
+#star-map .graph-node{transition:opacity .14s ease}
+#star-map.dragging .graph-node{transition:none}
+#star-map .graph-node .node-core{vector-effect:non-scaling-stroke;stroke-width:var(--render-node-stroke,.7px);fill:var(--node-color);stroke:var(--canvas);filter:drop-shadow(0 0 var(--render-glow,0px) var(--node-color))}
+#star-map[data-graph-fill="hollow"] .graph-node .node-core{fill:var(--canvas);stroke:var(--node-color)}
+#star-map .node-ring{vector-effect:non-scaling-stroke;stroke-width:1px;stroke-dasharray:none;transition:opacity .12s}
+#star-map .node-halo,#star-map .node-glint,#star-map .network-backdrop{display:none}
+#star-map .network-edges path{stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s,stroke .12s}
+#star-map[data-graph-appearance="flow"] .node-core{fill:var(--flow-node-color,var(--node-color));fill-opacity:.76;stroke:none;filter:none}
+html[data-theme-mode="dark"] #star-map[data-graph-appearance="flow"] .graph-node{--flow-node-color:color-mix(in srgb,var(--node-color) 90%,white)}
+#star-map .flow-node-halo{fill:var(--flow-node-color,var(--node-color));fill-opacity:.16}
+#star-map .network-flow{pointer-events:none}
+#star-map .network-flow path{
+  fill:none;
+  stroke:color-mix(in srgb,var(--ink) 82%,var(--canvas));
+  stroke-width:var(--flow-dot-size,3px);
+  stroke-linecap:round;
+  stroke-dasharray:0 100;
+  animation:graph-edge-flow 4s linear infinite;
+}
+#star-map[data-graph-paused="true"] .network-flow path{animation-play-state:paused}
+@keyframes graph-edge-flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
+@media(prefers-reduced-motion:reduce){#star-map .network-flow{display:none}}
+#star-map .graph-node .node-label,#star-map .graph-node .tag-node-label{stroke-width:var(--render-label-halo,3px);font-weight:400;fill:var(--render-label-color,var(--muted))}
+#star-map .graph-node.is-active .node-label,#star-map .graph-node.is-active .tag-node-label{fill:var(--ink)}
+#star-map.dragging .network-edges path{transition:none}
+#star-map[data-graph-background="plain"]{background-image:none}
+#star-map[data-graph-background="dots"]{background-image:radial-gradient(circle,color-mix(in srgb,var(--line) 70%,transparent) .8px,transparent .9px);background-size:24px 24px}
+#star-map[data-graph-background="grid"]{background-image:linear-gradient(color-mix(in srgb,var(--line) 42%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 42%,transparent) 1px,transparent 1px);background-size:32px 32px}
+.graph-wrap:has(#star-map[data-graph-background])::after{display:none}
+.graph-help{opacity:.75}.graph-controls,.graph-tooltip{backdrop-filter:none}
+.graph-appearance-help{font-size:.75rem;color:var(--muted);line-height:1.8;margin:10px 0 0}
+@media(prefers-reduced-motion:reduce){#star-map .graph-node,#star-map .node-ring,#star-map .network-edges path{transition:none}}
+/* Cosmic graph API v2. Scenery never participates in input, labels or physics. */
+#star-map[data-graph-background="stars"],#star-map[data-graph-background="nebula"]{background-image:none}
+#star-map .cosmic-backdrop{pointer-events:none;overflow:hidden;isolation:isolate}
+#star-map .cosmic-nebula{opacity:var(--render-nebula-intensity,.5)}
+#star-map .cosmic-distant-star{fill:var(--render-star-color,#cfe3ff);stroke:var(--render-star-color,#cfe3ff)}
+#star-map .cosmic-distant-star circle{stroke:none}
+#star-map .cosmic-node-effects{pointer-events:none}
+#star-map .cosmic-corona{fill:var(--node-color);stroke:none}
+#star-map .cosmic-star-core{fill:var(--ink);stroke:none}
+#star-map .cosmic-orbit-back,#star-map .cosmic-orbit-front{fill:none;stroke:var(--node-color);stroke-width:.85px;vector-effect:non-scaling-stroke}
+#star-map .cosmic-orbit-back{opacity:.35}
+#star-map .cosmic-orbit-front{opacity:.8}
+#star-map .cosmic-planet-shade{fill:var(--canvas);opacity:.48;stroke:none}
+#star-map .cosmic-planet-sheen{fill:var(--ink);opacity:.32;stroke:none}
+#star-map .graph-node[data-cosmic-shape="star"] .node-core{stroke:var(--node-color);stroke-width:.35px}
+#star-map .graph-node[data-cosmic-shape="planet"] .node-core{stroke:var(--node-color);stroke-width:.5px}
+#star-map[data-graph-twinkle="subtle"] .cosmic-twinkle{animation:cosmic-twinkle var(--twinkle-duration,9s) ease-in-out var(--twinkle-delay,0s) infinite alternate}
+#star-map[data-graph-paused="true"] .cosmic-twinkle,#star-map.dragging .cosmic-twinkle{animation-play-state:paused}
+@keyframes cosmic-twinkle{from{filter:brightness(.72)}to{filter:brightness(1.35)}}
+@media(prefers-reduced-motion:reduce){#star-map .cosmic-twinkle{animation:none!important}}
+/* Package artwork has explicit paints and 24×24 coordinates; it shares input and layout with other nodes. */
+#star-map .graph-node .node-core[data-shape="symbol"]{fill:none;stroke:none;filter:none}
+#star-map .theme-symbol-art{stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#star-map .theme-symbol-backdrop{pointer-events:none;overflow:hidden}
+/* Orange/cyan nova points: luminous cores and diffraction, without scenic wallpaper. */
+#star-map .nova-halo,#star-map .nova-ray{fill:var(--node-color);stroke:none}
+#star-map .nova-orbit{fill:none;stroke:var(--node-color);stroke-width:.6px;opacity:.42;vector-effect:non-scaling-stroke}
+#star-map .nova-white-core{fill:#f4ffff;stroke:none}
+#star-map .graph-node[data-cosmic-shape="nova"] .node-core{fill:var(--node-color);stroke:#e5ffff;stroke-width:.5px;filter:drop-shadow(0 0 var(--render-glow) var(--node-color))}
+#star-map .relation-node[data-cosmic-shape="nova"] .nova-orbit{stroke-width:1px;opacity:.85}
+#star-map .relation-node[data-cosmic-shape="nova"] .nova-ray{opacity:.7}
+html[data-theme-mode="light"] #star-map .graph-node[data-cosmic-shape="nova"] .node-core{fill:color-mix(in srgb,var(--node-color) 72%,#173a42);stroke:var(--node-color)}
+html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var(--node-color) 72%,#173a42)}
+
+.graph-mode-help{flex:0 0 auto;margin:0;padding:0 22px 8px;color:var(--muted);font-size:.75rem;line-height:1.5}
+#graph-mode{max-width:150px;min-width:0;padding:6px 8px;font-size:.78rem}
+.graph-mode-bar{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;padding:0 15px 8px;flex-wrap:wrap}
+.graph-mode-bar .graph-mode-help{padding:0;flex:1 1 260px}
+.graph-neighbors-control{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.75rem;white-space:nowrap}
+.graph-neighbors-control select{width:58px;min-width:0;padding:4px 6px}
+.graph-neighbors-control input{width:64px;min-width:0;padding:4px 6px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.graph-neighbors-control[hidden]{display:none}
+
+/* Keep detailed theme artwork at rest; avoid thousands of filters in motion. */
+svg[data-graph-density="dense"][data-graph-moving="true"] .node-core{filter:none!important}
+svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-node-effects{display:none}
+svg[data-graph-density="dense"][data-graph-moving="true"] .cosmic-twinkle{animation-play-state:paused}
+svg[data-graph-density="dense"] .graph-node{transition:none}
+
+.visualization-column:has(#graph-wrap[hidden]) .graph-mode-bar{display:none}
+.graph-neighbors-control input[type="checkbox"]{width:14px;height:14px;padding:0}
+#legend>span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+
+.community-label{fill:var(--ink);font-weight:600;letter-spacing:.02em;paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+#graph-mode-help[hidden]{display:none}
+.graph-mode-bar{justify-content:flex-start;gap:12px 24px} #legend>span>i{width:6px;height:6px;flex:none;border-radius:50%} .community-label{vector-effect:non-scaling-stroke}

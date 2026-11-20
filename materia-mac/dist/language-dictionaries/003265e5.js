@@ -1,0 +1,1 @@
+export default {"2日":[["jmdict","[noun (common) (futsuumeishi)] 2nd day of the month\n[noun (common) (futsuumeishi)] two days","ふつか","ja","en"]],"2日間":[["jmdict","[noun (common) (futsuumeishi)] a period of two days","ふつかかん","ja","en"]]};

@@ -1,0 +1,1 @@
+export default {"pq":[["ecdict","abbr. 魁北克省（Province of Quebec）；渗透系数（Permeability Quotient）",""]],"pqe":[["ecdict","abbr. post-qualification education 合格后教育",""]],"pqli":[["ecdict","abbr. Physical Quality of Life Index 身体素质标准索引",""]],"pqrs":[["ecdict","abbr. productivity increases;  quality control;  robotization;  and savings 生产能力增长","'pi:kj'u:'ɑ:r'es"]]};

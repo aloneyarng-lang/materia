@@ -1,0 +1,1 @@
+export default {"007 (james bond's code in the books and films)":[["jmdict","ゼロゼロセブン；ゼロ・ゼロ・セブン [ゼロゼロセブン・ゼロ・ゼロ・セブン] — 007 (James Bond's code in the books and films)","","en","ja"]],"007":[["jmdict","ゼロゼロセブン；ゼロ・ゼロ・セブン [ゼロゼロセブン・ゼロ・ゼロ・セブン] — 007 (James Bond's code in the books and films)","","en","ja"]],"00 gauge":[["ding","Spurweite 00","","en","de"]]};

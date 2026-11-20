@@ -1,0 +1,1 @@
+export default {"kmt":[["jmdict","中国国民党 [ちゅうごくこくみんとう] — KMT","","en","ja"]],"kmma":[["jmdict","北九州市立美術館 [きたきゅうしゅうしりつびじゅつかん] — KMMA","","en","ja"]],"km stand":[["ding","mileage; milage (number of miles travelled)","","de","en"]]};

@@ -1,0 +1,1 @@
+export default {"díli (east timor)":[["jmdict","ディリ；ジリ [ディリ・ジリ] — Díli (East Timor)","","en","ja"]],"díli":[["jmdict","ディリ；ジリ [ディリ・ジリ] — Díli (East Timor)","","en","ja"]],"día de los muertos":[["jmdict","死者の日 [ししゃのひ] — Día de los Muertos","","en","ja"]]};

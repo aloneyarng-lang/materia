@@ -45,10 +45,6 @@ library.json
 library.previous.json
 preferences.json
 desktop-profile/
-文献库/
-/图片库/
-papers/
-backups/
 .trash/
 *.log
 
@@ -60,7 +56,27 @@ backups/
 **/theme-examples/*preview.png
 **/theme-examples/*comparison.png
 
-# Personal research data vaults
-/笔记库/
-AI 工作室库/
-/AI 工作室库/
+# Personal research data vaults (keep directory skeleton)
+文献库/*
+!文献库/.gitkeep
+!文献库/papers/
+文献库/papers/*
+!文献库/papers/.gitkeep
+!文献库/backups/
+文献库/backups/*
+!文献库/backups/.gitkeep
+
+图片库/*
+/图片库/*
+!图片库/.gitkeep
+!/图片库/.gitkeep
+
+笔记库/*
+/笔记库/*
+!笔记库/.gitkeep
+!/笔记库/.gitkeep
+
+AI 工作室库/*
+/AI 工作室库/*
+!AI 工作室库/.gitkeep
+!/AI 工作室库/.gitkeep

@@ -9,9 +9,9 @@ export function createQuickTip({flushNotes,toast}){
   const native = globalThis.materiaDesktop;
   const mac = /Mac|iPhone|iPad/.test(navigator.platform);
   let saving = false;
-  button.title = t('快速随记') + (mac ? ' · ⌘⌥N' : ' · Ctrl+Alt+N');
+  button.title = t('快速随记') + (mac ? ' · ⌘⌥N' : ' · Alt+Q');
   save.title = t('保存') + (mac ? ' · ⌘↵' : ' · Ctrl+Enter');
-  button.setAttribute('aria-keyshortcuts', mac ? 'Meta+Alt+N' : 'Control+Alt+N');
+  button.setAttribute('aria-keyshortcuts', mac ? 'Meta+Alt+N' : 'Alt+Q');
 
   function open(){
     if(!dialog.open){
@@ -27,7 +27,8 @@ export function createQuickTip({flushNotes,toast}){
   document.addEventListener('keydown',event=>{
     if(event.isComposing||event.defaultPrevented)return;
     const modifier = mac ? event.metaKey&&!event.ctrlKey : event.ctrlKey&&!event.metaKey;
-    if(modifier&&event.altKey&&!event.shiftKey&&event.code==='KeyN'){
+    const quickTip = mac ? modifier&&event.code==='KeyN' : !event.ctrlKey&&!event.metaKey&&event.code==='KeyQ';
+    if(quickTip&&event.altKey&&!event.shiftKey){
       event.preventDefault();
       if(!event.repeat)open();
     }

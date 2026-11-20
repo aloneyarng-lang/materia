@@ -145,8 +145,8 @@ async function start() {
   Menu.setApplicationMenu(null);
   mainWindow.on('close',event=>{if(canvasCloseReady&&!canvasAllowClose){event.preventDefault();mainWindow.webContents.send('canvas:prepare-close');}});
   mainWindow.webContents.on('before-input-event',(event,input)=>{
-    const modifier=process.platform==='darwin' ? input.meta&&!input.control : input.control&&!input.meta;
-    if(input.type!=='keyDown'||input.isComposing||!modifier||!input.alt||input.shift||input.code!=='KeyN')return;
+    const quickTip=process.platform==='darwin' ? input.meta&&!input.control&&input.code==='KeyN' : !input.control&&!input.meta&&input.code==='KeyQ';
+    if(input.type!=='keyDown'||input.isComposing||!quickTip||!input.alt||input.shift)return;
     event.preventDefault();
     if(!input.isAutoRepeat)mainWindow.webContents.send('notes-vault:quick-tip');
   });

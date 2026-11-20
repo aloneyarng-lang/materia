@@ -38,7 +38,7 @@ async function stop(){await browser?.close();browser=null;if(child?.exitCode===n
     await body.fill('First quick note');
     await body.press('Control+Enter');
     await dialog.waitFor({state:'hidden'});
-    await page.keyboard.press('Control+Alt+n');
+    await page.keyboard.press('Alt+q');
     await dialog.waitFor();
     assert.equal(await body.evaluate(element=>element===document.activeElement),true);
     await body.fill('Second quick note');

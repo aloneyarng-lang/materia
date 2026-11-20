@@ -1,4 +1,4 @@
-import {SIZE,POINTS,neighbors,other,groupAt,placement,areaScore,positionKey} from './flow-go-rules.js';
+import {SIZE,POINTS,BLACK,WHITE,KOMI,neighbors,other,groupAt,placement,areaScore,positionKey} from './flow-go-rules.js';
 
 const openingValue = [0,-1,1.7,2.6,1.35,.7,.3,.15,.05,0];
 const geometry = Array.from({length:POINTS},(_,point) => {
@@ -31,6 +31,41 @@ function evaluate(board,color) {
     value += (owner === color ? 1 : -1) * (stones.length * strength + Math.min(libertyCount,8) * .16);
   }
   return value;
+}
+
+function distancesTo(board,color) {
+  const distances = new Uint8Array(POINTS).fill(255);
+  const queue = [];
+  for (let point = 0; point < POINTS; point++) {
+    if (board[point] !== color) continue;
+    distances[point] = 0;
+    queue.push(point);
+  }
+  for (const point of queue) {
+    for (const next of neighbors[point]) {
+      if (distances[next] !== 255) continue;
+      distances[next] = distances[point] + 1;
+      queue.push(next);
+    }
+  }
+  return distances;
+}
+
+export function estimateBlackWinRate({board,turn,phase,winner}) {
+  if (phase === 'finished') return winner === BLACK ? 100 : 0;
+  const black = distancesTo(board,BLACK), white = distancesTo(board,WHITE);
+  let empty = 0, influence = 0;
+  for (let point = 0; point < POINTS; point++) {
+    if (board[point]) continue;
+    empty++;
+    // Discount open intersections and cancel influence where both colors are close.
+    influence += (Math.exp(-black[point] * .62) - Math.exp(-white[point] * .62)) * 1.2;
+  }
+  const open = empty / POINTS;
+  const initiative = (turn === BLACK ? 1 : -1) * (.8 + .7 * open);
+  const advantage = evaluate(board,BLACK) + influence + initiative - KOMI + (KOMI - 1.5) * open;
+  const uncertainty = 4 + 15 * open;
+  return Math.max(.5,Math.min(99.5,100 / (1 + Math.exp(-advantage / uncertainty))));
 }
 
 function isEye(board,point,color) {

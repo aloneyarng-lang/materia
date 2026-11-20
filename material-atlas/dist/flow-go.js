@@ -1,7 +1,7 @@
 import {html,msg,t} from './i18n.js';
 import {icon} from './icons.js';
 import {SIZE,POINTS,BLACK,WHITE,files,coordinate,createGoGame,groupAt,placement} from './flow-go-rules.js';
-import {agreesWithDeadStones,rankGoMoves} from './flow-go-engine.js';
+import {agreesWithDeadStones,estimateBlackWinRate,rankGoMoves} from './flow-go-engine.js';
 
 const storageKey = 'materia.flow.go';
 const ruleErrors = {occupied:'此处已有棋子。',suicide:'此处是禁入点，落子后无气。',ko:'此手会使同一方即将行棋的局面重复。'};
@@ -107,7 +107,7 @@ export function createFlowGo(panel) {
     <header class="go-header">
       <div class="go-heading"><h2>STEINS;GATE</h2><span>LOCAL GO</span></div>
       <div class="go-header-tools">
-        <div class="go-world"><span>WORLD LINE&nbsp; ▸</span><output data-go="world" aria-label="世界线读数"></output></div>
+        <div class="go-world"><span><b>世界线 · </b>黑棋胜率</span><output data-go="world"></output></div>
         <button type="button" class="go-close icon-button" data-go="close" aria-label="关闭棋局" title="关闭棋局">${icon('close')}</button>
       </div>
     </header>
@@ -184,12 +184,12 @@ export function createFlowGo(panel) {
   let saved;
   try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch {}
   const game = createGoGame(saved?.actions);
-  let branch = Number.isSafeInteger(saved?.branch) && saved.branch >= 0 ? saved.branch % 1000000 : 0;
+  let winRate = estimateBlackWinRate(game.state);
   let focused = center, worker, timer, generation = 0, hints = [], analyzing = false, confirmation = '';
   let marked = new Set(), notice = '', mail = '';
 
   function persist() {
-    try { localStorage.setItem(storageKey,JSON.stringify({actions:game.history,branch})); }
+    try { localStorage.setItem(storageKey,JSON.stringify({actions:game.history})); }
     catch { notice = t('这盘棋未能保存，关闭应用前仍可继续。'); }
   }
 
@@ -211,12 +211,16 @@ export function createFlowGo(panel) {
         candidate ? msg`推荐第 ${candidate} 位` : '',marked.has(point) ? t('拟移除') : ''].filter(Boolean).join(' · '));
       button.setAttribute('aria-disabled',String(phase === 'scoring' ? !color : !playerTurn || analyzing || Boolean(color)));
     }
-    const world = '1.' + String(branch).padStart(6,'0');
+    const winRateDigits = Math.round(winRate * 10000);
+    const world = String(winRateDigits).padStart(7,'0');
     const worldDisplay = get('world');
     if (worldDisplay.textContent !== world) {
+      const label = msg`黑棋估算胜率 ${(winRateDigits / 10000).toFixed(4)}%`;
+      worldDisplay.setAttribute('aria-label',label);
+      worldDisplay.title = label;
       worldDisplay.replaceChildren(...[...world].map(digit=>{
         const cell = document.createElement('span');
-        cell.className = digit === '.' ? 'go-decimal' : 'go-tube';
+        cell.className = 'go-tube';
         cell.textContent = digit;
         return cell;
       }));
@@ -263,6 +267,7 @@ export function createFlowGo(panel) {
   function nextTurn() {
     cancelAnalysis();
     hints = [];
+    winRate = estimateBlackWinRate(game.state);
     if (game.state.phase !== 'play' || !dialog.open) {
       render();
       return;
@@ -351,7 +356,6 @@ export function createFlowGo(panel) {
       case 'close': close(); break;
       case 'undo':
         if (!game.undoRound()) return;
-        branch = (branch + 1) % 1000000;
         mail = t('D-Mail 已送达。已回到你上一手之前。');
         confirmation = notice = '';
         marked.clear();
@@ -377,7 +381,7 @@ export function createFlowGo(panel) {
         render();
         break;
       case 'confirm':
-        if (confirmation === 'new') { game.reset(); branch = 0; mail = ''; focused = center; }
+        if (confirmation === 'new') { game.reset(); mail = ''; focused = center; }
         else if (confirmation === 'resign') game.apply({type:'resign',color:BLACK});
         confirmation = notice = '';
         marked.clear();

@@ -1,5 +1,5 @@
 import { normalizeNotes } from './note-model.js';
-import { normalizeAuthors, numericImpact, parseMetrics, mergeMetrics } from './catalog.js';
+import { normalizeAuthors, normalizeInnovations, numericImpact, parseMetrics, mergeMetrics } from './catalog.js';
 import { normalizePaperMaterials, materializePaper } from './materials.js';
 import { takeRemoval, restoreRemoval } from './removal.js';
 import { planBulkEdit } from './bulk-edit.js';
@@ -15,8 +15,12 @@ const native = globalThis.materiaDesktop;
 let richNoteSupport;
 async function assertRichNoteSupport(value){const notes=Object.values(value||{}).filter(Array.isArray).flat();if(native&&notes.some(note=>note.anchor||note.attachments?.length)){richNoteSupport ||= native.info();const info=await richNoteSupport;if(Number(info.readerNotesVersion)<1||!info.readerNotesVersion)throw new Error('请关闭并重新打开 Materia，再保存带标记或图片的笔记；当前桌面存储接口仍是旧版。');if(notes.some(note=>['highlight','underline'].includes(note.anchor?.kind))&&Number(info.readerAnnotationsVersion||0)<2)throw new Error('请重新启动 Materia 以启用文字高亮和下划线。');if(notes.some(note=>note.anchor&&(note.anchor.kind||note.anchor.label!==undefined))&&!info.readerAnnotationsVersion)throw new Error('请重新启动 Materia 以启用文字和箭头标注；当前标注仍保留在编辑区。');}}
 async function nativePapers(papers) {
-  papers = papers.map(normalizePaperMaterials);
-  if (papers.length && !(Number((await native.info()).materialsVersion) >= 1)) throw new Error('请关闭并重新打开 Materia，以启用按材料保存性能参数；当前编辑内容仍保留。');
+  if (papers.length) {
+    const info = await native.info();
+    if (!(Number(info.materialsVersion) >= 1)) throw new Error('请关闭并重新打开 Materia，以启用按材料保存性能参数；当前编辑内容仍保留。');
+    if (papers.some(paper => paper.innovations !== undefined) && !info.innovationsVersion) throw new Error('请重新启动新版 Materia 后再保存创新点。');
+    if (papers.some(paper => paper.limitations !== undefined) && !info.limitationsVersion) throw new Error('请重新启动新版 Materia 后再保存局限性。');
+  }
   const output = [];
   for (const paper of papers) {
     const { file, ...metadata } = paper;
@@ -28,10 +32,14 @@ async function nativePapers(papers) {
 export async function openDatabase() {
   if (connection) return connection;
   connection = await new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore('papers', { keyPath: 'id' });
-      request.result.createObjectStore('settings', { keyPath: 'key' });
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = event => {
+      if (event.oldVersion === 0) {
+        request.result.createObjectStore('papers', { keyPath: 'id' });
+        request.result.createObjectStore('settings', { keyPath: 'key' });
+      } else {
+        request.transaction.objectStore('settings').delete('module:innovation-sea');
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -54,15 +62,32 @@ async function transaction(store, mode, run) {
 }
 
 export const getPapers = async () => (await (native ? native.getPapers() : transaction('papers', 'readonly', store => store.getAll()))).map(materializePaper);
+function preservePaperFields(paper, previous) {
+  const updated = preserveReadingStatus(paper, previous);
+  return {
+    ...updated,
+    ...(updated.innovations === undefined && previous?.innovations !== undefined ? {innovations: previous.innovations} : {}),
+    ...(updated.limitations === undefined && previous?.limitations !== undefined ? {limitations: previous.limitations} : {}),
+  };
+}
 async function webPutPapers(incoming){
   const db=await openDatabase();return new Promise((resolve,reject)=>{
     const tx=db.transaction(['papers','settings'],'readwrite'),papers=tx.objectStore('papers'),settings=tx.objectStore('settings'),all=papers.getAll(),activity=settings.get('importActivity');let pending=2;
-    const ready=()=>{if(--pending)return;try{const history=activity.result?.value||seedImportActivity(all.result),previous=new Map(all.result.map(p=>[p.id,p]));settings.put({key:'importActivity',value:recordImports(history,incoming)});for(const paper of incoming)papers.put(preserveReadingStatus(paper,previous.get(paper.id)));}catch(error){tx.abort();reject(error);}};
+    const ready=()=>{if(--pending)return;try{const history=activity.result?.value||seedImportActivity(all.result),previous=new Map(all.result.map(p=>[p.id,p]));settings.put({key:'importActivity',value:recordImports(history,incoming)});for(const paper of incoming)papers.put(preservePaperFields(paper,previous.get(paper.id)));}catch(error){tx.abort();reject(error);}};
     all.onsuccess=ready;activity.onsuccess=ready;tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('导入未保存。'));
   });
 }
 export const putPaper = async paper => putPapers([paper]);
-export const putPapers = async papers => { const clean = papers.map(normalizePaperMaterials); return native ? native.putPapers(await nativePapers(clean)) : webPutPapers(clean); };
+export const putPapers = async papers => {
+  const clean = papers.map(paper => {
+    const normalized = normalizePaperMaterials(paper);
+    for (const field of ['innovations', 'limitations']) {
+      if (paper[field] !== undefined) normalized[field] = normalizeInnovations(paper[field], field);
+    }
+    return normalized;
+  });
+  return native ? native.putPapers(await nativePapers(clean)) : webPutPapers(clean);
+};
 export const deletePaper = id => native ? native.deletePaper(id) : transaction('papers', 'readwrite', store => store.delete(id));
 export const getSetting = async key => native ? native.getSetting(key) : (await transaction('settings', 'readonly', store => store.get(key)))?.value;
 export const setSetting = async (key, value) => { if(key==='notes'){value=normalizeNotes(value);await assertRichNoteSupport(value);}if(key==='readerDrafts')await assertRichNoteSupport({drafts:(value||[]).map(row=>row.note)});return native ? native.setSetting(key, value) : transaction('settings', 'readwrite', store => store.put({ key, value })); };
@@ -183,6 +208,8 @@ export function readBackup(value) {
       authors: typeof item.authors === 'string' ? item.authors.slice(0, 1000) : '',
       authorDetails: normalizeAuthors(item.authorDetails || []),
       materials: normalizePaperMaterials(item).materials,
+      ...(item.innovations !== undefined ? { innovations: normalizeInnovations(item.innovations) } : {}),
+      ...(item.limitations !== undefined ? { limitations: normalizeInnovations(item.limitations, 'limitations') } : {}),
       doi: String(item.doi || '').slice(0, 1000),
       impactFactor: numericImpact(item.impactFactor), impactYear: /^\d{4}$/.test(String(item.impactYear || '')) ? String(item.impactYear) : '',
       journal: typeof item.journal === 'string' ? item.journal.slice(0, 300) : '',
@@ -222,7 +249,7 @@ export async function mergeBackup(backup) {
       for (const item of backup.collections) merged.set(item.id, item);
       settings.put({ key: 'collections', value: [...merged.values()] });
       settings.put({ key: 'mode', value: 'own' });
-      const previous=new Map((existingPapers.result||[]).map(p=>[p.id,p]));for (const paper of backup.papers) tx.objectStore('papers').put(preserveReadingStatus(paper,previous.get(paper.id)));
+      const previous=new Map((existingPapers.result||[]).map(p=>[p.id,p]));for (const paper of backup.papers) tx.objectStore('papers').put(preservePaperFields(paper,previous.get(paper.id)));
     };
     const noteRequest = settings.get('notes');
     noteRequest.onsuccess = () => {

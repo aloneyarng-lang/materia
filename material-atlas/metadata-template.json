@@ -25,6 +25,8 @@
         "材料体系",
         "研究方法"
       ],
+      "innovations": ["请替换为第一条创新点", "请替换为第二条创新点"],
+      "limitations": [],
       "impactFactor": null,
       "impactYear": "",
       "materials": [

@@ -7,6 +7,7 @@ export function cleanWorkspaceLayout(input={}){
  const tab=workspaceTab(input.view);
  if(tab)result.view=tab;
  for(const key of ['leftPanelOpen','detailOpen','focusGraph'])if(typeof input[key]==='boolean')result[key]=input[key];
+ if(input.easterTheme==='observatory')result.easterTheme=input.easterTheme;
  return result;
 }
 export const workspaceLayoutKey=library=>'materia.workspace-layout.v1:'+String(library||'browser');
@@ -18,11 +19,12 @@ export function createWorkspaceChrome(config){
  let returnFocus=null,items=[],active=0,executing=false;
  const views=()=>config.getViews?.()||primaryViews;
  const tabViews=()=>views().filter(module=>module.navigation!=='ribbon');
+ const shortcutViews=()=>views().filter(module=>module.ribbonGroup!=='bottom');
  let storage=null;try{storage=globalThis.localStorage;}catch{}
  const dialog=document.createElement('dialog');dialog.id='workspace-command-dialog';dialog.className='workspace-command-dialog';dialog.setAttribute('aria-label',t('快速操作'));document.body.append(dialog);
  const mac=/Mac|iPhone|iPad/.test(navigator.platform),modifier=mac?'⌘':'Ctrl';
  function commands(){return[
-  ...views().map(module=>{const index=tabViews().indexOf(module);return{id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:index>=0&&index<9?modifier+' '+(index+1):'',keywords:[module.id],run:()=>openView(module.id)};}),
+  ...views().map(module=>{const index=shortcutViews().indexOf(module);return{id:'view:'+module.id,label:t(module.label),image:module.icon,detail:t('切换视图'),hint:index>=0&&index<9?modifier+' '+(index+1):'',keywords:[module.id],run:()=>openView(module.id)};}),
   ...[['import','导入文献','plus'],['module-settings','功能管理','sliders'],['research-canvas','研究画布','network'],['ai-agent','AI 研究助手','assistant'],['parameter-index','性能参数目录','ruler'],['themes','主题与字体','palette'],['settings','设置','settings']].filter(([id])=>id!=='ai-agent'||config.showAgent?.()!==false).map(([id,label,image])=>({id,label:t(label),image,detail:t('常用操作'),keywords:[id],run:()=>runAction(id)})),
  ];}
  function openView(view){const button=document.querySelector(`.view-tabs [data-view="${view}"], [data-ribbon-view][data-view="${view}"]`);button?.click();button?.focus();}
@@ -51,9 +53,13 @@ export function createWorkspaceChrome(config){
   if(dialog.open||!canOpen())return;
   if(e.key==='Escape'&&e.target.id==='search'&&e.target.value){e.preventDefault();clearSearch();return;}
   const editing=e.target.matches('input,textarea,select')||e.target.isContentEditable;
-  const tabs=tabViews().map(module=>module.id);
-  if(!editing&&(e.ctrlKey||e.metaKey)&&!e.altKey&&/^[1-9]$/.test(e.key)&&tabs[Number(e.key)-1]){e.preventDefault();openView(tabs[Number(e.key)-1]);return;}
+  if(!editing&&(e.ctrlKey||e.metaKey)&&!e.altKey&&/^[1-9]$/.test(e.key)){
+    const shortcut=shortcutViews()[Number(e.key)-1];
+    if(shortcut){e.preventDefault();openView(shortcut.id);}
+    return;
+  }
   const tab=e.target.closest('.view-tabs [data-view]');if(!tab||e.ctrlKey||e.metaKey||e.altKey)return;
+  const tabs=tabViews().map(module=>module.id);
   let index=tabs.indexOf(tab.dataset.view);if(e.key==='ArrowLeft')index--;else if(e.key==='ArrowRight')index++;else if(e.key==='Home')index=0;else if(e.key==='End')index=tabs.length-1;else return;
   e.preventDefault();openView(tabs[(index+tabs.length)%tabs.length]);
  });
@@ -81,5 +87,5 @@ export function createWorkspaceChrome(config){
   $('#workspace-command').title=t('快速操作')+' · '+modifier+' K';
   $('#workspace-command').disabled=!state.ready||state.storageError;
   if(state.ready)writeWorkspaceLayout(storage,state.desktopInfo?.path||'browser',state);
- },restore(library){Object.assign(getState(),{view:'graph',leftPanelOpen:false,detailOpen:true,focusGraph:true},readWorkspaceLayout(storage,library));},open};
+ },restore(library){const state=getState();Object.assign(state,{view:'graph',leftPanelOpen:false,detailOpen:true,focusGraph:true,easterTheme:''},readWorkspaceLayout(storage,library));state.lobbyOpen=state.easterTheme==='observatory';},open};
 }

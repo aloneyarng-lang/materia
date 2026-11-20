@@ -36,6 +36,7 @@ export function workspaceHTML(native) {
           ${figuraIcon('parameters','绘图参数','sliders')}
           ${figuraIcon('montage','论文拼版','overview')}
           ${figuraIcon('export','导出绘图','download')}
+          <button type="button" class="outline-button figura-comparison" data-comparison-action="open">${icon('table')}对比与作图</button>
         </div>
         </div>
         <p class="figura-status" data-fig="notice" role="status"></p>

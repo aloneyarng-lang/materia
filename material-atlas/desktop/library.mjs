@@ -5,7 +5,7 @@ import { normalizeNotes, cleanReaderState, cleanReaderDrafts } from '../dist/not
 import { mkdir, open, readFile, writeFile, rename, copyFile, stat, access } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
-import { normalizeAuthors, numericImpact, mergeMetrics, parseMetrics } from '../dist/catalog.js';
+import { normalizeAuthors, normalizeInnovations, numericImpact, mergeMetrics, parseMetrics } from '../dist/catalog.js';
 import { renameTitleLinks } from '../dist/note-links.js';
 import { normalizePaperMaterials, materializePaper } from '../dist/materials.js';
 import { isOldExample, removeOldExampleNotes } from '../dist/example-migration.js';
@@ -44,12 +44,15 @@ export class LocalLibrary {
       for (const paper of parsed.papers) if (paper.pdfPath) resolveInside(this.root, paper.pdfPath);
       this.data = parsed; this.data.settings ||= {};
       this.data.settings.mode = 'own';
+      const hasRetiredInnovations = Object.hasOwn(this.data.settings, 'module:innovation-sea');
+      delete this.data.settings['module:innovation-sea'];
+      const previousData = hasRetiredInnovations ? {...this.data, settings:{...this.data.settings}} : undefined;
       const examples = this.data.papers.filter(isOldExample);
       if (examples.length) {
         this.data.papers = this.data.papers.filter(p=>!isOldExample(p));
         this.data.settings.notes = removeOldExampleNotes(this.data.settings.notes || {}, new Set(examples.map(p=>p.id)));
-        await this.save(this.data);
       }
+      if (examples.length || hasRetiredInnovations) await this.save(this.data, previousData);
     } catch (error) {
       if (error.code !== 'ENOENT') throw new Error(`无法读取文献库，原文件已保留：${error.message}`);
       this.data = { format: 'materia-library', version: 1, papers: [], settings: { collections: [], notes: {}, mode: 'own' } };
@@ -70,14 +73,19 @@ export class LocalLibrary {
     await this.folders.finish(moves,this.data);
     return this;
   }
-  async save(data) {
+  async save(data, previousData) {
     const studyVersion=data.version===3||data.settings.vocabulary?.length||data.settings.translationCache?.length;
     if (data.papers.some(paper => paper.materials !== undefined)) data.version = 2;
     if(studyVersion)data.version=3;
     const target = path.join(this.root, 'library.json');
     const temp = path.join(this.root, `.library-${randomUUID()}.tmp`);
     await writeFile(temp, JSON.stringify(data, null, 2), { encoding: 'utf8', flag: 'wx' });
-    try { await copyFile(target, path.join(this.root, 'backups', 'library.previous.json')); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    const previous = path.join(this.root, 'backups', 'library.previous.json');
+    if (previousData) {
+      await writeFile(previous, JSON.stringify(previousData, null, 2), 'utf8');
+    } else {
+      try { await copyFile(target, previous); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+    }
     await rename(temp, target);
     this.data = data;
   }
@@ -101,6 +109,7 @@ export class LocalLibrary {
   getSetting(key) { return this.data.settings[key]; }
   async setSetting(key, value) {
     const previousGroups=key==='collections'?structuredClone(this.data.settings.collections||[]):null;
+    if(key==='module:innovation-sea')throw Error('创意之海已移除。');
     const moduleData=typeof key==='string'&&/^module:[a-z][a-z0-9-]{0,63}$/.test(key);
     if (!moduleData&&!['workspaceModules','collections', 'notes', 'mode', 'journalMetrics', 'comparisonSelection', 'comparisonState', 'graphLayout', 'chartPreferences', 'graphPreferences', 'graphAssociations', 'themePreferences', 'readerState', 'readerDrafts', 'vocabulary', 'translationCache', 'translationPreferences'].includes(key)) throw new Error('不支持的文献库设置。');
     if(key==='workspaceModules'){
@@ -108,7 +117,7 @@ export class LocalLibrary {
       value={version:1,disabled:[...new Set(value.disabled)]};
     }
     if(moduleData){const text=JSON.stringify(value);if(typeof text!=='string'||Buffer.byteLength(text)>5*1024*1024)throw Error('模块数据格式无效或超过 5 MB，请使用独立存储服务。');value=JSON.parse(text);}
-    if(key==='module:innovation-sea'){
+    if(key==='module:innovation-timeline'){
       const operation=this.queue.then(()=>this.save({...this.data,settings:{...this.data.settings,[key]:value}}));
       this.queue=operation.catch(()=>{});
       return operation;
@@ -143,6 +152,10 @@ export class LocalLibrary {
       authorDetails: normalizeAuthors(input.authorDetails || existing?.authorDetails || []), doi: String(input.doi || '').slice(0, 1000), impactFactor: numericImpact(input.impactFactor), impactYear: /^\d{4}$/.test(String(input.impactYear)) ? String(input.impactYear) : '',
       materials: normalizePaperMaterials(input.materials !== undefined || input.measurements !== undefined ? input : existing || {}).materials,
     };
+    for (const field of ['innovations', 'limitations']) {
+      const entries = input[field] === undefined ? existing?.[field] : input[field];
+      if (entries !== undefined) paper[field] = normalizeInnovations(entries, field);
+    }
     if (input.fileBytes) {
       const bytes = Buffer.from(input.fileBytes);
       if (!bytes.subarray(0, 1024).toString('latin1').includes('%PDF-')) throw new Error('文件不是有效的 PDF。');
@@ -258,6 +271,6 @@ export class LocalLibrary {
   }
   async info() {
     let bytes = 0; for (const paper of this.data.papers) { try { bytes += (await stat(await this.pdfPath(paper.id))).size; } catch {} }
-    return { path: this.root, papers: this.data.papers.length, bytes, readingStatusVersion:1,folderSyncVersion:1,importActivityVersion:1,studyVersion: 1, materialsVersion: 1, readerNotesVersion: 1, readerAnnotationsVersion: 2, readerDraftsVersion: 1, themeSchemaVersion: 2, graphThemeVersion: GRAPH_APPEARANCE_VERSION, researchCanvasVersion: 1, materialSelectionVersion: 1, materialGroupsVersion: 1 };
+    return { path: this.root, papers: this.data.papers.length, bytes, readingStatusVersion:1,folderSyncVersion:1,importActivityVersion:1,studyVersion: 1, materialsVersion: 1, innovationsVersion: 1, limitationsVersion: 1, readerNotesVersion: 1, readerAnnotationsVersion: 2, readerDraftsVersion: 1, themeSchemaVersion: 2, graphThemeVersion: GRAPH_APPEARANCE_VERSION, researchCanvasVersion: 1, materialSelectionVersion: 1, materialGroupsVersion: 1 };
   }
 }

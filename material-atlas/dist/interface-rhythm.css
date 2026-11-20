@@ -116,6 +116,8 @@ html[data-liquid-glass=true] .detail-panel .paper-authors {font-size:.75rem;line
 html[data-liquid-glass=true] .detail-disclosure {border-top:1px solid var(--line);padding:14px 0;margin:0;}
 html[data-liquid-glass=true] .detail-disclosure>summary {font-size:.75rem;font-weight:400;color:var(--muted);cursor:pointer;line-height:1.6;}
 html[data-liquid-glass=true] .detail-disclosure[open]>summary {color:var(--ink);margin-bottom:14px;}
+.detail-innovations ol {margin:8px 0;padding-inline-start:1.4em;font-size:.75rem;line-height:1.65;overflow-wrap:anywhere;}
+.detail-innovations li + li {margin-top:6px;}
 html[data-liquid-glass=true] .detail-bottom {margin-top:10px;padding-top:0;}
 .list-selection-toolbar [data-action=select-filtered]{display:inline-flex;align-items:center;gap:6px}
 .list-selection-toolbar [data-action=select-filtered] svg{width:14px;height:14px}

@@ -5,6 +5,10 @@ import {icon,hydrateIcons} from './icons.js';
 const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function createWorkspaceModules(config){
   const tabs=document.querySelector('.view-tabs'),container=document.querySelector('.visualization-column'),styles=new Map();let generation=0;
+  const researchNav=document.createElement('nav');
+  researchNav.className='research-navigation';
+  researchNav.hidden=true;
+  container.insertBefore(researchNav,container.querySelector('.map-footer'));
   function available(id){
     if(!registry.enabled.has(id))return false;
     const {parentView}=registry.definitions.get(id);
@@ -12,7 +16,8 @@ export function createWorkspaceModules(config){
   }
   const views=()=>registry.list().filter(definition=>!definition.parentView);
   function navigation(){
-    const ribbonSpacer=document.querySelector('.ribbon-spacer');
+    const toolsDivider=document.getElementById('ribbon-tools-divider');
+    const settingsMenu=document.getElementById('workspace-menu').parentElement;
     document.querySelectorAll('[data-ribbon-view]').forEach(button=>button.remove());
     tabs.replaceChildren();for(const definition of registry.list()){
       if(!document.getElementById(definition.panelId)){const host=document.createElement('section');host.id=definition.panelId;host.hidden=true;container.insertBefore(host,container.querySelector('.map-footer'));}
@@ -21,7 +26,8 @@ export function createWorkspaceModules(config){
         const button=document.createElement('button'),label=t(definition.label);
         button.type='button';button.className='ribbon-button';button.dataset.view=definition.id;button.dataset.ribbonView='';
         button.title=label;button.setAttribute('aria-label',label);button.innerHTML=icon(definition.icon);
-        ribbonSpacer.before(button);
+        const anchor=definition.ribbonGroup==='bottom'?settingsMenu:toolsDivider;
+        anchor.before(button);
         continue;
       }
       const button=document.createElement('button');button.className='view-tab';button.type='button';button.dataset.view=definition.id;button.dataset.panel=definition.panelId;button.setAttribute('role','tab');button.innerHTML=icon(definition.icon)+escape(t(definition.label));tabs.append(button);
@@ -30,6 +36,16 @@ export function createWorkspaceModules(config){
       const parent=workspaceTab(config.getView());
       config.setView(available(parent)?parent:views()[0].id);
     }
+    researchNav.setAttribute('aria-label',t('研究'));
+    researchNav.replaceChildren(...registry.list().filter(child=>child.parentView==='research').map(child=>{
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='outline-button';
+      button.dataset.view=child.id;
+      button.setAttribute('aria-controls',child.panelId);
+      button.textContent=t(child.label);
+      return button;
+    }));
     hydrateIcons(tabs);
   }
   const registry=new ModuleRegistry(WORKSPACE_MODULES,definition=>{
@@ -43,14 +59,29 @@ export function createWorkspaceModules(config){
       setCount:value=>{if(config.getView()===definition.id)document.getElementById('visible-count').textContent=value;},
       getChildViews:()=>registry.list().filter(child=>child.parentView===definition.id),
       openAISettings:config.openAISettings,
-      openPdfPage:config.openPdfPage,readPaperPdf:config.readPaperPdf,readLargePaperText:config.readLargePaperText,
-      innovationAI:{extract:config.extractInnovations,status:config.aiServiceStatus},
+      workbenchFilterResults:config.workbenchFilterResults,openWorkbenchFilters:config.openWorkbenchFilters,
+      getSelectedIds:config.getSelectedIds,openPaper:config.openPaper,
       release:()=>{scope.abort();for(const link of links)link.remove();styles.delete(definition.id);if(definition.bodyClass)document.body.classList.remove(definition.bodyClass);if(!definition.required){host.replaceChildren();host.hidden=true;}}
     };
   },{onChange:navigation,persist:config.persistPreferences});
   navigation();
   async function render(){
     const token=++generation,id=config.getView(),definition=registry.definitions.get(id);if(!available(id))return;
+    researchNav.hidden=workspaceTab(id)!=='research'||!researchNav.childElementCount;
+    if(!researchNav.hidden){
+      const panel=document.getElementById(definition.panelId);
+      if(id==='research'){
+        if(researchNav.parentElement!==panel)panel.append(researchNav);
+      }else if(researchNav.nextElementSibling!==panel){
+        const focused=researchNav.contains(document.activeElement)?document.activeElement:null;
+        container.insertBefore(researchNav,panel);
+        focused?.focus();
+      }
+      for(const button of researchNav.children){
+        if(button.dataset.view===id)button.setAttribute('aria-current','page');
+        else button.removeAttribute('aria-current');
+      }
+    }
     for(const d of registry.definitions.values()){const host=document.getElementById(d.panelId);if(host)host.hidden=d.id!==id;if(d.bodyClass)document.body.classList.toggle(d.bodyClass,d.id===id);}
     try{const runtime=await registry.get(id);if(token===generation&&config.getView()===id)await runtime.render?.();}
     catch(error){if(token!==generation)return;const host=document.getElementById(definition.panelId);host.textContent=t('功能暂时无法打开')+'：'+error.message;config.toast(error.message,true);}

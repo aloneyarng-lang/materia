@@ -117,12 +117,22 @@ dialog.vault-fullscreen {
 .vault-workspace.vault-wide {grid-template-columns:minmax(0,1fr);border:0;border-radius:0;}
 .vault-wide .vault-library {display:none;}
 .vault-ai-button {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:.75rem;}
+.vault-ai-hint {margin:0;padding:5px 10px;border-top:1px solid var(--line);color:var(--muted);font-size:.6875rem;}
+.vault-content[data-mode=read]+.vault-ai-hint {display:none;}
 .vault-ai-dialog {width:min(960px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;}
 .vault-ai-dialog form,.vault-ai-dialog label {display:grid;gap:6px;min-width:0;}
 .vault-ai-dialog form {gap:12px;}
 .vault-ai-dialog h2,.vault-ai-dialog p {margin:0;}
 .vault-ai-dialog header p {margin-top:5px;color:var(--muted);font-size:.75rem;}
 .vault-ai-dialog textarea {width:100%;min-width:0;resize:vertical;}
-.vault-ai-comparison {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.vault-ai-comparison:not([hidden]) {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
 .vault-ai-comparison textarea {height:clamp(100px,32vh,330px);font-family:Consolas,monospace;}
-@media(max-width:650px){.vault-ai-comparison {grid-template-columns:minmax(0,1fr);}}
+.vault-ai-dialog:not(.vault-ai-quick) .vault-ai-key {display:none;}
+.vault-ai-quick {position:fixed;inset:auto 0 18px;margin:0 auto;width:min(560px,calc(100vw - 36px));padding:14px 16px;}
+.vault-ai-quick::backdrop {background:transparent;backdrop-filter:none;}
+.vault-ai-quick h2 {font-size:.95rem;}
+.vault-ai-quick .vault-ai-comparison:not([hidden]) {grid-template-columns:minmax(0,1fr);}
+.vault-ai-quick .vault-ai-original {display:none;}
+.vault-ai-quick .vault-ai-comparison textarea {height:clamp(85px,20vh,180px);}
+.vault-ai-key {margin-inline-start:5px;font-size:.7em;white-space:nowrap;}
+@media(max-width:650px){.vault-ai-comparison:not([hidden]) {grid-template-columns:minmax(0,1fr);}}

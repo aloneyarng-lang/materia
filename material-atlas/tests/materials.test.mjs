@@ -89,6 +89,31 @@ test('version 2 Markdown keeps multiple materials, overlapping sample IDs, notes
   assert.throws(()=>matchRecords([{filename:'multi.pdf',materials,measurements:[]}],[paper]),/不要同时提供/);
 });
 
+test('innovation points import per paper from Markdown or JSON and survive desktop storage and backup restore', async () => {
+  const points = ['新制备工艺', '新组织设计', '新表征方法', '新机理'];
+  const metadata = `## 文献 1\n- 文件名: multi.pdf\n### 创新点\n1. ${points[0]}\n- ${points[1]}\n3) ${points[2]}\n4. ${points[3]}\n- ${points[0]}\n## 文献 2\n- 文件名: other.pdf\n### Innovations\n- Other point`;
+  const file = new File(['%PDF-1.4\nSynthetic fixture'], 'multi.pdf', {type:'application/pdf'});
+  const plan = await planBatch([file], parseMetadata(metadata), [{...paper,id:'other',filename:'other.pdf'}]);
+  assert.deepEqual(plan.updates.map(p => p.innovations), [points, ['Other point']]);
+  const imported = plan.updates[0];
+  assert.deepEqual(matchRecords(parseMarkdown(markdownTemplate(['multi.pdf'])),[imported]).updates[0].innovations, points);
+  const json = parseMetadata('{"papers":[{"filename":"multi.pdf","innovations":[" 更新后的创新点 "]}]}');
+  assert.deepEqual((await planBatch([], json, [imported])).updates[0].innovations, ['更新后的创新点']);
+  assert.deepEqual(matchRecords([{filename:'multi.pdf', innovations:[]}], [imported]).updates[0].innovations, []);
+  assert.throws(() => matchRecords([{filename:'multi.pdf', innovations:['valid', {}]}], [imported]), /innovations/);
+
+  const parent = path.resolve('.local/tests');
+  await mkdir(parent, {recursive:true});
+  const root = await mkdtemp(path.join(parent, 'innovations-'));
+  const library = await new LocalLibrary(root).init();
+  await library.putPapers([{...imported, fileBytes:await file.arrayBuffer()}]);
+  await library.putPapers([{id:imported.id, title:'Edited title'}]);
+  const reopened = await new LocalLibrary(root).init();
+  assert.deepEqual(reopened.getPapers()[0].innovations, points);
+  const backup = await createBackup([{...imported, file:null}], []);
+  assert.deepEqual(readBackup(backup).papers[0].innovations, points);
+});
+
 test('search, inventory, comparison and CSV retain every material and never pair axes between materials with identical samples',()=>{
   assert.equal(filterCatalog([paper],{query:'FeCo',filters:{}}).length,1);assert.equal(filterCatalog([paper],{query:'退火处理',filters:{}}).length,1);
   assert.equal(hasParameter(paper,'X'),true);assert.equal(parameterInventory([paper]).find(p=>p.name==='X').records,2);assert.equal(parameterOptions([paper])[0].paperCount,1);

@@ -7,7 +7,7 @@ let browser,app,page,server,mlEngine;const errors=[],checks=[],settings={};let s
 async function check(name,fn){await fn();checks.push(name);console.log('PASS '+name);}
 async function openPanel(name){await page.locator(`[data-prediction-panel="${name}"]`).first().click();}
 async function enterPrediction(){
- await page.locator('.view-tabs [data-view="materials"]').click();
+ await page.locator('.workspace-ribbon [data-view="materials"]').click();
  await page.locator('#material-prediction-toggle').click();
  await page.locator('#prediction-form').waitFor();
 }
@@ -28,9 +28,8 @@ async function launch(){
  await fs.mkdir(output,{recursive:true});
  await launch();
  await check('prediction is a material subpage and returning preserves the material search',async()=>{
-  const views=await page.locator('.view-tabs [data-view]').evaluateAll(ns=>ns.map(n=>n.dataset.view));assert.deepEqual(views,['graph','list','materials','notes','figura']);
-  const materials=page.locator('.view-tabs [data-view="materials"]'),entry=page.locator('#material-prediction-toggle');
-  assert.equal(await materials.getAttribute('aria-selected'),'true');assert.equal(await materials.getAttribute('aria-controls'),'prediction-workspace');
+  const materials=page.locator('.workspace-ribbon [data-view="materials"]'),entry=page.locator('#material-prediction-toggle');
+  assert.equal(await materials.getAttribute('aria-current'),'page');assert.equal(await materials.getAttribute('aria-controls'),'prediction-workspace');
   assert.equal(await page.locator('#prediction-form button[type=submit]').isDisabled(),true);assert.equal(await page.locator('#detail-panel').isVisible(),false);
   if(!app)await page.screenshot({path:path.join(output,'empty.png')});
   await entry.click();await page.locator('#material-list-query').fill('保留搜索');
@@ -90,9 +89,9 @@ async function launch(){
  await check('optional module disable, restart and re-enable preserve its datasets and trained models',async()=>{
   const entry=page.locator('#material-prediction-toggle');
   await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').uncheck();await entry.waitFor({state:'hidden'});
-  assert.equal(await page.locator('.view-tabs [data-view]').count(),5);await page.locator('#modal [data-action="close-modal"]').last().click();await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});assert.equal(await entry.isVisible(),false);
+  assert.equal(await page.locator('.workspace-ribbon [data-view="materials"]').count(),1);await page.locator('#modal [data-action="close-modal"]').last().click();await page.reload();await page.locator('.import-main:not([disabled])').waitFor({state:'attached'});assert.equal(await entry.isVisible(),false);
   await page.keyboard.press('Control+k');await page.locator('#workspace-command-input').fill('功能管理');await page.keyboard.press('Enter');await page.locator('[data-workspace-module="prediction"]').check();await entry.waitFor();
-  const materialSetting=page.locator('[data-workspace-module="materials"]'),materials=page.locator('.view-tabs [data-view="materials"]');
+  const materialSetting=page.locator('[data-workspace-module="materials"]'),materials=page.locator('.workspace-ribbon [data-view="materials"]');
   await materialSetting.uncheck();await materials.waitFor({state:'detached'});assert.equal(await entry.isVisible(),false);
   await materialSetting.check();await materials.waitFor();await page.locator('#modal [data-action="close-modal"]').last().click();await enterPrediction();await openPanel('models');assert.equal(await page.locator('[data-model-details]').count(),3);
   await openPanel('properties');assert.ok((await page.locator('#prediction-workspace').textContent()).includes('新增测试性能'));

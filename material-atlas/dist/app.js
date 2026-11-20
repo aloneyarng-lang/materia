@@ -11,6 +11,7 @@ import {createWorkspaceModules} from './workspace-modules.js';
 import {agentServiceForm} from './agent-service-form.js';
 import {createAgentServiceSettings} from './agent-service-settings.js';
 import {createWorkspaceChrome} from './workspace-chrome.js';
+import {createObservatory,observatorySettingsHTML} from './observatory.js';
 import { paperMaterials, paperMeasurements, normalizePaperMaterials } from './materials.js';
 import { relatedPaperGroups, relatedPaperSections } from './related-papers.js';
 import {icon,hydrateIcons} from './icons.js';
@@ -41,12 +42,13 @@ import {createVocabularyController} from './vocabulary-ui.js';
 import {readStudy} from './study-client.js';
 import { BUNDLED_METRICS, JOURNAL_DATA_CHECKED, seedJournalMetrics } from './journal-data.js';
 import { createNotesController } from './notes.js';
-import { normalizeAuthors, authorsText, numericImpact, impactOf, filterCatalog, parseMetrics, mergeMetrics, matchMetadata } from './catalog.js';
+import { normalizeAuthors, normalizeInnovations, authorsText, numericImpact, impactOf, filterCatalog, parseMetrics, mergeMetrics, matchMetadata } from './catalog.js';
 bindStaticDOM(document.body);
 await initializeLocale();
 const native = globalThis.materiaDesktop;
 
 const $ = selector => document.querySelector(selector);
+const observatory = createObservatory($('.app-shell'));
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const displayTitle = value => escape(String(value ?? '').replace(/<\/?(?:sub|sup)\b[^>]*>/gi, ''));
 const uid = prefix => `${prefix}-${crypto.randomUUID()}`;
@@ -121,6 +123,19 @@ function selectedPaper() { return papers().find(p => p.id === state.selected); }
 function visiblePapers() {
   return filterCatalog(papers(), state, state.notes, state.journalMetrics);
 }
+const emptyWorkbenchFilters = () => ({filters:emptyFilters(), year:'', readingStatus:'', collection:''});
+let workbenchFilters = emptyWorkbenchFilters();
+const inWorkbench = () => state.view === 'literature-workbench';
+const catalogFilterState = () => inWorkbench() ? workbenchFilters : state;
+const workbenchPapers = () => papers().filter(paper => paper.file?.desktop);
+const workbenchMatches = (criteria = workbenchFilters) =>
+  filterCatalog(papers(), criteria, state.notes, state.journalMetrics).filter(paper => paper.file?.desktop);
+function countCatalogFilters({tag, year, readingStatus, collection, filters}, includeCollection = false) {
+  return [tag, year, readingStatus, includeCollection && collection, filters.parameterName].filter(Boolean).length
+    + filters.tags.length + filters.excludeTags.length
+    + Object.entries(filters).filter(([key,value]) =>
+      !['tags','excludeTags','tagMode','parameterName','parameterUnit'].includes(key) && Boolean(value)).length;
+}
 
 const map = new StarMap($('#star-map'), {
   onNaturalLayoutState:({busy,progress,canUndo,count})=>{
@@ -160,6 +175,7 @@ const notes = createNotesController({
 });
 
 function render() {
+  observatory.sync({enabled:state.easterTheme==='observatory'&&state.ready&&!state.storageError,open:state.lobbyOpen,views:workspaceModules?.views()||[],papers:papers(),showAgent:!minimalMode,canStudy:workspaceModules?.available('literature-workbench')});
   paperActions?.close();
   const standaloneView=!workspaceModules?.current()?.libraryView;
   document.body.classList.toggle('module-full-width',standaloneView);
@@ -195,12 +211,19 @@ function render() {
   $('#toggle-local').hidden=state.view!=='graph';
   $('#graph-caption').textContent = state.view==='graph'?(state.tag?`# ${state.tag}`:state.collection?navTitle:tr('研究星图')):workspaceModules.title();
   $('#visible-count').textContent = msg`${filtered.length} 篇文献${state.view === 'graph' && filtered.length > 350 ? tr(' · 展示前 350 篇') : ''}`;
-  const years = [...new Set(all.map(p => p.year).filter(Boolean))].sort().reverse();
+  const years = [...new Set((inWorkbench() ? workbenchPapers() : all).map(p => p.year).filter(Boolean))].sort().reverse();
   $('#year-filter').innerHTML = tr('<option value="">全部年份</option>',false) + years.map(year => `<option value="${escape(year)}">${escape(year)}</option>`).join('');
-  $('#year-filter').value = state.year;
+  $('#year-filter').value = catalogFilterState().year;
   $('#sort-order').value = state.sort;
   renderFilterOptions();
   renderParameterSummary(filtered);
+  if (inWorkbench()) {
+    const {parameterName,parameterUnit} = workbenchFilters.filters;
+    const parameter = parameterName && parameterInventory(workbenchPapers()).find(item => item.key === parameterName);
+    $('#quick-parameter-label').textContent = parameter
+      ? parameter.name + (parameterUnit === '*' ? '' : ' · ' + (parameterUnit || tr('单位未填')))
+      : tr('性能参数');
+  }
   const noteView=state.view==='notes';
   const independentNotes=noteView&&notes.independent();
   const enteringVault=independentNotes&&!document.body.classList.contains('independent-notes');
@@ -228,10 +251,10 @@ function render() {
   $('#filter-dialog-title').textContent = filterLabel;
   $('#advanced-filter-dialog').classList.toggle('paper-filters-only', !graphView);
   $('.map-footer').hidden = standaloneView||noteView||state.view==='list';
-  const filterCount = Number(Boolean(state.tag)) + Number(Boolean(state.year)) + Number(Boolean(state.readingStatus)) + Number(Boolean(state.filters.parameterName)) + state.filters.tags.length + state.filters.excludeTags.length + Object.entries(state.filters).filter(([key, value]) => !['tags', 'excludeTags', 'tagMode', 'parameterName', 'parameterUnit'].includes(key) && Boolean(value)).length;
+  const filterCount = countCatalogFilters(state);
   $('#active-filter-count').textContent = filterCount;
   $('#active-filter-count').hidden = !filterCount;
-  $('#advanced-result-count').textContent = msg`当前匹配 ${filtered.length} 篇文献`;
+  $('#advanced-result-count').textContent = msg`当前匹配 ${inWorkbench() ? workbenchMatches().length : filtered.length} 篇文献`;
   $('#restore-hidden').hidden = !state.hiddenIds.size && !state.hiddenTagNodes.size;
   $('#restore-hidden').innerHTML=icon('eye')+tr('<span>恢复隐藏文献</span>',false);$('#restore-hidden').title=msg`恢复隐藏的 ${state.hiddenIds.size} 篇文献`;
   $('#hide-node').disabled = !state.selected;
@@ -283,6 +306,7 @@ function render() {
   renderDetail();
   hydrateIcons();
   comparison?.refreshBar();
+  $('#selection-innovation-timeline').hidden=!workspaceModules.available('innovation-timeline');
   if(standaloneView)$('#comparison-bar').hidden=true;
   readingStatusController?.render();
   $('#removal-undo').hidden = !lastRemoval?.count;
@@ -294,7 +318,13 @@ function render() {
 async function applyParameterFilter(name, unit = '*') {
   if (!ensureStorage()) return;
   const fromFilters = $('#advanced-filter-dialog').open;
-  closeModal(); $('#advanced-filter-dialog').close();
+  closeModal();
+  if (inWorkbench()) {
+    Object.assign(workbenchFilters.filters, {parameterName:parameterNameKey(name), parameterUnit:unit});
+    render();
+    return;
+  }
+  $('#advanced-filter-dialog').close();
   if (!fromFilters) resetFilters(false);
   state.nav='library';state.view='list';state.filters.parameterName=parameterNameKey(name);state.filters.parameterUnit=unit;state.selected='';const matchingIds=new Set(parameterResults(papers(),name,unit).map(p=>p.id));await comparison.selectIds([...state.compareIds].filter(id=>matchingIds.has(id)));render();
 }
@@ -324,6 +354,7 @@ function renderDetail() {
   const folder = collections().find(c => c.id === p.collection);
   const authors = normalizeAuthors(p.authorDetails || []), metric = impactOf(p, state.journalMetrics, state.filters.impactYear);
   const related = relatedPaperGroups(papers(),p);
+  const innovations = p.innovations || [], limitations = p.limitations || [];
   panel.innerHTML = html`
     <div class="detail-top"><span>文献详情</span><div class="detail-actions"><button class="icon-button ${p.favorite ? 'favorite-on' : ''}" data-action="favorite" aria-label="${p.favorite ? tr('取消星标') : tr('加入星标我的收藏')}" title="星标我的收藏，与主题分组独立"><span data-icon="star"></span></button>${actionMenu('detail-paper-menu',tr('文献操作'),'<button type="button" data-action="edit">'+icon('edit')+tr('编辑文献信息 / 标签</button><button type="button" data-action="toggle-compare">',false)+icon('chart')+(state.compareIds.has(p.id)?tr('从对比选择中移除'):tr('加入性能对比'))+'</button><hr><button type="button" data-action="download-pdf">'+icon('download')+tr('另存 PDF</button><button type="button" class="danger" data-action="delete">',false)+icon('trash')+tr('移除文献…</button>',false),{iconOnly:true,className:'icon-button'})}<button class="icon-button detail-close-button" data-action="toggle-detail" aria-label="收起文献详情" title="收起文献详情"><span data-icon="close"></span></button></div></div>
     ${documentArt()}
@@ -337,6 +368,12 @@ function renderDetail() {
     <details class="detail-disclosure"><summary>标签与分组</summary><div class="detail-label"><span>研究标签</span></div>
     <div class="tags">${p.tags.length ? p.tags.map(tag => `<button class="tag" data-link-tag="${escape(tag)}">${escape(tag)}</button>`).join('') : tr('<span class="help-inline">暂无标签</span>')}</div>
     <p class="detail-label">文献分组</p><button class="collection-value collection-value-button" data-action="paper-collection" title="更改分组"><span data-icon="folder"></span>${escape(folder?.name || tr('未分组'))}<span aria-hidden="true">⌄</span></button>
+    </details><details class="detail-disclosure detail-innovations"><summary>${msg`创新点 · ${innovations.length} 条`}</summary>
+    ${innovations.length ? `<ol>${innovations.map(point => `<li>${escape(point)}</li>`).join('')}</ol>` : html`<p class="help-inline">尚未录入创新点。</p>`}
+    <button type="button" class="text-button" data-action="edit">编辑</button>
+    </details><details class="detail-disclosure detail-innovations"><summary>${msg`局限性 · ${limitations.length} 条`}</summary>
+    ${limitations.length ? `<ol>${limitations.map(point => `<li>${escape(point)}</li>`).join('')}</ol>` : html`<p class="help-inline">尚未录入局限性。</p>`}
+    <button type="button" class="text-button" data-action="edit">编辑</button>
     </details><details class="detail-disclosure"><summary>材料与性能 · ${paperMaterials(p).length} 个</summary><div class="detail-label"><span>材料 · ${paperMaterials(p).length} 个</span><button class="text-button" data-action="performance-editor">编辑</button></div>
     <div class="material-preview-list">${paperMaterials(p).map(material=>html`<section class="material-preview"><h3>${escape(material.name)}</h3>${material.composition?`<p class="material-composition">${escape(material.composition)}</p>`:''}${material.description?`<p class="material-description-text">${escape(material.description)}</p>`:''}<small>${material.measurements.length} 条性能参数</small><div class="performance-preview">${material.measurements.slice(0,4).map(m=>html`<div><button class="performance-parameter-link" data-parameter-name="${escape(parameterNameKey(m.name))}" data-parameter-unit="*" title="查找全库录入此参数的文献">${escape(m.name)} ↗</button><strong>${escape(m.qualifier)}${escape(m.value)} <small>${escape(m.unit)}</small></strong><small>${escape([m.sample,m.conditions].filter(Boolean).join(' · '))}</small></div>`).join('')||tr('<p class="help-inline">尚未录入性能参数。</p>')}</div>${material.measurements.length>4?tr('<p class="help-inline">管理材料可查看全部参数。</p>'):''}</section>`).join('')||''}</div>
     </details><details class="detail-disclosure"><summary>文献笔记 · ${notes.count('paper',p.id)} 条</summary><div class="detail-label"><span>文献笔记 · ${notes.count('paper', p.id)} 条</span><button class="text-button" data-action="paper-notes">添加</button></div>
@@ -396,12 +433,16 @@ async function addFiles(files) { if (ensureStorage()) await batch.addFiles(files
 function editModal() {
   const p = selectedPaper(); if (!p) return;
   if (!ensureStorage()) return;
-  showModal(tr('编辑文献信息'), tr('完整记录作者、机构与期刊指标。'), html`<form id="edit-form" data-id="${escape(p.id)}"><label class="form-field">文献标题<input name="title" required maxlength="1000" value="${displayTitle(p.title)}"></label>${bibliographyFields(p)}<label class="form-field">研究标签<input name="tags" maxlength="2500" value="${escape(p.tags.join('，'))}" placeholder="用逗号分隔标签"><small>标签关联至少 3 篇文献后参与常规筛选与颜色分组。星图只连接手动加入的关联节点，原始标签及笔记始终保留。</small></label><label class="form-field">分组<select name="collection">${folderOptions(p.collection)}</select></label><div class="modal-footer"><button type="button" class="text-button" data-action="close-modal">取消</button><button type="submit" class="primary">保存修改</button></div></form>`, 'edit');
+  showModal(tr('编辑文献信息'), tr('完整记录作者、机构与期刊指标。'), html`<form id="edit-form" data-id="${escape(p.id)}"><label class="form-field">文献标题<input name="title" required maxlength="1000" value="${displayTitle(p.title)}"></label>${bibliographyFields(p)}<label class="form-field">研究标签<input name="tags" maxlength="2500" value="${escape(p.tags.join('，'))}" placeholder="用逗号分隔标签"><small>标签关联至少 3 篇文献后参与常规筛选与颜色分组。星图只连接手动加入的关联节点，原始标签及笔记始终保留。</small></label><label class="form-field">分组<select name="collection">${folderOptions(p.collection)}</select></label><label class="form-field">创新点<textarea name="innovations" rows="4">${escape((p.innovations || []).join('\n'))}</textarea><small>每行填写一条创新点。</small></label><label class="form-field">局限性<textarea name="limitations" rows="4">${escape((p.limitations || []).join('\n'))}</textarea><small>每行填写一条作者明确说明的局限性。</small></label><div class="modal-footer"><button type="button" class="text-button" data-action="close-modal">取消</button><button type="submit" class="primary">保存修改</button></div></form>`, 'edit');
 }
 
 async function submitEdit(form) {
   const paper = state.papers.find(p => p.id === form.dataset.id); if (!paper) return;
   const values = formValues(form); if (!values.title) { toast(tr('请填写文献标题。'), true); return; }
+  const innovations = normalizeInnovations(form.elements.innovations.value.split(/\r?\n/));
+  if (innovations.length || paper.innovations !== undefined) values.innovations = innovations;
+  const limitations = normalizeInnovations(form.elements.limitations.value.split(/\r?\n/), 'limitations');
+  if (limitations.length || paper.limitations !== undefined) values.limitations = limitations;
   const updated = { ...paper, ...values }; await putPaper(updated);
   state.papers = state.papers.map(p => p.id === updated.id ? updated : p); if (native) state.notes = await getSetting('notes') || {}; closeModal(); render(); toast(tr('文献信息已保存。'));
 }
@@ -480,6 +521,7 @@ async function settingsModal() {
     <div class="settings-card"><div><strong>功能管理</strong><p>选择工作区中需要的页面</p></div><button class="outline-button" data-action="module-settings">管理…</button></div>
     <div class="settings-card"><div><strong>AI 服务</strong><p>AI 助手、研读与阅读翻译共用</p></div><button class="outline-button" data-action="ai-service-settings">配置…</button></div>
     <div class="settings-card"><div><strong>主题与字体</strong><p>配色、明暗外观与字号</p></div><button id="ribbon-theme" class="outline-button" data-action="themes">外观…</button></div>
+    ${observatorySettingsHTML(state.easterTheme)}
     ${native?html`<div class="settings-card folder-card"><div><strong>文献库</strong><p class="folder-path">${escape(state.desktopInfo?.path||'')}</p><small>${state.papers.length} 篇 · ${bytesLabel(size)}</small></div><div class="settings-inline-actions">${actionMenu('storage-options',tr('文献库选项'),html`<button type="button" data-action="open-folder">${icon('folder')}打开文献库</button><button type="button" data-action="choose-folder">${icon('swap')}切换文献库…</button><button type="button" data-action="sync-folders">${icon('refresh')}立即同步文件夹</button>`,{iconName:'folder'})}</div></div>`:tr('<div class="info-box">网页预览 · 数据保存在当前浏览器</div>')}
     <div class="settings-card"><div><strong>文献信息</strong><p>补充信息与期刊指标</p></div>${actionMenu('metadata-options',tr('管理'),tr('<button data-action="import-metadata">导入文献信息…</button><button data-action="journal-catalog">期刊影响因子…</button>'),{iconName:'folder'})}</div>
     <div class="settings-card"><div><strong>备份与恢复</strong><p>PDF、笔记、分组与导入记录</p></div>${actionMenu('backup-options',tr('备份'),tr('<button data-action="export">导出完整备份…</button><button data-action="export-paper-tags">导出文献与标签 MD…</button><button data-action="restore">从备份恢复…</button>'),{iconName:'download'})}</div>
@@ -586,7 +628,7 @@ function helpModal() {
   showModal(tr('从阅读，到连接'), tr('一个安静、专注的材料文献研究空间。'), html`<div class="guide-step"><span>1</span><div><strong>收录原始 PDF</strong><p>选择或拖入多份 PDF；相同文件自动去重。桌面版将文件保存至本地文献库文件夹，可在设置里更换位置。</p></div></div><div class="guide-step"><span>2</span><div><strong>补充完整信息</strong><p>编辑标题、全部作者与机构、期刊和标签，或导入其他 AI 整理的 JSON。年度影响因子可通过 CSV / JSON 导入。</p></div></div><div class="guide-step"><span>3</span><div><strong>让思考彼此连接</strong><p>点击标题或标签，分别添加多条笔记。使用 [[完整标题]] 和 [[#标签]] 互相跳转，目标处会显示反向链接。</p></div></div><div class="guide-step"><span>4</span><div><strong>搜索与探索</strong><p>搜索标题、标签、作者、机构和笔记。过滤支持多标签、期刊、年份与 IF 范围，星图和列表同步更新，IF 支持升降序排列。</p></div></div><div class="guide-step"><span>译</span><div><strong>对照翻译与生词复习</strong><p>在 PDF 中选中文字后，点击弹窗「翻译」才会发送请求；译文出现后点击「添加批注」贴到原文附近。也可在右侧「译文」主动翻译当前页或整篇。短词可保存到生词本，记录原句与页码，左侧字典图标可搜索、复习与导出。</p></div></div><div class="guide-step"><span>5</span><div><strong>把积累带走</strong><p>导出完整备份，包含 PDF、笔记、作者机构、期刊指标、生词本和译文；可在其他设备恢复。桌面版也可直接复制整个文献库文件夹。</p></div></div><div class="info-box">所有文献信息由你填写或导入，PDF 文件留在本地。主动翻译时会把选文或页面文字发给已配置的 AI 服务；程序不自动生成标签或影响因子。</div><div class="modal-footer"><button class="primary" data-action="close-modal">开始探索</button></div>`, 'help');
 }
 function shortcutsModal() {
-  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>快速操作</span><kbd>Ctrl / ⌘ K</kbd></div><div class="shortcut-row"><span>切换主要视图</span><kbd>Ctrl / ⌘ 1–5</kbd></div><div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
+  showModal(tr('留一点时间给思考'), tr('让常用操作更快一步。'), tr('<div class="shortcut-row"><span>快速操作</span><kbd>Ctrl / ⌘ K</kbd></div><div class="shortcut-row"><span>切换主要视图</span><kbd>Ctrl / ⌘ 1–6</kbd></div><div class="shortcut-row"><span>搜索文献</span><kbd>/</kbd></div><div class="shortcut-row"><span>导入文献</span><kbd>N</kbd></div><div class="shortcut-row"><span>切换星图 / 列表</span><kbd>V</kbd></div><div class="shortcut-row"><span>适应全部可见节点</span><kbd>0</kbd></div><div class="shortcut-row"><span>关闭弹窗 / 详情</span><kbd>Esc</kbd></div><div class="shortcut-row"><span>快捷键说明</span><kbd>?</kbd></div><div class="modal-footer"><button class="primary" data-action="close-modal">记住了</button></div>'), 'shortcuts');
 }
 
 function renderGraphPreferences(){
@@ -613,10 +655,23 @@ function saveGraphPreferences(){clearTimeout(graphPreferenceTimer);graphPreferen
 document.addEventListener('input',event=>{const key=event.target.dataset.graphSetting;if(!key)return;if(key==='appearance'){state.graphPreferences=cleanGraphSettings({...state.graphPreferences,appearance:event.target.value});map.configure(state.graphPreferences,collections(),state.associations);map.applyAppearance();saveGraphPreferences();return;}state.graphPreferences=cleanGraphSettings({...state.graphPreferences,[key]:event.target.type==='checkbox'?event.target.checked:event.target.type==='range'?Number(event.target.value):event.target.value});render();saveGraphPreferences();});
 document.addEventListener('change',event=>{if(event.target.matches('select[data-graph-setting]')){const key=event.target.dataset.graphSetting;if(key==='appearance')return;state.graphPreferences=cleanGraphSettings({...state.graphPreferences,[key]:key==='localDepth'?Number(event.target.value):event.target.value});render();saveGraphPreferences();}});
 
-function openAdvancedFilters() { if (!$('#advanced-filter-dialog').open) $('#advanced-filter-dialog').showModal(); $('#filter-button').setAttribute('aria-expanded','true'); }
+function openAdvancedFilters() {
+  const dialog = $('#advanced-filter-dialog');
+  if (!dialog.open) dialog.showModal();
+  $('#filter-button').setAttribute('aria-expanded','true');
+  return dialog;
+}
 $('#advanced-filter-dialog').addEventListener('close',()=>$('#filter-button').setAttribute('aria-expanded','false'));
 
 const actions = {
+  'observatory-search':()=>workspaceChrome.open(),
+  'open-observatory':()=>{
+    if(state.easterTheme!=='observatory'||!ensureStorage())return;
+    state.lobbyOpen=true;render();observatory.focus();
+  },
+  'resume-workspace':()=>{
+    state.lobbyOpen=false;render();observatory.focusReturn();
+  },
   'ai-agent': () => agentController.open(),
   'vocabulary': () => vocabularyController.open(),
   import: () => importModal(), 'choose-pdf': () => $('#pdf-input').click(),
@@ -635,7 +690,11 @@ const actions = {
   help: helpModal, shortcuts: shortcutsModal,
   'zoom-in': () => map.zoom(1.2), 'zoom-out': () => map.zoom(1 / 1.2), fit: () => map.fit(),
   'clear-tag': () => { state.tag = ''; render(); }, 'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.naturalTask?map.cancelNaturalLayout():map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
-  'reset-filters': () => resetFilters(),
+  'reset-filters': () => {
+    if (!inWorkbench()) return resetFilters();
+    workbenchFilters = emptyWorkbenchFilters();
+    render();
+  },
   'toggle-sidebar': () => {state.leftPanelOpen=!state.leftPanelOpen;render();},'toggle-detail': () => {state.detailOpen=!state.detailOpen;render();},'toggle-local': () => {state.graphPreferences.localMode=!state.graphPreferences.localMode;render();saveGraphPreferences();},'associations':()=>associationController.open(),'reset-graph-settings':()=>{state.graphPreferences={...GRAPH_DEFAULTS};render();saveGraphPreferences();},
   'graph-focus': () => { state.focusGraph = !state.focusGraph; render(); window.scrollTo({top:0}); },
   'close-detail': () => $('#detail-panel').classList.remove('mobile-open'),
@@ -646,9 +705,14 @@ const actions = {
     state.view=state.view==='materials'?'prediction':'materials';render();
   },
   menu: () => $('#sidebar').classList.toggle('mobile-open'),
-  'parameter-index': () => parameterFinder.open(), 'clear-parameter': () => { state.filters.parameterName='';state.filters.parameterUnit='*';render(); }, 'plot-parameter-results': plotActiveParameter, 'select-parameter-results': async()=>{await comparison.selectIds(visiblePapers().map(p=>p.id));renderParameterSummary(visiblePapers());},
+  'parameter-index': () => inWorkbench()
+    ? parameterFinder.open('', {papers:workbenchPapers(), showMaterials:false})
+    : parameterFinder.open(),
+  'clear-parameter': () => { state.filters.parameterName='';state.filters.parameterUnit='*';render(); }, 'plot-parameter-results': plotActiveParameter, 'select-parameter-results': async()=>{await comparison.selectIds(visiblePapers().map(p=>p.id));renderParameterSummary(visiblePapers());},
   'tag-index': () => notes.openIndex(),
   'module-settings':()=>showModal(tr('功能管理'),'',workspaceModules.settingsHTML()+html`<div class="modal-footer"><button class="primary" data-action="close-modal">完成</button></div>`,'modules'),
+  'open-innovation-timeline':()=>{if(workspaceModules.available('innovation-timeline')){state.view='innovation-timeline';render();}},
+  'select-timeline-papers':()=>{state.view='list';render();},
   'paper-notes': () => { if (state.selected) notes.open('paper', state.selected); },
   'open-folder': () => native?.openFolder(),
   'sync-folders':async()=>{await native?.syncFolders();await reloadLibrary();render();await settingsModal();},
@@ -659,6 +723,7 @@ const actions = {
     let info;
     try { info = await native?.chooseFolder(); } finally { switchingLibrary = false; }
     if (!info) {render();return;}
+    workbenchFilters = emptyWorkbenchFilters();
     citationCache.clear();citationKey=null;citations=[];
     researchCanvas.reset();
     await workspaceModules.reset();
@@ -688,19 +753,32 @@ document.addEventListener('click', async event => {
     if (button?.matches('[data-note-location],[data-reader-image],[data-theme-id],[data-theme-action],[data-theme-remove],[data-association-kind],[data-add-association],[data-remove-association],[data-association-clear],[data-parameter-name],[data-link-paper],[data-link-tag],[data-note-action],[data-note-edit],[data-note-delete],[data-note-owner-type],[data-comparison-action],[data-comparison-tab],[data-comparison-remove],[data-bulk-action],[data-batch-action],[data-batch-remove],[data-batch-md-remove],[data-performance-add],[data-performance-remove]') || event.target.closest('.compare-checkbox')) return;
     if (button?.dataset.action && actions[button.dataset.action]) { await actions[button.dataset.action](); return; }
     if (button?.dataset.favorite) { await favorite(button.dataset.favorite); return; }
-    if (button?.dataset.nav) {
+    if (button?.dataset.nav || button?.dataset.lobbyNav) {
+      const leavingLobby=state.lobbyOpen;
+      state.lobbyOpen=false;
       state.filters = emptyFilters();
-      state.nav = button.dataset.nav; state.collection = ''; state.selected = ''; state.view = state.nav === 'all' ? 'graph' : 'list'; state.tag = ''; state.year = ''; state.query = ''; state.sort = 'newest'; $('#search').value = ''; state.listLimit = 100;
-      $('#sidebar').classList.remove('mobile-open'); render(); return;
+      state.nav = button.dataset.nav || button.dataset.lobbyNav; state.collection = ''; state.selected = ''; state.view = state.nav === 'all' ? 'graph' : 'list'; state.tag = ''; state.year = ''; state.query = ''; state.sort = 'newest'; $('#search').value = ''; state.listLimit = 100;
+      $('#sidebar').classList.remove('mobile-open'); render();
+      if(leavingLobby)$('#workspace-tab-'+state.view)?.focus();
+      return;
     }
     if (button?.dataset.collection) { state.filters = emptyFilters(); state.collection = button.dataset.collection; state.selected = ''; state.query = ''; state.tag = ''; state.year = ''; $('#search').value = ''; $('#sidebar').classList.remove('mobile-open'); render(); return; }
-    if (button?.dataset.view) { if(!workspaceModules.available(button.dataset.view))return; state.view = button.dataset.view; if(state.view==='materials'){state.nav='library';state.collection='';resetFilters(false);} render(); return; }
+    if (button?.dataset.view || button?.dataset.lobbyView) {
+      const view=button.dataset.view||button.dataset.lobbyView;
+      if(!workspaceModules.available(view))return;
+      const leavingLobby=state.lobbyOpen;
+      state.lobbyOpen=false;state.view=view;
+      if(view==='materials'){state.nav='library';state.collection='';resetFilters(false);}
+      render();
+      if(leavingLobby)document.querySelector(`.app-shell [data-view="${view}"]`)?.focus();
+      return;
+    }
     if (button?.dataset.tag) { state.tag = state.tag === button.dataset.tag ? '' : button.dataset.tag; state.selected = ''; state.listLimit = 100; render(); return; }
     if (button?.dataset.journal) { state.filters.journal = button.dataset.journal; openAdvancedFilters(); render(); return; }
     if (button?.dataset.author) { state.filters.author = button.dataset.author; openAdvancedFilters(); render(); return; }
     if (button?.dataset.institution) { state.filters.institution = button.dataset.institution; openAdvancedFilters(); render(); return; }
-    if (button?.dataset.removeExcludedTag) { state.filters.excludeTags = state.filters.excludeTags.filter(tag => tag !== button.dataset.removeExcludedTag); render(); return; }
-    if (button?.dataset.removeFilterTag) { state.filters.tags = state.filters.tags.filter(t => t !== button.dataset.removeFilterTag); render(); return; }
+    if (button?.dataset.removeExcludedTag) { const {filters} = catalogFilterState(); filters.excludeTags = filters.excludeTags.filter(tag => tag !== button.dataset.removeExcludedTag); render(); return; }
+    if (button?.dataset.removeFilterTag) { const {filters} = catalogFilterState(); filters.tags = filters.tags.filter(t => t !== button.dataset.removeFilterTag); render(); return; }
     if (button?.dataset.related) { resetFilters(false); state.nav = 'all'; state.selected = button.dataset.related; render(); return; }
         if (button?.dataset.color) { $('#collection-form [name="color"]').value = button.dataset.color; document.querySelectorAll('.color-choice').forEach(b => { b.classList.toggle('active', b === button); b.setAttribute('aria-pressed', String(b === button)); }); return; }
     const row = event.target.closest('.paper-row[data-select]');
@@ -725,7 +803,7 @@ document.addEventListener('submit', async event => {
 
 $('#search').addEventListener('input', event => { state.query = event.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.listLimit = 100; render(); }, 140); });
 $('#search-scope').addEventListener('change', event => { state.searchScope = event.target.value; state.listLimit = 100; render(); });
-$('#year-filter').addEventListener('change', event => { state.year = event.target.value; state.listLimit = 100; render(); });
+$('#year-filter').addEventListener('change', event => { catalogFilterState().year = event.target.value; if (!inWorkbench()) state.listLimit = 100; render(); });
 $('#sort-order').addEventListener('change', event => { state.sort = event.target.value; render(); });
 $('#pdf-input').addEventListener('change', async event => { try { await addFiles([...event.target.files]); } catch (error) { toast(error.message, true); } event.target.value = ''; });
 $('#backup-input').addEventListener('change', async event => { try { await restoreFile(event.target.files[0]); } catch (error) { toast(error.message, true); } event.target.value = ''; });
@@ -742,46 +820,50 @@ document.addEventListener('drop', async event => { if (!event.dataTransfer.files
 document.addEventListener('keydown', event => {
   if(event.defaultPrevented||event.target.closest('#workspace-command-dialog, #material-list-filter-dialog'))return;
   if (event.key === 'Escape') {
+    if(state.lobbyOpen&&!document.querySelector('dialog[open], :popover-open')&&!reader?.isOpen()&&!researchCanvas?.isOpen()){
+      event.preventDefault();actions['resume-workspace']();return;
+    }
     if (!document.querySelector('dialog[open], :popover-open') && !reader?.isOpen() && !researchCanvas?.isOpen() && map.closeOrbit()) event.preventDefault();
     $('#detail-panel').classList.remove('mobile-open'); $('#sidebar').classList.remove('mobile-open'); return;
   }
   if (event.target.closest('#vocabulary-dialog') || event.target.matches('input,textarea,select') || event.target.isContentEditable || event.metaKey || event.ctrlKey || event.altKey || $('#modal').open || reader?.isOpen() || researchCanvas?.isOpen()) return;
   if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-select]')) { event.preventDefault(); selectPaper(event.target.dataset.select, true); return; }
-  if (event.key === '/') { event.preventDefault(); $('#search').focus(); }
+  if (event.key === '/') { event.preventDefault(); if(state.lobbyOpen)workspaceChrome.open();else $('#search').focus(); }
   if (event.key.toLowerCase() === 'n') { event.preventDefault(); importModal(); }
-  if (event.key.toLowerCase() === 'v') { state.view = state.view === 'graph' ? 'list' : 'graph'; render(); }
-  if (event.key === '0') map.fit();
+  if (event.key.toLowerCase() === 'v') { state.lobbyOpen=false;state.view = state.view === 'graph' ? 'list' : 'graph'; render(); }
+  if (event.key === '0'&&!state.lobbyOpen) map.fit();
   if (event.key === '?') { event.preventDefault(); shortcutsModal(); }
 });
 window.addEventListener('pagehide', () => { for (const url of activeObjectURLs) URL.revokeObjectURL(url); });
 
 function renderFilterOptions() {
+  const {filters, collection} = catalogFilterState();
   const all = papers(), select = (id, items, initial, current) => {
     $(id).innerHTML = `<option value="">${initial}</option>` + [...new Set(items.filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b))).map(value => `<option value="${escape(value)}">${escape(value)}</option>`).join('');
     $(id).value = current || '';
   };
-  select('#tag-filter-add', [...eligibleTags(all)].filter(t => !state.filters.tags.includes(t)), tr('全部标签'), '');
+  select('#tag-filter-add', [...eligibleTags(all)].filter(t => !filters.tags.includes(t)), tr('全部标签'), '');
   select('#graph-tag-hide', [...eligibleTags(all)].filter(tag => !state.hiddenTagNodes.has(tag)), tr('选择要隐藏的标签节点…'), '');
-  select('#excluded-tag-add', [...eligibleTags(all)].filter(tag => !state.filters.excludeTags.includes(tag)), tr('隐藏包含此标签的文献…'), '');
-  $('#excluded-filter-tags').innerHTML = state.filters.excludeTags.map(tag => html`<button class="tag excluded-tag" data-remove-excluded-tag="${escape(tag)}">排除 ${escape(tag)} ×</button>`).join('');
-  select('#journal-filter', all.map(p => p.journal), tr('全部期刊'), state.filters.journal);
-  select('#impact-year-filter', [...state.journalMetrics.map(m => m.year), ...all.map(p => p.impactYear)], tr('各刊最新 / 文献指定'), state.filters.impactYear);
+  select('#excluded-tag-add', [...eligibleTags(all)].filter(tag => !filters.excludeTags.includes(tag)), tr('隐藏包含此标签的文献…'), '');
+  $('#excluded-filter-tags').innerHTML = filters.excludeTags.map(tag => html`<button class="tag excluded-tag" data-remove-excluded-tag="${escape(tag)}">排除 ${escape(tag)} ×</button>`).join('');
+  select('#journal-filter', (inWorkbench() ? workbenchPapers() : all).map(p => p.journal), tr('全部期刊'), filters.journal);
+  select('#impact-year-filter', [...state.journalMetrics.map(m => m.year), ...all.map(p => p.impactYear)], tr('各刊最新 / 文献指定'), filters.impactYear);
   $('#folder-filter').innerHTML = tr('<option value="">全部分组</option>',false) + collections().map(c => `<option value="${escape(c.id)}">${escape(c.name)}</option>`).join('');
-  $('#folder-filter').value = state.collection;
-  $('#selected-filter-tags').innerHTML = state.filters.tags.map(t => `<button class="tag" data-remove-filter-tag="${escape(t)}">${escape(t)} ×</button>`).join('');
-  document.querySelectorAll('[data-filter]').forEach(input => { if (input.type === 'checkbox') input.checked = Boolean(state.filters[input.dataset.filter]); else if (input.value !== String(state.filters[input.dataset.filter] ?? '')) input.value = state.filters[input.dataset.filter] ?? ''; });
+  $('#folder-filter').value = collection;
+  $('#selected-filter-tags').innerHTML = filters.tags.map(t => `<button class="tag" data-remove-filter-tag="${escape(t)}">${escape(t)} ×</button>`).join('');
+  document.querySelectorAll('[data-filter]').forEach(input => { if (input.type === 'checkbox') input.checked = Boolean(filters[input.dataset.filter]); else if (input.value !== String(filters[input.dataset.filter] ?? '')) input.value = filters[input.dataset.filter] ?? ''; });
   $('#show-edges').checked = state.showEdges[state.graphPreferences.mode]; $('#show-labels').checked = state.showLabels;
-  $('#filter-panel').classList.toggle('has-conflict', Boolean(state.filters.minIF !== '' && state.filters.maxIF !== '' && Number(state.filters.minIF) > Number(state.filters.maxIF)) || Boolean(state.filters.yearFrom && state.filters.yearTo && Number(state.filters.yearFrom) > Number(state.filters.yearTo)));
+  $('#filter-panel').classList.toggle('has-conflict', Boolean(filters.minIF !== '' && filters.maxIF !== '' && Number(filters.minIF) > Number(filters.maxIF)) || Boolean(filters.yearFrom && filters.yearTo && Number(filters.yearFrom) > Number(filters.yearTo)));
 }
 document.querySelectorAll('[data-filter]').forEach(input => input.addEventListener(input.tagName === 'INPUT' && input.type !== 'checkbox' ? 'input' : 'change', event => {
-  state.filters[input.dataset.filter] = input.type === 'checkbox' ? input.checked : input.value;
-  state.listLimit = 100;
+  catalogFilterState().filters[input.dataset.filter] = input.type === 'checkbox' ? input.checked : input.value;
+  if (!inWorkbench()) state.listLimit = 100;
   if (event.type === 'input') { clearTimeout(searchTimer); searchTimer = setTimeout(render, 160); } else render();
 }));
 $('#graph-tag-hide').addEventListener('change',event=>{if(event.target.value)state.hiddenTagNodes.add(event.target.value);render();});
-$('#excluded-tag-add').addEventListener('change',event=>{if(event.target.value)state.filters.excludeTags.push(event.target.value);render();});
-$('#tag-filter-add').addEventListener('change', event => { if (event.target.value) state.filters.tags.push(event.target.value); render(); });
-$('#folder-filter').addEventListener('change', event => { state.collection = event.target.value; render(); });
+$('#excluded-tag-add').addEventListener('change',event=>{if(event.target.value)catalogFilterState().filters.excludeTags.push(event.target.value);render();});
+$('#tag-filter-add').addEventListener('change', event => { if (event.target.value) catalogFilterState().filters.tags.push(event.target.value); render(); });
+$('#folder-filter').addEventListener('change', event => { catalogFilterState().collection = event.target.value; render(); });
 $('#show-edges').addEventListener('change', event => { state.showEdges[state.graphPreferences.mode] = event.target.checked; render(); });
 $('#show-labels').addEventListener('change', event => { state.showLabels = event.target.checked; render(); });
 
@@ -815,7 +897,7 @@ async function previewDataImport() {
 async function downloadTemplate(kind) {
   if (kind === 'metadata') { await saveText(markdownTemplate(state.papers.length ? state.papers.map(p=>p.filename) : undefined), 'materia-metadata-template.md', 'md'); return; }
   const title = state.papers[0]?.title || tr('请替换为实际论文标题');
-  const content = kind === 'metrics' ? tr('\uFEFFjournal,impactFactor,year,source\r\n期刊完整名称,0.0,2025,请填写指标来源\r\n') : JSON.stringify({ papers: [{ filename: state.papers[0]?.filename || 'your-paper.pdf', title, authors: [{ name: tr('作者一'), affiliations: [tr('机构一'), tr('机构二')] }, { name: tr('作者二'), affiliations: [tr('机构二')] }], journal: tr('期刊完整名称'), year: '2025', tags: [tr('材料体系'), tr('工艺')], doi: '', impactFactor: null, impactYear: '' }] }, null, 2);
+  const content = kind === 'metrics' ? tr('\uFEFFjournal,impactFactor,year,source\r\n期刊完整名称,0.0,2025,请填写指标来源\r\n') : JSON.stringify({ papers: [{ filename: state.papers[0]?.filename || 'your-paper.pdf', title, authors: [{ name: tr('作者一'), affiliations: [tr('机构一'), tr('机构二')] }, { name: tr('作者二'), affiliations: [tr('机构二')] }], journal: tr('期刊完整名称'), year: '2025', tags: [tr('材料体系'), tr('工艺')], innovations: [tr('示例创新点')], limitations: [], doi: '', impactFactor: null, impactYear: '' }] }, null, 2);
   const filename = kind === 'metrics' ? 'materia-journal-metrics-template.csv' : 'materia-metadata-template.json';
   if (native) { await native.saveText({ filename, content, type: kind === 'metrics' ? 'csv' : 'json' }); return; }
   const url = URL.createObjectURL(new Blob([content], { type: kind === 'metrics' ? 'text/csv;charset=utf-8' : 'application/json' })); triggerDownload(url, filename); setTimeout(() => URL.revokeObjectURL(url), 30000);
@@ -855,7 +937,7 @@ comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.vie
 materialList=createMaterialList({escape,showModal,closeModal,toast,comparison,getPapers:papers,isVisible:()=>state.view==='materials',onCount:(count,total)=>{$('#visible-count').textContent=msg`${count} / ${total} 个材料`;}});
 batch=createBatchImporter({escape,showModal,toast,bytesLabel,normalizeTags,folderOptions,getPapers:papers,isOpen:()=>modalContext==='import',putPapers,saveText,persistNotes:async incoming=>{const next=mergeImportNotes(await getSetting('notes') || {},incoming);await setSetting('notes',next);},reload:reloadLibrary,onDone:id=>{closeModal();state.nav='all';state.mode='own';state.selected=id || '';resetFilters(false);map.fit();render();}});
 bulkEditor=createBulkEditor({escape,showModal,toast,normalizeTags,getPapers:papers,getCollections:collections,getSelection:()=>state.compareIds,save:bulkEdit,reload:reloadLibrary,done:()=>{closeModal();render();}});
-readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>state.readingStatus,isVisible:()=>Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{state.readingStatus=value;state.listLimit=100;state.selected='';render();},persist:setReadingStatus,reload:async()=>{await reloadLibrary();render();}});
+readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>catalogFilterState().readingStatus,isVisible:()=>inWorkbench()||Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>inWorkbench()?workbenchMatches({...workbenchFilters,readingStatus:''}):filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{catalogFilterState().readingStatus=value;if(!inWorkbench()){state.listLimit=100;state.selected='';}render();},persist:setReadingStatus,reload:async()=>{await reloadLibrary();render();}});
 paperActions=createPaperActions({escape,showModal,closeModal,toast,setReadingStatus:(ids,status)=>readingStatusController.set(ids,status),locate:native?.openPaperFolder? id=>native.openPaperFolder(id):null,parameters:id=>{selectPaper(id);performanceEditor.open(id);},hide:id=>{state.hiddenIds.add(id);render();},canEdit:ensureStorage,getPapers:papers,getCollections:collections,getVisible:visiblePapers,getSelection:()=>state.compareIds,selectPaper,hasPDF:p=>Boolean(p.file||p.pdfPath),isReaderOpen:()=>reader.isOpen(),read:id=>reader.open(id),edit:ids=>{if(ids.length===1){selectPaper(ids[0]);editModal();}else bulkEditor.open(null,ids);},notes:id=>notes.open('paper',id),remove:deleteModal,selectComparison:ids=>comparison.selectIds(ids),assign:bulkEdit,reload:async()=>{await reloadLibrary();render();},star:async(ids,favorite)=>{await putPapers(papers().filter(p=>ids.includes(p.id)).map(p=>({...p,favorite})));},createEmpty:async name=>{if(collections().some(c=>c.name===name))throw new Error(tr('已有同名分组，请直接选择该分组。'));await setSetting('collections',[...collections(),{id:uid('folder'),name,color:PALETTE[0]}]);}});
 groupActions=createGroupActions({escape,showModal,closeModal,toast,getGroups:collections,openFolder:native?.openGroupFolder?id=>native.openGroupFolder(id):null,save:groups=>setSetting('collections',groups),reload:async()=>{await reloadLibrary();render();}});
 performanceEditor=createPerformanceEditor({escape,showModal,toast,getPapers:papers,close:closeModal,save:async(id,materials)=>{const p=state.papers.find(p=>p.id===id);if(!p)throw new Error(tr('找不到文献'));await putPaper(normalizePaperMaterials({...p,materials}));await reloadLibrary();render();}});
@@ -901,45 +983,39 @@ async function init() {
   requestAnimationFrame(()=>requestAnimationFrame(()=>native?.startupReady?.().catch(()=>{})));
 }
 workspaceModules=createWorkspaceModules({native,openAISettings:()=>aiServiceSettingsModal().catch(error=>toast(error.message,true)),libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
- openPdfPage:({paperId,page})=>reader.openAt(paperId,page),
- readPaperPdf:async paper=>{
-   if(!native)return {length:paper.file.size,readRange:async(begin,end)=>new Uint8Array(await paper.file.slice(begin,end).arrayBuffer())};
-   if(!native.readPdfRange)throw Error(tr('请重新启动 Materia。'));
-   const request={id:paper.id,libraryKey:state.desktopInfo?.path};
-   const {length,revision}=await native.readPdfRange(request);
-   return {length,readRange:(begin,end)=>native.readPdfRange({...request,range:{begin,end,revision}})};
- },
- readLargePaperText:native?.innovationReadPdf ? async (paper,signal)=>{
-   signal.throwIfAborted();
-   const id=crypto.randomUUID();
-   const cancel=()=>{native.innovationCancelPdf(id).catch(()=>{});};
-   signal.addEventListener('abort',cancel,{once:true});
-   try {
-     const pages=await native.innovationReadPdf({id,paperId:paper.id,fingerprint:paper.fingerprint||'',libraryKey:state.desktopInfo?.path});
-     signal.throwIfAborted();
-     return pages;
-   } finally {signal.removeEventListener('abort',cancel);}
- } : null,
- aiServiceStatus:()=>agentController.serviceStatus(),extractInnovations:(...args)=>agentController.extractInnovations(...args),
+ workbenchFilterResults:()=>({ids:workbenchMatches().map(paper=>paper.id), count:countCatalogFilters(workbenchFilters,true)}),
+ openWorkbenchFilters:()=>inWorkbench()&&openAdvancedFilters(),
+ getSelectedIds:()=>state.compareIds,
+ openPaper:id=>{state.view='list';state.nav='all';resetFilters(false);state.selected=id;state.detailOpen=true;render();selectPaper(id,true);},
  builtins:{graph:{render(){}},list:{render:()=>renderList(visiblePapers())},materials:{render:()=>materialList.render()},notes:{render:()=>{const filtered=visiblePapers(),count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=count===null?tr('本地 Markdown 笔记'):msg`${count} 条笔记 · ${filtered.length} 篇文献`;}}},
 
 });
 workspaceChrome=createWorkspaceChrome({$,getState:()=>state,getViews:()=>workspaceModules.views(),getPapers:papers,toast,canOpen:()=>state.ready&&!state.storageError&&!document.querySelector('dialog[open]')&&!reader?.isOpen()&&!researchCanvas?.isOpen(),runAction:id=>actions[id]?.(),showAgent:()=>!minimalMode,
  clearSearch:()=>{clearTimeout(searchTimer);state.query='';state.listLimit=100;$('#search').value='';render();},
- selectPaper:id=>{resetFilters(false);state.nav='library';state.view='list';state.selected=id;state.detailOpen=true;render();selectPaper(id,true);}
+ selectPaper:id=>{state.lobbyOpen=false;resetFilters(false);state.nav='library';state.view='list';state.selected=id;state.detailOpen=true;render();selectPaper(id,true);}
 });
 researchCanvas=createResearchCanvas({flushBeforeExit:async()=>{await comparison.flushSelection();await workspaceModules.flush();await notes.flush();},escape,toast,getPapers:papers,isReady:()=>state.ready&&!state.storageError,
  load:async()=>{if(native){if(typeof native.canvasGet!=='function')throw Error(tr('请重新启动 Materia，以启用研究画布的本地存储接口。'));return native.canvasGet();}return{libraryKey:'browser',state:await getSetting('researchCanvases')};},
  persist:async payload=>{if(native)return native.canvasSave(payload);await setSetting('researchCanvases',payload.state);},saveText,
- openPaper:id=>{if(!papers().some(p=>p.id===id)){toast(tr('关联文献已不在当前文献库。'));return;}state.nav='all';resetFilters(false);state.selected=id;render();selectPaper(id,true);},openTag:tag=>notes.open('tag',tag)
+ openPaper:id=>{if(!papers().some(p=>p.id===id)){toast(tr('关联文献已不在当前文献库。'));return;}if(state.lobbyOpen){state.lobbyOpen=false;state.view='graph';}state.nav='all';resetFilters(false);state.selected=id;render();selectPaper(id,true);},openTag:tag=>notes.open('tag',tag)
 });
-agentController = createAgentController({ getPapers: papers, getNotes: () => state.notes, getSelectedIds: () => state.compareIds.size ? [...state.compareIds] : (state.selected ? [state.selected] : []), getSetting, setSetting, isReady: () => state.ready && !state.storageError, openPaper: id => { if (!state.papers.some(p => p.id === id)) { toast(tr('这篇文献已不在当前文献库。')); return; } state.nav='all'; resetFilters(false); state.detailOpen=true; state.selected=id; render(); selectPaper(id,true); } });
+agentController = createAgentController({ getPapers: papers, getNotes: () => state.notes, getSelectedIds: () => state.compareIds.size ? [...state.compareIds] : (state.selected ? [state.selected] : []), getSetting, setSetting, isReady: () => state.ready && !state.storageError, openPaper: id => { if (!state.papers.some(p => p.id === id)) { toast(tr('这篇文献已不在当前文献库。')); return; } if(state.lobbyOpen){state.lobbyOpen=false;state.view='graph';} state.nav='all'; resetFilters(false); state.detailOpen=true; state.selected=id; render(); selectPaper(id,true); } });
 onLocaleChange(async()=>{
   if(!state.ready)return;
   workspaceModules.refreshNavigation();render();agentController.refreshLanguage();
   if(modalContext==='settings'){
     await settingsModal();document.querySelector('#interface-language')?.focus();
   }
+});
+document.addEventListener('change',async event=>{
+  if(event.target.id!=='easter-theme')return;
+  if(event.target.value==='observatory'&&!ensureStorage()){
+    event.target.value=state.easterTheme||'';return;
+  }
+  state.easterTheme=event.target.value==='observatory'?'observatory':'';
+  state.lobbyOpen=Boolean(state.easterTheme);
+  closeModal();render();
+  if(state.lobbyOpen)observatory.focus();else observatory.focusReturn();
 });
 document.addEventListener('change',async event=>{
   if(event.target.id!=='interface-language')return;
@@ -958,6 +1034,7 @@ document.addEventListener('change',async event=>{
     else localStorage.setItem(minimalModeKey,String(enabled));
     minimalMode=enabled;
     agentController.setMinimalMode(enabled);
+    if(state.lobbyOpen)render();
   }catch(error){toast(msg`简洁模式设置未保存：${error.message}`,true);}
   finally{
     const current=$('#minimal-mode');

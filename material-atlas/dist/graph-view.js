@@ -35,7 +35,7 @@ export class StarMap {
       onClose: () => this.closeOrbit(),
     });
     this.labelCanvas=document.createElement('canvas').getContext('2d');this.labelWidths=new Map();
-    this.resizeObserver=new ResizeObserver(()=>{const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;this.bounds={width:r.width,height:r.height};const height=Math.max(430,Math.min(1200,1000*r.height/r.width));if(Math.abs(height-this.viewHeight)>1)this.cancelNaturalLayout();this.y+=(height-this.viewHeight)/2;this.viewHeight=height;svg.setAttribute('viewBox',`0 0 1000 ${height}`);this.cosmos.resize(height);this.symbolBackdrop.resize(height);this.transform();});this.resizeObserver.observe(svg);
+    this.resizeObserver=new ResizeObserver(()=>{const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;this.bounds={width:r.width,height:r.height};const height=Math.max(430,Math.min(1200,1000*r.height/r.width));const resized=Math.abs(height-this.viewHeight)>1;if(resized)this.cancelNaturalLayout();this.y+=(height-this.viewHeight)/2;this.viewHeight=height;svg.setAttribute('viewBox',`0 0 1000 ${height}`);this.cosmos.resize(height);this.symbolBackdrop.resize(height);this.transform();if(resized)this.refreshOrbit();});this.resizeObserver.observe(svg);
   }
   configure(value,collections=[],associations=[]){this.preferences=cleanGraphSettings(value);this.collections=collections;this.associations=associations;}
   setLayout(value) { this.closeOrbit(false);this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
@@ -143,6 +143,7 @@ export class StarMap {
     this.transform();if(!allSaved||wasMoving||citationsChanged&&this.preferences.mode==='citations'&&this.network.edges.length)this.start(.6);
     this.naturalState();
     this.onStats?.({ papers: this.papers.length, tags: this.network.nodes.filter(node => node.type === 'relation').length, edges: this.network.edges.length, omittedTags: this.network.omittedTags, communities:new Set(this.network.nodes.filter(n=>n.clusterSize>1).map(n=>n.community)).size, layoutEdges:this.network.layoutEdges.length });
+    this.refreshOrbit();
   }
   focusOrbit(id) {
     if (!this.orbitPapers?.some(paper => paper.id === id)) return;
@@ -158,7 +159,7 @@ export class StarMap {
     if (!this.orbitCenter) return;
     const center = this.orbitPapers.find(paper => paper.id === this.orbitCenter);
     if (!center) { this.closeOrbit(false); return; }
-    this.orbit.render(center, this.orbitPapers, this.preferences.orbitRings, this.viewHeight, this.selected);
+    this.orbit.render(center, this.orbitPapers, this.preferences, this.viewHeight, this.selected);
   }
   closeOrbit(restoreFocus = true) {
     if (!this.orbitCenter) return false;

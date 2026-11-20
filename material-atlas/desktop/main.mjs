@@ -71,7 +71,7 @@ const mlEngine=new MachineLearningEngine({onProgress:progress=>{if(mainWindow&&!
 let preferenceQueue=Promise.resolve();
 function observeLibrary(store){store.onFolderChange=result=>{if(store===library&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('library:changed',{path:store.root,...result});};return store;}
 let canvasCloseReady=false,canvasAllowClose=false;
-let agentRun = null,connectionTest=null,modelDiscovery=null,innovationPdfRun=null;
+let agentRun = null,connectionTest=null,modelDiscovery=null;
 const translationRuns=new Map();
 function cancelTranslations(){for(const controller of translationRuns.values())controller.abort();connectionTest?.abort();modelDiscovery?.abort();}
 const lock = app.requestSingleInstanceLock();
@@ -84,7 +84,7 @@ app.on('window-all-closed', () => app.quit());
 let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
-  event.preventDefault();quitPending=true;agentRun?.controller.abort();innovationPdfRun?.controller.abort();agentVoice.close();cancelTranslations();mlEngine.cancelAll();
+  event.preventDefault();quitPending=true;agentRun?.controller.abort();agentVoice.close();cancelTranslations();mlEngine.cancelAll();
   Promise.allSettled([agentHistory.queue,library.queue,canvasStore?.queue,moduleServices?.flush(),preferenceQueue]).then(()=>app.quit());
 });
 
@@ -134,7 +134,7 @@ async function start() {
   const workspaceFile=path.join(appRoot,'dist','index.html');
   let lastRecovery=0;
   mainWindow.webContents.on('render-process-gone',(_event,details)=>{
-    canvasCloseReady=false;mlEngine.cancelAll();agentRun?.controller.abort();innovationPdfRun?.controller.abort();cancelTranslations();
+    canvasCloseReady=false;mlEngine.cancelAll();agentRun?.controller.abort();cancelTranslations();
     if(!['crashed','oom'].includes(details.reason)||quitPending||mainWindow.isDestroyed())return;
     const now=Date.now();
     if(now-lastRecovery<60000)return;
@@ -209,23 +209,6 @@ async function start() {
     const result=await store.readPdfRange(id,range);
     if(store!==library)throw Error('文献库已切换，请重新提取。');
     return result;
-  });
-  handle('innovation:cancel-pdf',id=>{if(innovationPdfRun?.id===id)innovationPdfRun.controller.abort();});
-  handle('innovation:read-pdf',async ({id,paperId,fingerprint,libraryKey})=>{
-    const store=library;
-    if(libraryKey!==store.root)throw Error('文献库已切换，请重新提取。');
-    if(typeof id!=='string'||id.length>100||innovationPdfRun)throw Error('后台 PDF 提取仍在运行，请稍后重试。');
-    if((store.data.papers.find(paper=>paper.id===paperId)?.fingerprint||'')!==fingerprint)throw Error('PDF 已更换，请重新提取。');
-    const current={id,controller:new AbortController()};
-    innovationPdfRun=current;
-    try{
-      const {extractInnovationPdf}=await import('./innovation-pdf.mjs');
-      const file=await store.pdfPath(paperId);
-      current.controller.signal.throwIfAborted();
-      const result=await extractInnovationPdf(file,current.controller.signal);
-      if(store!==library)throw Error('文献库已切换，请重新提取。');
-      return result;
-    }finally{if(innovationPdfRun===current)innovationPdfRun=null;}
   });
   handle('library:info', async () => ({...await library.info(),appVersion:app.getVersion()}));
   handle('library:sync-folders',()=>library.syncFolders());
@@ -334,13 +317,6 @@ async function start() {
     const runSignal = AbortSignal.any([controller.signal, AbortSignal.timeout(300000)]);
     const current = { id: payload.id, controller }; agentRun = current;
     try {
-      if(payload.innovation!==undefined){
-        const {runInnovationExtraction}=await import('../dist/modules/beta/innovation-sea/model.js');
-        const complete=config.connection==='antigravity'
-          ? createAntigravityCompletion(config,{jsonOutput:true})
-          : input=>completeWithProvider(config,input);
-        return {points:await runInnovationExtraction(payload.innovation,complete,runSignal)};
-      }
       if(payload.noteEdit!==undefined)return {body:await editNoteMarkdown(payload.noteEdit,input=>completeWithProvider(config,input),runSignal,()=>noteCatalogData(library.getPapers()))};
       const localMemory=hasCharacterMemory(payload.character);
       if (payload.companion) {
@@ -362,7 +338,7 @@ async function start() {
       return { error: controller.signal.aborted ? '已停止生成。' : runSignal.aborted ? '本次研究已超时，请缩小范围后重试。' : (error.message || 'AI 请求失败，请重试。'), canceled: controller.signal.aborted };
     } finally { if (agentRun === current) agentRun = null; }
   });
-  mainWindow.on('closed', () => {agentRun?.controller.abort();innovationPdfRun?.controller.abort();agentVoice.close();cancelTranslations();});
+  mainWindow.on('closed', () => {agentRun?.controller.abort();agentVoice.close();cancelTranslations();});
   handle('library:open-pdf', async id => { const result = await shell.openPath(await library.pdfPath(id)); if (result) throw new Error(result); });
   handle('library:save-pdf', async id => {
     const p = library.data.papers.find(p => p.id === id); if (!p) throw new Error('找不到文献。');
@@ -375,7 +351,6 @@ async function start() {
     const chosen = await dialog.showOpenDialog(mainWindow, { title: t('选择或新建文献库文件夹'), defaultPath: library.root, properties: ['openDirectory', 'createDirectory'] });
     if (chosen.canceled) return null;
     agentRun?.controller.abort();
-    innovationPdfRun?.controller.abort();
     cancelTranslations();
     await library.queue;
     await agentHistory.queue;

@@ -6,6 +6,7 @@ const $ = (id) => document.getElementById(id);
 const token = document.querySelector('meta[name="workbench"]').content;
 const cache = new Map();
 let documents = [];
+let matchingPaperIds = null;
 let libraryVersion;
 let current;
 let original;
@@ -264,8 +265,39 @@ function buttons() {
   $("crop").disabled = !current || Boolean(current.batch || current.refreshing || current.loadingArchive || current.pendingArchive);
   $("open-paper").disabled = !current;
   $("run-preset").disabled = current?.preset.mode !== "text" || !current.hasText || Boolean(current.running || current.loadingArchive);
+  $("export-report").hidden = !current?.report;
+  $("export-report").disabled = Boolean(current?.exporting);
+  $("export-status").textContent = current?.exportStatus || "";
   drawConversation();
 }
+
+$("export-report").addEventListener("click", async () => {
+  const session = current;
+  const report = session?.report;
+  if (!report || session.exporting) return;
+  const title = String(session.document.title || session.document.filename || "研读报告")
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").slice(0, 100).trim();
+  session.exporting = true;
+  session.exportStatus = "正在准备报告…";
+  buttons();
+  try {
+    const archive = await post("/export-report", {report:report.id}, "blob");
+    const url = URL.createObjectURL(archive);
+    const link = element("a");
+    link.href = url;
+    link.download = `${title || "研读报告"}-${report.number || "报告"}.zip`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    session.exportStatus = "";
+  } catch (error) {
+    session.exportStatus = error.message;
+  } finally {
+    session.exporting = false;
+    if (current === session) buttons();
+  }
+});
 
 function selectedPreset() {
   return presets.find((preset) => preset.id === activePreset);
@@ -509,9 +541,11 @@ document.fonts.addEventListener("loadingdone", () => {
 function drawList() {
   const query = $("query").value.trim().toLowerCase();
   const selected = (pendingDocument || original)?.id;
-  const visible = documents.filter(({title, filename, authors, doi}) =>
+  const visible = documents.filter(({id, title, filename, authors, doi}) =>
+    (!matchingPaperIds || matchingPaperIds.has(id)) &&
     [title, filename, authors, doi].some(value => String(value || "").toLowerCase().includes(query)));
   $("paper-count").textContent = [selected ? "已选 1 篇" : "", `${visible.length} 篇`].filter(Boolean).join(" · ");
+  $("paper-filter-empty").hidden = !documents.length || !!visible.length;
   hidePaperTooltip();
   $("papers").replaceChildren(...visible.map((document) => {
     const button = element("button", "", "paper");
@@ -1277,11 +1311,16 @@ function clearSelection() {
   buttons();
 }
 $("query").oninput = drawList;
+$("paper-filters").onclick = () => parent.postMessage({type:"studio-open-paper-filters"}, "*");
 
 window.addEventListener("message", (event) => {
   if (event.source !== parent || !event.data) return;
   const message = event.data;
   if (message.type === "studio-service-changed") refreshService();
+  if (message.type === "studio-paper-filters-state") {
+    $("paper-filters").setAttribute("aria-expanded", String(message.open));
+    if (message.restoreFocus) $("paper-filters").focus({preventScroll:true});
+  }
   if (message.type === "studio-theme") {
     const style = document.documentElement.style;
     for (const [token, value] of Object.entries(message.tokens)) {
@@ -1298,6 +1337,11 @@ window.addEventListener("message", (event) => {
       clearSelection();
     }
     documents = message.papers;
+    matchingPaperIds = Array.isArray(message.matchingIds) ? new Set(message.matchingIds) : null;
+    $("paper-filters").disabled = false;
+    $("paper-filters").toggleAttribute("data-active", !!message.filterCount);
+    $("paper-filter-count").textContent = message.filterCount || "";
+    $("paper-filter-count").hidden = !message.filterCount;
     if (pendingDocument && !documents.some(({id}) => id === pendingDocument.id)) {
       pendingDocument = null;
       $("empty-title").textContent = "选择处理方式";

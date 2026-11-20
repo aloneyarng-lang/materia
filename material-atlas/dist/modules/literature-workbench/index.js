@@ -12,10 +12,11 @@ export const literatureWorkbenchModule = {
   id: 'literature-workbench',
   label: '研读',
   title: '研读',
-  icon: 'assistant',
+  icon: 'files',
   panelId: 'literature-workbench',
+  navigation: 'ribbon',
   styles: [new URL('./workspace.css', import.meta.url).href],
-  create({host, signal, setCount, on, getPapers, openAISettings}) {
+  create({host, signal, setCount, on, getPapers, openAISettings, workbenchFilterResults, openWorkbenchFilters}) {
     const status = document.createElement('p');
     status.setAttribute('role', 'status');
     const retry = document.createElement('button');
@@ -48,10 +49,12 @@ export const literatureWorkbenchModule = {
       if (!ready) return;
       papers = getPapers().filter(paper => paper.file?.desktop).map(({id, title, filename, size, journal, year, authors, doi}) =>
         ({id, title, filename, size, journal, year, authors, doi}));
-      const snapshot = JSON.stringify(papers);
+      const {ids, count} = workbenchFilterResults();
+      const payload = {papers, matchingIds:count ? ids : null, filterCount:count};
+      const snapshot = JSON.stringify(payload);
       if (snapshot === librarySnapshot) return;
       librarySnapshot = snapshot;
-      send({type:'studio-library', papers, version:libraryVersion});
+      send({type:'studio-library', ...payload, version:libraryVersion});
     }
     const observer = new MutationObserver(syncTheme);
     observer.observe(root, {attributes:true, attributeFilter:['style', 'data-theme-mode', 'data-theme-fonts']});
@@ -59,6 +62,15 @@ export const literatureWorkbenchModule = {
     on(window, 'message', async event => {
       if (event.origin !== studioOrigin || event.source !== frame?.contentWindow || !event.data) return;
       if (event.data.type === 'studio-open-settings') openAISettings();
+      if (event.data.type === 'studio-open-paper-filters' && !host.hidden) {
+        const dialog = openWorkbenchFilters();
+        if (!dialog) return;
+        send({type:'studio-paper-filters-state', open:true});
+        on(dialog, 'close', () => {
+          send({type:'studio-paper-filters-state', open:false, restoreFocus:!host.hidden});
+        }, {once:true});
+        return;
+      }
       if (event.data.type === 'studio-ready') {
         ready = true;
         librarySnapshot = '';
@@ -110,7 +122,12 @@ export const literatureWorkbenchModule = {
     on(retry, 'click', load);
     return {
       render() { setCount(''); syncLibrary(); return load(); },
-      reset() { libraryVersion++; librarySnapshot = ''; syncLibrary(); },
+      reset() {
+        libraryVersion++;
+        librarySnapshot = '';
+        papers = [];
+        send({type:'studio-library', papers, matchingIds:null, filterCount:0, version:libraryVersion});
+      },
       dispose() { libraryVersion++; ready = false; observer.disconnect(); },
     };
   },

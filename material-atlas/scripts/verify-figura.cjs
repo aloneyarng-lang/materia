@@ -62,8 +62,8 @@ async function desktop(testRoot) {
   delete env.ELECTRON_RUN_AS_NODE;
   const start = async () => {
     app = await _electron.launch({executablePath:exe,args:process.env.MATERIA_VERIFY_DESKTOP?[]:[root],env,timeout:35000});
-    const main = candidate => candidate.url().endsWith('/dist/index.html');
-    page = app.windows().find(main) || await app.waitForEvent('window',{predicate:main,timeout:25000});
+    page = await app.firstWindow({timeout:25000});
+    await page.waitForURL('**/dist/index.html',{waitUntil:'domcontentloaded',timeout:25000});
     page.on('pageerror', error=>errors.push(error.message));
     await ready();
     await page.locator('[data-view=figura]').click();
@@ -91,7 +91,8 @@ export async function render({params}) {
   return '<svg xmlns="http://www.w3.org/2000/svg" width="'+params.width+'" height="'+params.height+'" viewBox="0 0 '+params.width+' '+params.height+'"><text x="30" y="40" fill="'+params.color+'">'+esc('Fixture plot')+'</text></svg>';
 }`);
   await start();
-  assert.deepEqual(await page.locator('.view-tabs .view-tab').evaluateAll(nodes=>nodes.map(node=>node.dataset.view)),['graph','list','materials','notes','figura']);
+  assert.deepEqual(await page.locator('.view-tabs .view-tab').evaluateAll(nodes=>nodes.map(node=>node.dataset.view)),['graph','list']);
+  assert.equal(await page.locator('.workspace-ribbon [data-view=figura]').getAttribute('aria-current'),'page');
   assert.equal(await page.locator('.figura-scheme').count(),16);
   await template('grouped-line').click();
   await updated();

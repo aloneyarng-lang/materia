@@ -1,4 +1,5 @@
 """Store portable reports and restore the latest run for a paper and preset."""
+import io
 import json
 import os
 import re
@@ -8,6 +9,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
+from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(os.environ["MATERIA_WORKBENCH_OUTPUT"])
 REPORTS = {}
@@ -406,6 +408,28 @@ def save(data, sections, render, images=(), outline=None, text=None, before_comm
     REPORTS[key] = (target / "报告.md", tuple(line(item["label"]) for item in items), data["id"], title,
                     (saved_items, outline, text))
     return {"id": key, "number": reference}
+
+
+def export_archive(key):
+    with LOCK:
+        entry = REPORTS.get(key) if isinstance(key, str) else None
+        if not entry:
+            raise ValueError("请重新打开报告后再导出。")
+        report = entry[0]
+        folder = report.parent
+        if report.is_symlink() or not report.is_file() or not folder.resolve().is_relative_to(ROOT.resolve()):
+            raise ValueError("找不到已保存的报告。")
+        names = {"报告.md", "报告.html", "运行记录.json", "导图.json", "图证据.json", "正文结果.json"}
+        files = sorted(file for file in folder.iterdir()
+                       if not file.is_symlink() and file.is_file()
+                       and (file.name in names or re.fullmatch(r"figure-\d{3,}\.png", file.name)))
+        if sum(file.stat().st_size for file in files) > 120 * 1024 * 1024:
+            raise ValueError("报告超过 120 MB，无法导出。")
+        output = io.BytesIO()
+        with ZipFile(output, "w", ZIP_DEFLATED, compresslevel=1) as archive:
+            for file in files:
+                archive.write(file, arcname=file.name)
+        return output.getvalue()
 
 
 def turn_markdown(question, answer):

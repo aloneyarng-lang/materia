@@ -66,9 +66,14 @@ html[data-theme-mode="light"] #star-map .graph-node[data-cosmic-shape="nova"] .n
 html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var(--node-color) 72%,#173a42)}
 
 #star-map[data-orbit-focus] {
-  background-image: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--teal) 13%, transparent), transparent 66%);
+  background:
+    radial-gradient(ellipse at 50% 50%, #7b516326, transparent 31%),
+    radial-gradient(ellipse at 28% 72%, #34497236, transparent 54%),
+    radial-gradient(ellipse at 81% 24%, #28606825, transparent 43%),
+    #101628;
 }
 #star-map[data-orbit-focus] .graph-overview,
+#star-map[data-orbit-focus] :is(.cosmic-backdrop, .theme-symbol-backdrop),
 .graph-wrap:has(#star-map[data-orbit-focus]) .graph-controls { display: none; }
 .graph-orbit-toolbar {
   position: absolute;
@@ -88,23 +93,29 @@ html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var
   overflow: hidden;
   overflow-wrap: anywhere;
   font: 600 1rem/1.4 var(--serif);
-  color: var(--ink);
+  color: #f0f5ff;
 }
-.graph-orbit-toolbar small { display: block; margin-top: 3px; color: var(--muted); }
-.graph-orbit-toolbar button { pointer-events: auto; white-space: nowrap; flex-shrink: 0; background: var(--surface); }
-.graph-orbit-scene { animation: graph-orbit-reveal .22s ease-out; }
-.graph-orbit-rear, .graph-orbit-front { fill: none; stroke: var(--teal); }
-.graph-orbit-rear { opacity: .26; stroke-width: 1; }
-.graph-orbit-front { opacity: .62; stroke-width: 1.5; }
+.graph-orbit-toolbar small { display: block; margin-top: 3px; color: #aabbd9; }
+.graph-wrap:has(#star-map[data-orbit-focus]) .graph-orbit-toolbar button {
+  pointer-events: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: #f0f5ff;
+  background: #182237;
+  border: 1px solid #53617d;
+}
+.graph-wrap:has(#star-map[data-orbit-focus]) .graph-orbit-toolbar button:hover { color: #fff; background: #2a3b59; }
+.graph-orbit-scene { animation: graph-orbit-reveal .3s ease-out; }
+.graph-orbit-starfield { fill: #c6dbfc; pointer-events: none; }
+.graph-orbit-rear, .graph-orbit-front { fill: none; stroke: #a4bbde; pointer-events: none; }
+.graph-orbit-rear { opacity: .27; stroke-width: .85; stroke-dasharray: 2 5; }
+.graph-orbit-front { opacity: .51; stroke-width: 1.1; }
 .graph-orbit-planet { cursor: pointer; outline: none; }
-.graph-orbit-sphere { fill: color-mix(in srgb, var(--teal) 56%, #7eacfb); }
-.graph-orbit-center .graph-orbit-sphere {
-  fill: color-mix(in srgb, var(--teal) 56%, #6d9cfc);
-  filter: drop-shadow(0 0 13px color-mix(in srgb, var(--teal) 48%, transparent));
-}
-.graph-orbit-target { fill: transparent; stroke: transparent; stroke-width: 2; }
-.graph-orbit-planet:is(:hover, :focus-visible, [aria-pressed="true"]) .graph-orbit-target { stroke: var(--teal); }
-.graph-orbit-planet:focus-visible .graph-orbit-target { stroke: var(--ink); stroke-dasharray: 3 3; }
+.graph-orbit-body { pointer-events: none; }
+.graph-orbit-target { fill: transparent; stroke: transparent; stroke-width: 1.4; }
+.graph-orbit-planet[aria-pressed="true"] .graph-orbit-target { stroke: #afdcfc; }
+.graph-orbit-planet:is(:hover, :focus-visible) .graph-orbit-target { stroke: #fff0c4; }
+.graph-orbit-planet:focus-visible .graph-orbit-target { stroke-dasharray: 3 3; }
 @keyframes graph-orbit-reveal { from { opacity: 0; } to { opacity: 1; } }
 @media(prefers-reduced-motion:reduce) { .graph-orbit-scene { animation: none; } }
 

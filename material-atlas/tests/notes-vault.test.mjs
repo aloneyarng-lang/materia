@@ -6,6 +6,43 @@ import path from 'node:path';
 import {NotesVault} from '../desktop/notes-vault.mjs';
 import {notePath} from '../dist/notes-vault-model.js';
 import {noteReferences,renderNoteMarkdown,resolveNoteLink} from '../dist/notes-markdown.js';
+import {editNoteMarkdown,noteCommandAt} from '../dist/note-edit.js';
+
+test('Tab commands identify only the bracketed range and retain nearby text as context',()=>{
+  const prefix='实验结果\n原句 ',command='【AI： 总结上文 】',body=prefix+command+' 后续正文';
+  const end=prefix.length+command.length;
+  const expected={start:prefix.length,end,instruction:'总结上文',context:prefix};
+  assert.deepEqual(noteCommandAt(body,end,end),expected);
+  assert.deepEqual(noteCommandAt(body,prefix.length,end),expected);
+  assert.equal(noteCommandAt(body,0,end),null);
+  assert.equal(noteCommandAt(body,end-1,end-1),null);
+  assert.equal(noteCommandAt(body,body.length,body.length),null);
+  assert.equal(noteCommandAt('【AI： 】',6,6),null);
+  const preceding='x'.repeat(9000)+'\n';
+  const ascii=preceding+'{{AI: continue}}';
+  assert.deepEqual(noteCommandAt(ascii,ascii.length,ascii.length),{
+    start:preceding.length,end:ascii.length,instruction:'continue',context:preceding.slice(-8000),
+  });
+});
+
+test('note edit requests distinguish insertion context from selected text',async()=>{
+  async function payload(request){
+    let messages;
+    const result=await editNoteMarkdown(request,input=>{
+      assert.deepEqual(input.tools,[]);
+      messages=input.messages;
+      return {content:'生成结果'};
+    });
+    assert.equal(result,'生成结果');
+    return messages;
+  }
+  const context='甲'.repeat(9000);
+  const insertion=await payload({body:'',instruction:'总结上文',selected:false,context});
+  assert.match(insertion[0].content,/生成插入当前位置/);
+  assert.deepEqual(JSON.parse(insertion[1].content),{body:'',instruction:'总结上文',selected:false,context:context.slice(-8000)});
+  const selection=await payload({body:'段落',instruction:'润色',selected:true});
+  assert.deepEqual(JSON.parse(selection[1].content),{body:'段落',instruction:'润色',selected:true});
+});
 
 test('vault writes actual Markdown, rejects collisions and preserves external edits',async t=>{
   const scratch=await mkdtemp(path.join(os.tmpdir(),'materia-notes-'));

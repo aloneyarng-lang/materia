@@ -245,6 +245,8 @@ class Handler(BaseHTTPRequestHandler):
             if route == "/follow-up":
                 return self.out(reports.follow_up(data.get("report"), data.get("question"), data.get("figure"),
                     lambda prompt, images: self.server.ai.explain(prompt, images)["answer"], self.server.ai.render_report))
+            if route == "/export-report":
+                return self.reply(reports.export_archive(data.get("report")), "application/zip")
             if route == "/edit-report":
                 return self.out(reports.edit(data, self.server.ai.render_report))
             if route not in ("/render", "/interpret", "/process", "/report", "/outline", "/saved-report"):

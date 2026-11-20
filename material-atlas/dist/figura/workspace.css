@@ -60,6 +60,7 @@
 #figura-workspace .figura-data-head .outline-button,
 #figura-workspace .figura-dialog-footer button {display:inline-flex;align-items:center;gap:6px;min-height:34px;font-size:.75rem;}
 #figura-workspace .figura-toolbar {margin-left:auto;gap:4px;}
+#figura-workspace .figura-comparison {margin-inline-start:4px;white-space:nowrap;}
 #figura-workspace .icon-button {flex:0 0 auto;}
 #figura-workspace .figura-mode {
   display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:var(--button-radius);

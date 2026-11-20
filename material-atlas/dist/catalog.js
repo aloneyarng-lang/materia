@@ -88,6 +88,12 @@ export function parseMetrics(text) {
   return [...result.values()];
 }
 export function mergeMetrics(current, incoming) { return [...new Map([...current, ...incoming].map(m => [`${journalKey(m.journal)}:${m.year}`, m])).values()]; }
+export function normalizeInnovations(value, field = "innovations") {
+  if (!Array.isArray(value) || value.some(point => typeof point !== 'string' || /[\r\n]/.test(point.trim()))) {
+    throw new Error(field + ' 必须是单行文本组成的数组。');
+  }
+  return [...new Set(value.map(point => point.trim()).filter(Boolean))];
+}
 export function matchMetadata(text, papers) {
   const data = JSON.parse(text), rows = Array.isArray(data) ? data : data.papers;
   if (!Array.isArray(rows) || !rows.length) throw new Error('元数据 JSON 需要 papers 数组或文献数组。');
@@ -104,6 +110,9 @@ export function matchMetadata(text, papers) {
     if (!updated.title.trim() || updated.year && !/^\d{4}$/.test(updated.year) || updated.impactYear && !/^\d{4}$/.test(updated.impactYear)) throw new Error('标题或年份格式不正确。');
     if ((row.authors !== undefined || row.authorDetails !== undefined) && authorDetails) { updated.authorDetails = authorDetails; updated.authors = authorDetails.map(a => a.name).join(', '); }
     if (row.tags !== undefined) { if (!Array.isArray(row.tags)) throw new Error('tags 必须是字符串数组。'); updated.tags = [...new Set(row.tags.map(t => String(t).trim()).filter(Boolean))].slice(0, 30); }
+    for (const field of ['innovations', 'limitations']) {
+      if (row[field] !== undefined) updated[field] = normalizeInnovations(row[field], field);
+    }
     if (row.impactFactor !== undefined) { updated.impactFactor = numericImpact(row.impactFactor); if (updated.impactFactor === null && row.impactFactor !== null && row.impactFactor !== '') throw new Error('影响因子格式不正确。'); }
     if (row.materials !== undefined && row.measurements !== undefined) throw new Error('请使用 materials 材料数组，不要同时提供文献级 measurements。');
     if (row.materials !== undefined || row.measurements !== undefined) {

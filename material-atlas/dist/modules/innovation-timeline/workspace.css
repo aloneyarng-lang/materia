@@ -1,0 +1,91 @@
+:is(#innovation-timeline, #limitation-timeline, #combined-timeline) {
+  flex: 1 1 0;
+  min-block-size: 0;
+  padding-inline: 16px;
+}
+:is(#innovation-timeline, #limitation-timeline, #combined-timeline):not([hidden]) {
+  display: flex;
+  flex-direction: column;
+}
+.timeline-toolbar, .timeline-filters, .timeline-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.timeline-toolbar p {
+  flex: 1 1 210px;
+  margin: 0;
+  color: var(--muted);
+}
+.timeline-filters { margin-block: 16px; }
+.timeline-filters [aria-pressed="true"] {
+  color: var(--teal);
+  border-color: var(--teal);
+}
+.timeline-filters span { color: var(--muted); }
+.timeline-empty { color: var(--muted); }
+.timeline-years {
+  flex: 1 1 0;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--muted) var(--canvas);
+  padding-inline-end: 10px;
+  padding-block-end: 24px;
+}
+.timeline-years:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: -2px;
+}
+.timeline-year {
+  display: grid;
+  grid-template-columns: minmax(4.75rem, auto) minmax(0, 1fr);
+  gap: 12px;
+  margin-block-start: 16px;
+}
+.timeline-year h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--muted);
+}
+.timeline-year ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--line);
+  list-style: none;
+}
+.timeline-year li {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius, 12px);
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+.timeline-point { margin: 0 0 6px; white-space: pre-wrap; }
+.timeline-source { font-size: .9em; color: var(--muted); }
+.timeline-source button { max-width: 100%; text-align: start; white-space: normal; }
+.timeline-direction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-block-start: 8px;
+  color: var(--muted);
+  font-size: .9em;
+}
+.timeline-direction input {
+  max-width: 100%;
+  width: 15em;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--button-radius, 6px);
+  background: var(--surface);
+  color: var(--ink);
+}
+@media (max-width: 620px) {
+  .timeline-year { grid-template-columns: minmax(0, 1fr); }
+}

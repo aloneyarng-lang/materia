@@ -4,6 +4,7 @@ import {actionMenu} from './action-menus.js';
 import {getSetting,setSetting} from './storage.js';
 import {NOTE_LIMIT,notePath,noteName,noteBody} from './notes-vault-model.js';
 import {createNoteEditDialog} from './note-edit-dialog.js';
+import {noteCommandAt} from './note-edit.js';
 import {renderNoteMarkdown,noteReferences,resolveNoteLink} from './notes-markdown.js';
 
 const native=globalThis.materiaDesktop;
@@ -59,13 +60,14 @@ export function createNotesVault(host,{saveText,editNote,escape,toast}){
             ${tool('export','导出 Markdown','download')}
           </div>
           <div class="vault-content" data-vault="content" data-mode="split">
-            <textarea data-vault="editor" aria-label="Markdown 源码" placeholder="支持 Markdown、[[双向链接]] 和 $$ LaTeX 公式" spellcheck="false" maxlength="${NOTE_LIMIT}"></textarea>
+            <textarea data-vault="editor" aria-label="Markdown 源码" ${editNote?'aria-describedby="vault-ai-hint"':''} placeholder="支持 Markdown、[[双向链接]] 和 $$ LaTeX 公式" spellcheck="false" maxlength="${NOTE_LIMIT}"></textarea>
             <article class="vault-preview" data-vault="preview" aria-label="Markdown 预览" tabindex="0"></article>
             <aside class="vault-details" data-vault="details" hidden>
               <strong>大纲</strong><nav data-vault="outline" aria-label="大纲"></nav>
               <strong>反向链接</strong><div data-vault="backlinks"></div>
             </aside>
           </div>
+          ${editNote?html`<p class="vault-ai-hint" id="vault-ai-hint">选中文字按 Tab，或写下【AI：指令】后按 Tab</p>`:''}
         </section>
         <p class="vault-status" data-vault="status" role="status"></p>
       </div>
@@ -365,6 +367,17 @@ export function createNotesVault(host,{saveText,editNote,escape,toast}){
     status(t('待保存'));
     timer=setTimeout(()=>flush().catch(error=>status(error.message,true)),420);
     if(mode!=='edit'||!get('details').hidden)previewTimer=setTimeout(renderPreview,140);
+  });
+  editor.addEventListener('keydown',event=>{
+    if(event.key!=='Tab'||event.defaultPrevented||event.shiftKey||event.ctrlKey||event.metaKey||event.altKey||event.isComposing||event.keyCode===229)return;
+    if(!active||!aiEditor||busy||editor.readOnly)return;
+    const body=editor.value,start=editor.selectionStart,end=editor.selectionEnd;
+    const command=noteCommandAt(body,start,end);
+    if(!command&&start===end)return;
+    event.preventDefault();
+    if(event.repeat)return;
+    const snapshot={id:active.id,body,start:command?.start??start,end,selected:!command};
+    aiEditor.open(snapshot,{quick:true,command});
   });
   host.addEventListener('keydown',event=>{
     if(event.target.closest('.vault-ai-dialog')||!(event.ctrlKey||event.metaKey)||event.isComposing)return;

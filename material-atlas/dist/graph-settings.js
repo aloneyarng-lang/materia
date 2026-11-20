@@ -1,6 +1,6 @@
 import {THEME_ALIASES} from './theme-variants.js';
 import {GRAPH_PRESETS} from './graph-appearance.js';
-export const GRAPH_DEFAULTS = {mode:'similarity',clusterBasis:'combined',neighbors:3,similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65,sharedTagThreshold:6,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,showCommunityLabels:true,colorBy:'community',localMode:false,localDepth:1,appearance:'theme',orbitRings:3};
+export const GRAPH_DEFAULTS = {mode:'similarity',clusterBasis:'combined',neighbors:3,similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65,sharedTagThreshold:6,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,showCommunityLabels:true,colorBy:'community',localMode:false,localDepth:1,appearance:'theme',orbitRings:6};
 export function cleanGraphSettings(value = {}) {
   const output={...GRAPH_DEFAULTS},limits={neighbors:[1,12],center:[0,2],repulsion:[.25,4],linkStrength:[.1,2],linkDistance:[40,250],inertia:[0,1],nodeSize:[.6,2],linkWidth:[.3,2.5],labelThreshold:[.5,2.5],localDepth:[0,2]};
   for(const [key,[min,max]]of Object.entries(limits))if(Number.isFinite(Number(value[key])))output[key]=Math.max(min,Math.min(max,Number(value[key])));

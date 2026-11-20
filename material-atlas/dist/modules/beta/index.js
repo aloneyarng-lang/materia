@@ -1,6 +1,3 @@
-import {innovationSeaModule} from './innovation-sea/index.js';
-
-export const betaExperiments = [innovationSeaModule];
 const betaPlans = [];
 
 export const betaModule = {
@@ -10,6 +7,7 @@ export const betaModule = {
   icon: 'flask',
   panelId: 'beta-workspace',
   navigation: 'ribbon',
+  ribbonGroup: 'bottom',
   styles: [new URL('./workspace.css', import.meta.url).href],
   async create(context) {
     const {createBetaWorkspace} = await import('./workspace.js');

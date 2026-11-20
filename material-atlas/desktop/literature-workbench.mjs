@@ -17,15 +17,15 @@ const markdownAssets = new Map([
 ]);
 const routes = new Map([
   ['GET', new Set(['/', '/app.js', '/style.css'])],
-  ['POST', new Set(['/extract', '/render', '/interpret', '/process', '/report', '/outline', '/cancel', '/saved-report', '/follow-up', '/edit-report', '/presets', '/display-preferences'])],
+  ['POST', new Set(['/extract', '/render', '/interpret', '/process', '/report', '/outline', '/cancel', '/saved-report', '/follow-up', '/edit-report', '/export-report', '/presets', '/display-preferences'])],
 ]);
 
-async function readWorkerResponse(response) {
+async function readWorkerResponse(response, limit) {
   const chunks = [];
   let size = 0;
   for await (const chunk of response) {
     size += chunk.length;
-    if (size > 32 * 1024 * 1024) throw new Error('AI 工作室返回的结果过大。');
+    if (size > limit) throw new Error('AI 工作室返回的结果过大。');
     chunks.push(chunk);
   }
   if (!response.complete) throw new Error('AI 工作室连接在响应完成前中断。');
@@ -42,7 +42,8 @@ function requestWorker({port, pathname, method, headers, body, signal}) {
     const timeout = pathname === '/outline' ? 900000 : 360000;
     const outgoing = httpRequest({hostname:'127.0.0.1', port, path:pathname, method, headers, agent:false,
       signal:AbortSignal.any([signal, AbortSignal.timeout(timeout)])}, response => {
-      readWorkerResponse(response).then(resolve, reject);
+      const limit = (pathname === '/export-report' ? 128 : 32) * 1024 * 1024;
+      readWorkerResponse(response, limit).then(resolve, reject);
     });
     outgoing.once('error', reject);
     outgoing.end(body);

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SIZE,POINTS,BLACK,WHITE,KOMI,neighbors,placement,positionKey,areaScore,createGoGame} from '../dist/flow-go-rules.js';
-import {rankGoMoves,agreesWithDeadStones} from '../dist/flow-go-engine.js';
+import {rankGoMoves,agreesWithDeadStones,estimateBlackWinRate} from '../dist/flow-go-engine.js';
 
 const at = (x,y) => y * SIZE + x;
 function position(black,white) {
@@ -89,4 +89,21 @@ test('the engine ranks unique legal placements and prefers a clean group capture
   assert.equal(choices[0].point,at(2,0));
   assert.ok(choices.slice(1).every(choice=>choice.score<=choices[0].score));
   assert.equal(agreesWithDeadStones(position([at(5,5)],[at(9,9)]),[at(9,9)],new Set()),false);
+});
+
+test('black win estimate reacts to play, reverses on undo and gives the actual result when finished',()=>{
+  const game = createGoGame();
+  const opening = estimateBlackWinRate(game.state);
+  assert.equal(opening,50);
+  game.apply({type:'move',point:at(3,3)});
+  const afterBlack = estimateBlackWinRate(game.state);
+  assert.ok(afterBlack > opening);
+  game.apply({type:'move',point:at(15,15)});
+  assert.ok(estimateBlackWinRate(game.state) < afterBlack);
+  game.undoRound();
+  assert.equal(estimateBlackWinRate(game.state),opening);
+  game.apply({type:'resign',color:BLACK});
+  assert.equal(estimateBlackWinRate(game.state),0);
+  const scored = createGoGame([{type:'move',point:0},{type:'pass'},{type:'pass'},{type:'score'}]);
+  assert.equal(estimateBlackWinRate(scored.state),100);
 });

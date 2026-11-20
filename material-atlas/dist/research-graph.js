@@ -36,39 +36,83 @@ export function louvain(count, edges, resolution = 1) {
   const result=Array(count);members.sort((a,b)=>Math.min(...a)-Math.min(...b)).forEach((row,c)=>row.forEach(i=>result[i]=c));return result;
 }
 
-export function researchGraph(papers,{neighbors=3,similarityThreshold=.2,mutualKnn=false,resolution=1,clusterBasis='combined'}={}){
+function researchTags(papers, clusterBasis) {
   const facets=new Map();
   const rows=papers.map(p=>[...new Set((p.tags||[]).map(normalize).filter(Boolean))].sort().filter(tag=>{
     const info=tagFacet(tag);facets.set(tag,info);
     return info.weight>0&&(clusterBasis==='combined'||info.facet===clusterBasis);
   }));
+  return {rows, facets};
+}
+
+function indexResearchTags(rows, facets) {
+  const index = new Map();
+  rows.forEach((tags, i) => {
+    for (const tag of tags) {
+      if (!index.has(tag)) index.set(tag, []);
+      index.get(tag).push(i);
+    }
+  });
+  const weights = new Map([...index].map(([tag, papers]) => [tag, Math.log(1 + rows.length / papers.length)]));
+  const sums = rows.map(tags => {
+    const result = new Map();
+    for (const tag of tags) {
+      const facet = facets.get(tag).facet;
+      result.set(facet, (result.get(facet) || 0) + weights.get(tag));
+    }
+    return result;
+  });
+  const facetWeights = new Map([...facets.values()].map(info => [info.facet, info.weight]));
+  return {index, weights, sums, facets, facetWeights};
+}
+
+function matchingResearchPapers(tags, source, {index, weights, sums, facets, facetWeights}, threshold, firstTarget = 0) {
+  const overlap = new Map();
+  for (const tag of tags) {
+    const facet = facets.get(tag).facet;
+    for (const target of index.get(tag)) {
+      if (target < firstTarget || target === source) continue;
+      if (!overlap.has(target)) overlap.set(target, new Map());
+      const common = overlap.get(target);
+      common.set(facet, (common.get(facet) || 0) + weights.get(tag));
+    }
+  }
+  const matches = [];
+  for (const [target, common] of overlap) {
+    let score = 0, total = 0;
+    for (const [facet, sum] of sums[source]) {
+      if (!sums[target].has(facet)) continue;
+      const weight = facetWeights.get(facet), shared = common.get(facet) || 0;
+      total += weight;
+      score += weight * (shared / (sum + sums[target].get(facet) - shared || 1));
+    }
+    const similarity = total ? Math.min(1, Math.max(0, score / total)) : 0;
+    if (similarity > 0 && similarity >= threshold) matches.push({source, target, similarity});
+  }
+  return matches;
+}
+
+export function researchNeighbors(papers, id, {clusterBasis = 'combined', similarityThreshold = .2, limit} = {}) {
+  const source = papers.findIndex(paper => paper.id === id);
+  if (source < 0) return [];
+  const {rows, facets} = researchTags(papers, clusterBasis);
+  const matches = matchingResearchPapers(rows[source], source, indexResearchTags(rows, facets), similarityThreshold);
+  return matches
+    .sort((a, b) => b.similarity - a.similarity || String(papers[a.target].id).localeCompare(String(papers[b.target].id)))
+    .slice(0, limit)
+    .map(({target}) => papers[target]);
+}
+
+export function researchGraph(papers,{neighbors=3,similarityThreshold=.2,mutualKnn=false,resolution=1,clusterBasis='combined'}={}){
+  const {rows, facets} = researchTags(papers, clusterBasis);
   const key=JSON.stringify([papers.map((p,i)=>[p.id,rows[i],p.tags]),similarityThreshold,resolution,clusterBasis,[...facets]]);
   if(cache?.key!==key){
-    const index=new Map();rows.forEach((tags,i)=>tags.forEach(t=>{if(!index.has(t))index.set(t,[]);index.get(t).push(i);}));
-    const weights=new Map([...index].map(([t,list])=>[t,Math.log(1+papers.length/list.length)]));
-    const sums=rows.map(tags=>{
-      const result=new Map();
-      for(const tag of tags){const f=facets.get(tag).facet;result.set(f,(result.get(f)||0)+weights.get(tag));}
-      return result;
-    });
-    const facetWeights=new Map([...facets.values()].map(info=>[info.facet,info.weight]));
+    const tagIndex = indexResearchTags(rows, facets);
+    const {weights} = tagIndex;
     const layoutEdges=[];
     rows.forEach((tags,source)=>{
-      const overlap=new Map();
-      for(const t of tags)for(const target of index.get(t))if(target>source){
-        if(!overlap.has(target))overlap.set(target,new Map());
-        const common=overlap.get(target),f=facets.get(t).facet;
-        common.set(f,(common.get(f)||0)+weights.get(t));
-      }
-      for(const [target,common] of overlap){
-        let score=0,total=0;
-        for(const [f,sum] of sums[source]){
-          if(!sums[target].has(f))continue;
-          const weight=facetWeights.get(f),shared=common.get(f)||0;
-          total+=weight;score+=weight*(shared/(sum+sums[target].get(f)-shared||1));
-        }
-        const similarity=total?Math.min(1,Math.max(0,score/total)):0;
-        if(similarity>0&&similarity>=similarityThreshold)layoutEdges.push({source,target,similarity});
+      for (const match of matchingResearchPapers(tags, source, tagIndex, similarityThreshold, source + 1)) {
+        layoutEdges.push(match);
       }
     });
     layoutEdges.sort((a,b)=>a.source-b.source||a.target-b.target);

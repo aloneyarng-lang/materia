@@ -26,7 +26,7 @@ export function createAgentController(options) {
   const native = globalThis.materiaDesktop;
   const desktop = Boolean(native?.agentRun);
   const ribbonButton=document.createElement('button'); ribbonButton.type='button'; ribbonButton.className='ribbon-button'; ribbonButton.dataset.action='ai-agent'; ribbonButton.title=tr('AI 研究助手'); ribbonButton.setAttribute('aria-label',tr('AI 研究助手')); ribbonButton.setAttribute('aria-controls','ai-agent-panel'); ribbonButton.setAttribute('aria-expanded','false'); ribbonButton.innerHTML=icon('assistant');
-  document.querySelector('.workspace-ribbon')?.insertBefore(ribbonButton,document.querySelector('[data-ribbon-view], .ribbon-spacer'));
+  document.querySelector('.workspace-ribbon [data-action="research-canvas"]')?.after(ribbonButton);
   bindStaticDOM(ribbonButton,{translated:true});
   const panel = document.createElement('aside');
   panel.id = 'ai-agent-panel'; panel.className = 'agent-panel'; panel.hidden = true;
@@ -592,9 +592,9 @@ export function createAgentController(options) {
     await reset(); fillConfig();const issue=agentCredentialIssue(config);settings.open=Boolean(issue);status(clearKey?tr('密钥已清除。'):issue||tr('设置已保存，可以开始提问。'));
   }
   async function testConnection(){return serviceSettings.refresh();}
-  async function completeInPreview({messages,signal,noteEdit,noteCatalog,innovation},companion=false){
+  async function completeInPreview({messages,signal,noteEdit,noteCatalog},companion=false){
     const provider={provider:config.provider,baseUrl:config.baseUrl,model:config.model,protocol:config.protocol,apiKey:browserKey};
-    const response=await fetch('/api/ai-agent/complete',{method:'POST',headers:{'Content-Type':'application/json','X-Materia-Agent':'1'},body:JSON.stringify({config:provider,messages,companion,noteEdit,noteCatalog,innovation}),signal});
+    const response=await fetch('/api/ai-agent/complete',{method:'POST',headers:{'Content-Type':'application/json','X-Materia-Agent':'1'},body:JSON.stringify({config:provider,messages,companion,noteEdit,noteCatalog}),signal});
     let data;try{data=await response.json();}catch{throw new Error(tr('预览服务不支持 AI 请求，请使用 npm run preview 启动本项目。'));}
     if(!response.ok)throw new Error(data.error||tr('AI 服务请求失败，请重试。'));
     return data;
@@ -949,24 +949,8 @@ export function createAgentController(options) {
       return result.body;
     }finally{signal?.removeEventListener('abort',cancel);}
   }
-  async function extractInnovations(innovation,{signal}={}){
-    signal?.throwIfAborted();
-    if(!desktop){
-      return (await completeInPreview({innovation,signal})).points;
-    }
-    const id=crypto.randomUUID();
-    const cancel=()=>{native.agentCancel(id).catch(()=>{});};
-    signal?.addEventListener('abort',cancel,{once:true});
-    try{
-      const result=await native.agentRun({id,innovation});
-      signal?.throwIfAborted();
-      if(result.error)throw Error(result.error);
-      if(!Array.isArray(result.points))throw Error(tr('请重新启动 Materia。'));
-      return result.points;
-    }finally{signal?.removeEventListener('abort',cancel);}
-  }
   async function openSettings(){await open();if(panel.hidden)return;showSettings('service');(config.model&&!config.hasKey?$('#agent-key'):modelField()).focus();}
   function refreshLanguage(){syncGapSlider();render({refreshLog:true});notice();chatbar();serviceSettings.sync();panel.setAttribute('aria-label',tr('AI 研究助手'));}
   return {open,close, async getSharedServiceConfig(){await serviceStatus();return config;}, getBrowserKey:()=>browserKey,
-    async saveSharedServiceConfig(value){await persistServiceConfig(value);fillConfig();return config;},setMinimalMode,reset,changeLibrary,serviceStatus,translate,editNote,extractInnovations,openSettings,refreshLanguage,isBusy:()=>busy};
+    async saveSharedServiceConfig(value){await persistServiceConfig(value);fillConfig();return config;},setMinimalMode,reset,changeLibrary,serviceStatus,translate,editNote,openSettings,refreshLanguage,isBusy:()=>busy};
 }

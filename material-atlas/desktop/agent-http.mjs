@@ -24,11 +24,6 @@ export async function handleAgentRequest(req, res) {
     if(req.url==='/api/ai-agent/models'){const result=await listAgentModels(payload.config,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}
     if(req.url==='/api/ai-agent/test'){const result=await testAgentConnection(payload.config,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}
     if(req.url==='/api/translation'){const result=await translateText(payload.config,payload.request,{signal:controller.signal});res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(result));return true;}
-    if(payload.innovation!==undefined){
-      const {runInnovationExtraction}=await import('../dist/modules/beta/innovation-sea/model.js');
-      const points=await runInnovationExtraction(payload.innovation,input=>completeWithProvider(payload.config,input),controller.signal);
-      res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}).end(JSON.stringify({points}));return true;
-    }
     if(payload.noteEdit!==undefined){
       const body=await editNoteMarkdown(payload.noteEdit,input=>completeWithProvider(payload.config,input),controller.signal,()=>payload.noteCatalog);
       res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify({body}));return true;

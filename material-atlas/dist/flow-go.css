@@ -50,6 +50,7 @@
 .flow-go .go-heading h2 { color: #efdfc7; margin: 0; font: 700 clamp(1.5rem,2.9vw,3rem)/.96 Georgia, "Times New Roman",serif; letter-spacing: .065em; white-space: nowrap; text-shadow: 1px 2px #0c0c0b; }
 .go-heading > span { border-inline-start: 1px solid #a69376; padding-inline-start: clamp(10px,1.8vw,32px); font-size: clamp(.65rem,1.45vw,1.35rem); letter-spacing: .24em; white-space: nowrap; }
 .go-world > span { padding: 5px 12px; border: 1px solid #635746; box-shadow: inset 0 0 0 2px #0e0d0c5c; background: #171716; font-size: clamp(.68rem,1.25vw,1.15rem); white-space: nowrap; letter-spacing: .14em; }
+.go-world > span b { font-weight: inherit; }
 .go-world output { display: flex; gap: 3px; align-items: end; font: 500 clamp(1.25rem,2.8vw,2.8rem)/1 Consolas,monospace; font-variant-numeric: tabular-nums; }
 .go-tube {
   display: grid;
@@ -65,7 +66,6 @@
   box-shadow: inset 2px 1px 4px #fac39146,inset -2px -2px 5px #0b0706,0 0 9px #e45d3542;
   text-shadow: 0 0 3px #f99145,0 0 9px #fa6c28;
 }
-.go-decimal { color: #ffc881; text-shadow: 0 0 8px #fc7940; width: .31em; text-align: center; }
 .flow-go .go-close { color: var(--go-ink); }
 
 .go-layout { display: grid; grid-template-columns: minmax(74px,10.7%) minmax(0,50.5%) minmax(0,1fr); gap: clamp(8px,1.1vw,18px); padding: 7px; align-items: stretch; }
@@ -173,7 +173,7 @@
 
 @media (max-width: 890px) {
   #ai-agent-panel .flow-go { width: calc(100vw - 12px); }
-  .go-world > span { display: none; }
+  .go-world > span b { display: none; }
   .go-layout { grid-template-columns: minmax(0,58%) minmax(0,1fr); gap: 10px; }
   .go-rail { grid-column: 1 / -1; grid-row: 2; flex-direction: row; align-items: center; }
   .go-rail-label,.go-rail-graphic,.go-rail-mail { display: none; }
@@ -184,7 +184,9 @@
   .go-heading > span { display: none; }
   .flow-go .go-heading h2 { font-size: clamp(.82rem,5vw,1.32rem); }
   .go-header-tools { gap: 4px; }
-  .go-world output { font-size: clamp(.8rem,3.5vw,1.15rem); gap: 1px; }
+  .go-world { gap: 4px; }
+  .go-world > span { border: 0; box-shadow: none; background: none; padding: 0; font-size: .6rem; letter-spacing: 0; }
+  .go-world output { font-size: clamp(.75rem,3.3vw,1.1rem); gap: 1px; }
   .go-layout { grid-template-columns: minmax(0,1fr); }
   .go-rail { grid-row: 3; }
   .go-sidebar { padding: 0; }

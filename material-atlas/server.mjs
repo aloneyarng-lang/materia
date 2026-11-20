@@ -7,7 +7,7 @@ import { handleAgentRequest } from './desktop/agent-http.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
 const port = Number(process.env.PORT || 4173);
-const mime = { '.mjs':'text/javascript; charset=utf-8', '.wasm':'application/wasm', '.bcmap':'application/octet-stream', '.ttf':'font/ttf', '.pfb':'application/octet-stream', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json; charset=utf-8' };
+const mime = { '.mjs':'text/javascript; charset=utf-8', '.wasm':'application/wasm', '.bcmap':'application/octet-stream', '.ttf':'font/ttf', '.pfb':'application/octet-stream', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json; charset=utf-8' };
 export function createPreviewServer() { return http.createServer(async (req, res) => {
   try {
     if (await handleAgentRequest(req, res)) return;

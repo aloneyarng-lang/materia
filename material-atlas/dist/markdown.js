@@ -1,5 +1,6 @@
 import { normalizeMeasurements } from './parameters.js';
 import { normalizeMaterials } from './materials.js';
+import { normalizeInnovations } from './catalog.js';
 
 const fieldNames = { '文件名':'filename', filename:'filename', file:'filename', '文献id':'id', id:'id', '标题':'title', title:'title', '期刊':'journal', journal:'journal', '发表年份':'year', year:'year', doi:'doi', '标签':'tags', tags:'tags', '影响因子':'impactFactor', impactfactor:'impactFactor', '指标年份':'impactYear', impactyear:'impactYear' };
 const headerKey = v => v.replace(/[`*]/g, '').trim().toLocaleLowerCase().replace(/[ _-]/g, '');
@@ -60,6 +61,14 @@ export function parseMarkdown(text) {
       if (/^(作者与机构|作者|authors)$/i.test(name)) {
         const authors=tables(lines).filter(r=>r.作者||r.name||r.author).map(r=>({ name:r.作者||r.name||r.author, affiliations:(r.机构||r.affiliations||r.institutions||'').split(/[;；]/).map(v=>v.trim()).filter(Boolean) }));
         if(authors.length)paper.authors=authors;
+      } else if (/^(创新点|innovations|局限性|limitations)$/i.test(name)) {
+        const field = /^(局限性|limitations)$/i.test(name) ? 'limitations' : 'innovations';
+        const points = lines.flatMap(line => {
+          const item = line.match(/^\s*(?:[-*+]|\d+[.)、])(?:\s+|$)(.*)$/);
+          return item ? [item[1]] : [];
+        });
+        const entries = normalizeInnovations([...(paper[field] || []), ...points], field);
+        if (entries.length) paper[field] = entries;
       } else if (/^(性能参数|性能数据|measurements|parameters)$/i.test(name)) {
         if(version?.[1]==='2'&&tables(lines).some(row=>Object.values(row).some(Boolean)))throw new Error('版本 2 的性能参数必须放在对应材料区块内。');
         const rows=measurementRows(lines,`第 ${bi+1} 篇文献`);
@@ -92,5 +101,5 @@ export function paperTagsMarkdown(papers) {
 
 export function markdownTemplate(filenames = ['请替换为实际文件名.pdf']) {
   const material=index=>`#### 材料 ${index}\n\n- 名称: \n- 成分 / 配方: \n- 说明: \n\n##### 性能参数\n\n| 样品 / 批次 | 参数名称 | 数值 | 单位 | 测试条件 | 来源 | 限定符 | 误差 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n\n`;
-  return '# Materia 文献批量元数据\n\n格式版本: 2\n\n每个「## 文献」对应一个 PDF；每篇可有多个「#### 材料」区块。先填写材料名称，再填写其性能表；可复制或删除材料区块。数值、单位与条件分列填写。空材料模板保留已有数据，非空材料列表会整体替换该篇的材料与参数，请包含所有需要保留的材料。\n\n' + filenames.map((filename, i)=>`## 文献 ${i+1}\n\n- 文件名: ${filename}\n- 标题: \n- 发表年份: \n- 期刊: \n- DOI: \n- 标签: \n- 影响因子: \n- 指标年份: \n\n### 作者与机构\n\n| 作者 | 机构 |\n| --- | --- |\n\n### 材料\n\n${material(1)}${material(2)}### 文献笔记\n\n#### 笔记 1\n\n### 标签笔记\n\n`).join('\n');
+  return '# Materia 文献批量元数据\n\n格式版本: 2\n\n每个「## 文献」对应一个 PDF；每篇可有多个「#### 材料」区块。先填写材料名称，再填写其性能表；可复制或删除材料区块。数值、单位与条件分列填写。空材料模板保留已有数据，非空材料列表会整体替换该篇的材料与参数，请包含所有需要保留的材料。「### 创新点」与「### 局限性」下每行填写一条，留空保留已有内容。只填写有原文依据的创新点及作者明确说明的本研究局限。\n\n' + filenames.map((filename, i)=>`## 文献 ${i+1}\n\n- 文件名: ${filename}\n- 标题: \n- 发表年份: \n- 期刊: \n- DOI: \n- 标签: \n- 影响因子: \n- 指标年份: \n\n### 创新点\n\n1.\n\n### 局限性\n\n1.\n\n### 作者与机构\n\n| 作者 | 机构 |\n| --- | --- |\n\n### 材料\n\n${material(1)}${material(2)}### 文献笔记\n\n#### 笔记 1\n\n### 标签笔记\n\n`).join('\n');
 }

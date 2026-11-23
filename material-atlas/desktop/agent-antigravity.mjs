@@ -1,3 +1,4 @@
+import {askWindow} from './antigravity-window.mjs';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {access,mkdir,readFile,rename,unlink,writeFile} from 'node:fs/promises';
@@ -59,13 +60,19 @@ export async function findAntigravity(explicit='',env=process.env){
   for(const file of candidates)try{await access(file);return file;}catch{}
   throw Error('未找到反重力客户端，请点击“选择程序”指定 Antigravity.exe。');
 }
-const processQuery=`$items=@();Get-CimInstance Win32_Process -Filter "Name = 'language_server.exe'" -ErrorAction Stop | ForEach-Object { $p=$_; if($p.CommandLine -match '--override_ide_name[= ]+antigravity') { $m=[regex]::Match($p.CommandLine,'--csrf_token[= ]+([^ "]+)'); if($m.Success) { $ports=@(Get-NetTCPConnection -OwningProcess $p.ProcessId -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LocalPort -Unique);$items+=@{pid=$p.ProcessId;token=$m.Groups[1].Value;ports=$ports;binary=$p.ExecutablePath} } } };ConvertTo-Json -InputObject @($items) -Compress`;
-export async function discoverAntigravity({signal,exec=promisify(execFile)}={}){
+const processQuery=`$items=@();Get-CimInstance Win32_Process -Filter "Name = 'language_server.exe'" -ErrorAction Stop | ForEach-Object { $p=$_; if($p.CommandLine -match '--override_ide_name[= ]+antigravity') { $m=[regex]::Match($p.CommandLine,'--csrf_token[= ]+([^ "]+)'); if($m.Success) { $ports=@(Get-NetTCPConnection -OwningProcess $p.ProcessId -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LocalPort -Unique);$items+=@{pid=$p.ProcessId;token=$m.Groups[1].Value;ports=$ports;binary=$p.ExecutablePath} } elseif($p.CommandLine -match '--read_host_bridge_token_from_stdin(?:\s|$)') { $items+=@{hostBridge=$true;binary=$p.ExecutablePath} } } };ConvertTo-Json -InputObject @($items) -Compress`;
+export async function discoverAntigravity({signal,clientPath,exec=promisify(execFile)}={}){
   signal?.throwIfAborted();if(process.platform!=='win32')throw Error('当前桌面客户端直连暂支持 Windows。');
   let rows;
   try{const {stdout}=await exec('powershell.exe',['-NoProfile','-NonInteractive','-Command',processQuery],{windowsHide:true,timeout:12000,maxBuffer:200000,signal});rows=JSON.parse(stdout);}
   catch{signal?.throwIfAborted();throw Error('无法检测反重力进程，请打开客户端后重试。');}
-  return (Array.isArray(rows)?rows:[]).flatMap(row=>Number.isInteger(row.pid)&&typeof row.token==='string'&&/^[a-z\d-]{16,150}$/i.test(row.token)&&typeof row.binary==='string'?(row.ports||[]).filter(p=>Number.isInteger(p)&&p>0&&p<65536).map(port=>({port,token:row.token,pid:row.pid,clientPath:path.resolve(path.dirname(row.binary),'../..','Antigravity.exe')})):[]);
+  rows=Array.isArray(rows)?rows:[];
+  const matching=rows.filter(row=>typeof row.binary==='string'&&(!clientPath||
+    path.resolve(path.dirname(row.binary),'../..','Antigravity.exe').toLowerCase()===path.resolve(clientPath).toLowerCase()));
+  if(matching.length&&matching.every(row=>row.hostBridge===true)){
+    return [{window:true,clientPath:path.resolve(path.dirname(matching[0].binary),'../..','Antigravity.exe')}];
+  }
+  return matching.flatMap(row=>Number.isInteger(row.pid)&&typeof row.token==='string'&&/^[a-z\d-]{16,150}$/i.test(row.token)&&typeof row.binary==='string'?(row.ports||[]).filter(p=>Number.isInteger(p)&&p>0&&p<65536).map(port=>({port,token:row.token,pid:row.pid,clientPath:path.resolve(path.dirname(row.binary),'../..','Antigravity.exe')})):[]);
 }
 export function antigravityRPC(connection,method,body={},signal){
   signal?.throwIfAborted();
@@ -105,8 +112,9 @@ async function connect(value,options={}){
   const cacheable=!options.rpc&&!options.discover;
   const key=config.clientPath.toLowerCase(),cached=cacheable?links.get(key):null;
   if(!options.refresh&&cached&&Date.now()<cached.until)return cached;
-  const rows=await(options.discover||discoverAntigravity)(options);
+  const rows=await(options.discover||discoverAntigravity)({...options,clientPath:config.clientPath});
   const candidates=rows.filter(row=>!config.clientPath||path.resolve(row.clientPath).toLowerCase()===path.resolve(config.clientPath).toLowerCase());
+  if(candidates[0]?.window)return {connection:candidates[0],models:[{id:'desktop-current',name:'桌面端当前模型',remaining:null,supportsPng:false}]};
   const probes=new AbortController(),signal=AbortSignal.any([probes.signal,...(options.signal?[options.signal]:[])]);
   try{
     const linked=await Promise.any(candidates.map(async connection=>{
@@ -129,7 +137,7 @@ async function connect(value,options={}){
 }
 export async function inspectAntigravity(value={},options={}){
   const {connection,models}=await connect(value,{...options,refresh:true});
-  return{ok:true,clientPath:connection.clientPath,models:models.map(({selector,supportsPng,...row})=>row),message:'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
+  return{ok:true,clientPath:connection.clientPath,models:models.map(({selector,supportsPng,...row})=>row),message:connection.window?'已检测到反重力桌面端，测试对话可验证窗口收发。':'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
 }
 
 function selectModel(models, id, vision){
@@ -187,6 +195,10 @@ export function createAntigravityCompletion(value,options={}){
       let linked,id;
       if(!session){
         linked=await connect(config,{...options,signal:combined});
+        if(linked.connection.window){
+          const response=await askWindow(linked.connection.clientPath,messages,tools,options.jsonOutput,combined);
+          return {...(options.jsonOutput?{content:response}:readAntigravityReply(response,tools)),model:'desktop-current'};
+        }
         id=options.previousId;
         if(id){
           // Establish the baseline before sending. After a restart or canceled

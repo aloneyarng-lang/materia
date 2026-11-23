@@ -22,6 +22,17 @@ test('app assignment, Explorer moves, folder renames and a restart preserve the 
   await rename(path.join(lib.root,'papers/界面'),path.join(lib.root,'papers/界面研究'));await lib.syncFolders();assert.equal(lib.getSetting('collections').find(c=>c.id==='folder-b').name,'界面研究');assert.equal(lib.data.papers[0].collection,'folder-b');
   const reopened=await new LocalLibrary(lib.root).init();assert.deepEqual(reopened.data.papers,lib.data.papers);assert.deepEqual(Buffer.from(await reopened.readPdf('p1')),pdf('one'));assert.equal((await reopened.syncFolders()).changed,false);
 });
+test('desktop startup can load an established catalog before reconciling external PDFs',async()=>{
+  const lib=await fresh();
+  await writeFile(path.join(lib.root,'papers/external.pdf'),pdf('deferred'));
+  const reopened=await new LocalLibrary(lib.root).init({deferFolderSync:true});
+  assert.equal(reopened.getPapers().length,0);
+  await reopened.setSetting('graphLayout',{'paper:test':{x:100,y:200,pinned:true}});
+  assert.equal(reopened.getPapers().length,0);
+  assert.equal((await reopened.syncFolders()).added,1);
+  assert.equal(reopened.getPapers().length,1);
+  assert.equal(reopened.getSetting('graphLayout')['paper:test'].pinned,true);
+});
 test('empty and nested folders import, external PDFs count once, copied duplicates and removed records never reappear',async()=>{
   const lib=await fresh();await mkdir(path.join(lib.root,'papers/新组/子组'),{recursive:true});await writeFile(path.join(lib.root,'papers/新组/子组/new.pdf'),pdf('new'));
   const sync=await lib.syncFolders();assert.equal(sync.added,1);assert.equal(lib.data.papers.length,1);assert.equal(lib.getSetting('collections').length,2);const paper=lib.data.papers[0],history=lib.getSetting('importActivity');assert.equal(history.days[dayKey()],1);

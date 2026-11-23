@@ -10,6 +10,10 @@ export async function walkFiles(root,relative=''){
 // Check the exact staged application, so a working source tree cannot hide missing release assets.
 export async function validatePackagedAssets(root){
   const files=await walkFiles(root),known=new Set(files.map(p=>p.replaceAll('\\','/'))),missing=[];
+  if(known.has('desktop/go-analysis.mjs')){
+    for(const name of ['katago.exe','materia.cfg','kata1-b10c128-s1141046784-d204142634.txt.gz','LICENSE-KataGo.txt','LICENSE-Network.txt'])
+      if(!known.has('desktop/vendor/katago/'+name))missing.push({file:'KataGo',reference:name});
+  }
   if(known.has('desktop/ml-engine.mjs'))for(const reference of ['ml/engine.py','ml/elemental-magpie.json','ml/elemental-magpie-LICENSE.txt','ml/runtime/python.exe','ml/runtime/python313.dll','ml/runtime/python313.zip','ml/runtime/python313._pth','ml/runtime/Lib/site-packages/sklearn/__init__.py','ml/runtime/Lib/site-packages/skops/__init__.py','ml/runtime/Lib/site-packages/numpy/__init__.py','ml/runtime/Lib/site-packages/scipy/__init__.py'])if(!known.has(reference))missing.push({file:'machine learning engine',reference});
   if(known.has('dist/offline-dictionary.js')){
     const manifestText=await readFile(path.join(root,'dist/dictionaries/manifest.js'),'utf8');

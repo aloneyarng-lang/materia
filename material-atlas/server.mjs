@@ -4,14 +4,39 @@ import {createReadStream} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleAgentRequest } from './desktop/agent-http.mjs';
+import { createGoAnalysis } from './desktop/go-analysis.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
 const port = Number(process.env.PORT || 4173);
 const mime = { '.mjs':'text/javascript; charset=utf-8', '.wasm':'application/wasm', '.bcmap':'application/octet-stream', '.ttf':'font/ttf', '.pfb':'application/octet-stream', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json; charset=utf-8' };
-export function createPreviewServer() { return http.createServer(async (req, res) => {
+export function createPreviewServer() {
+const go = createGoAnalysis();
+const server = http.createServer(async (req, res) => {
   try {
     if (await handleAgentRequest(req, res)) return;
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (pathname === '/api/flow-go/analyze') {
+      const host = req.headers.host || '';
+      if (req.method !== 'POST' || !/^(?:127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(host) ||
+          req.headers.origin !== `http://${host}` || req.headers['x-materia-go'] !== '1') {
+        res.writeHead(403).end();
+        return;
+      }
+      try {
+        const chunks = [];
+        let size = 0;
+        for await (const chunk of req) {
+          size += chunk.length;
+          if (size > 256 * 1024) throw new Error('Go history is too large');
+          chunks.push(chunk);
+        }
+        const result = await go.analyze(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        res.writeHead(200, {'Content-Type':'application/json', 'Cache-Control':'no-store'}).end(JSON.stringify(result));
+      } catch (error) {
+        if (!res.destroyed) res.writeHead(400).end(error.message);
+      }
+      return;
+    }
     const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
     const info=await stat(file);if (!info.isFile()) throw new Error('Not found');
@@ -36,7 +61,10 @@ export function createPreviewServer() { return http.createServer(async (req, res
     res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
     res.end(body);
   } catch { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); }
-}); }
+});
+server.on('close', () => go.close());
+return server;
+}
 if (path.resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
   const server = createPreviewServer();
   server.listen(port, '127.0.0.1', () => console.log(`Materia is ready: http://localhost:${server.address().port}`));

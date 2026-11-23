@@ -34,7 +34,7 @@ export const cleanNotes = normalizeNotes;
 
 export class LocalLibrary {
   constructor(root) { this.root = path.resolve(root); this.queue = Promise.resolve(); this.folders=new FolderSync(this.root); }
-  async init() {
+  async init({deferFolderSync=false}={}) {
     await mkdir(path.join(this.root, 'papers'), { recursive: true });
     await mkdir(path.join(this.root, 'backups'), { recursive: true });
     const file = path.join(this.root, 'library.json');
@@ -61,6 +61,7 @@ export class LocalLibrary {
     const metrics = seedJournalMetrics(this.data.settings.journalMetrics || []);
     if (JSON.stringify(metrics) !== JSON.stringify(this.data.settings.journalMetrics)) { this.data.settings.journalMetrics = metrics; await this.save(this.data); }
     if(this.data.settings.translationPreferences?.instant===true){this.data.settings.translationPreferences=cleanTranslationPreferences(this.data.settings.translationPreferences);await this.save(this.data);}
+    if(deferFolderSync&&this.data.settings.folderSync&&this.data.settings.importActivity)return this;
     const next=structuredClone(this.data);
     next.settings.importActivity ||= seedImportActivity(next.papers);
     // The first upgrade exports the existing memberships before reading physical folders.
@@ -117,7 +118,8 @@ export class LocalLibrary {
       value={version:1,disabled:[...new Set(value.disabled)]};
     }
     if(moduleData){const text=JSON.stringify(value);if(typeof text!=='string'||Buffer.byteLength(text)>5*1024*1024)throw Error('模块数据格式无效或超过 5 MB，请使用独立存储服务。');value=JSON.parse(text);}
-    if(key==='module:innovation-timeline'){
+    if(key==='module:innovation-timeline'||key==='graphLayout'){
+      if(key==='graphLayout')value=cleanLayout(value);
       const operation=this.queue.then(()=>this.save({...this.data,settings:{...this.data.settings,[key]:value}}));
       this.queue=operation.catch(()=>{});
       return operation;
@@ -132,7 +134,6 @@ export class LocalLibrary {
     if(key==='graphPreferences')value=cleanGraphSettings(value);
     if(key==='graphAssociations')value=cleanAssociations(value);
     if(key==='chartPreferences')value=cleanFigureSettings(value);
-    if(key==='graphLayout')value=cleanLayout(value);
     if(key==='notes')value=cleanNotes(value);
     if(key==='journalMetrics')value=Array.isArray(value) && value.length ? parseMetrics(JSON.stringify(value)) : [];
     return this.mutate(data => {

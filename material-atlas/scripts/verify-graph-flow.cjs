@@ -35,7 +35,11 @@ const { chromium } = require(path.join(process.env.USERPROFILE,
     const edgeCount = await baseEdges.count();
     assert.ok(edgeCount > 0 && edgeCount < 72);
 
+    const displayOptions = page.locator('.graph-setting-section > summary').filter({ hasText: '显示与文字' });
     await page.locator('#filter-button').click();
+    await displayOptions.click();
+    await page.locator('#show-edges').check();
+    await displayOptions.click();
     await appearance.selectOption('flow');
     assert.equal(await pulses.count(), edgeCount);
     assert.equal(await page.locator('.flow-node-halo').count(), 18);
@@ -83,6 +87,9 @@ const { chromium } = require(path.join(process.env.USERPROFILE,
     assert.equal(await page.locator('#star-map').getAttribute('data-graph-appearance'), 'flow');
     assert.equal(await page.locator('#star-map').getAttribute('data-graph-density'), 'dense');
     assert.equal(await baseEdges.count(), 3);
+    await page.locator('#filter-button').click();
+    await displayOptions.click();
+    await page.locator('#show-edges').check();
     assert.equal(await pulses.count(), 72);
     assert.deepEqual(errors, []);
     console.log('PASS translucent nodes, edge geometry and animation, pause, reduced motion, visibility, persistence, dense cap');

@@ -90,11 +90,14 @@ function planetArtwork(radius, style) {
     }
   }
   const light = isSun ? null : svgElement('circle', {r: 1, fill: 'url(#graph-orbit-light)'});
+  const surface = svgElement('g', {});
+  surface.append(...texture.childNodes);
+  texture.append(surface);
   body.append(texture);
   if (light) body.append(light);
   body.append(svgElement('circle', {r: 1, fill:'none', stroke: isSun ? '#ffdca6' : '#e0f4ff',
     'stroke-opacity': isSun ? .78 : .32, 'stroke-width': .04}));
-  return {body, light};
+  return {body, light, surface};
 }
 
 export function rankOrbitPapers(center, papers, {orbitRings, clusterBasis, similarityThreshold}) {
@@ -156,7 +159,7 @@ export class GraphOrbit {
   }
 
   placeSatellites() {
-    for (const {node, light, rx, ry, phase, angularSpeed} of this.satellites) {
+    for (const {node, light, surface, rx, ry, phase, angularSpeed} of this.satellites) {
       const angle = phase + this.orbitTime * angularSpeed;
       const depth = Math.sin(angle);
       const x = rx * Math.cos(angle);
@@ -167,6 +170,7 @@ export class GraphOrbit {
       node.setAttribute('transform', `translate(${500 + dx} ${this.centerY + dy}) scale(${scale})`);
       node.style.opacity = .89 + .11 * depth;
       light.setAttribute('transform', `rotate(${Math.atan2(-dy, -dx) * 180 / Math.PI})`);
+      surface.setAttribute('transform', `rotate(${this.orbitTime * .022})`);
     }
   }
 
@@ -183,6 +187,7 @@ export class GraphOrbit {
     this.papers = new Map(papers.map(paper => [paper.id, paper]));
     if (this.key === key && this.layer?.parentNode === this.svg) {
       this.select(selected);
+      this.syncMotion();
       return;
     }
 
@@ -206,10 +211,10 @@ export class GraphOrbit {
       const ry = rx * .45;
       rear.append(svgElement('path', {d: `M ${-rx} 0 A ${rx} ${ry} 0 0 1 ${rx} 0`}));
       front.append(svgElement('path', {d: `M ${-rx} 0 A ${rx} ${ry} 0 0 0 ${rx} 0`}));
-      const {node, light} = this.planet(paper, 10 + (index % 3) * 1.7, count, index % planetColors.length);
+      const {node, light, surface} = this.planet(paper, 10 + (index % 3) * 1.7, count, index % planetColors.length);
       node.dataset.orbitRing = index + 1;
       satellites.append(node);
-      this.satellites.push({node, light, rx, ry,
+      this.satellites.push({node, light, surface, rx, ry,
         phase: .74 + index * 2.4,
         angularSpeed: fullTurn / (26000 + index * 5700),
       });
@@ -243,7 +248,7 @@ export class GraphOrbit {
       class: `graph-orbit-planet ${isCenter ? 'graph-orbit-center' : ''}`,
       'data-orbit-paper-id': paper.id, tabindex: 0, role: 'button', 'aria-label': name,
     });
-    const {body, light} = planetArtwork(radius, style);
+    const {body, light, surface} = planetArtwork(radius, style);
     group.append(svgElement('title', {}, name), body,
       svgElement('circle', {r: radius + 5, class: 'graph-orbit-target'}));
     group.addEventListener('click', event => {
@@ -267,6 +272,6 @@ export class GraphOrbit {
       if (event.shiftKey && event.key === 'Enter') this.onCenter(paper.id);
       else this.onSelect(paper.id);
     });
-    return {node: group, light};
+    return {node: group, light, surface};
   }
 }

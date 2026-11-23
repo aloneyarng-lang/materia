@@ -1,10 +1,20 @@
 import {html,msg,t} from './i18n.js';
 import {icon} from './icons.js';
-import {SIZE,POINTS,BLACK,WHITE,files,coordinate,createGoGame,groupAt,placement} from './flow-go-rules.js';
-import {agreesWithDeadStones,estimateBlackWinRate,rankGoMoves} from './flow-go-engine.js';
+import {SIZE,POINTS,BLACK,WHITE,files,coordinate,createGoGame,groupAt} from './flow-go-rules.js';
+import {agreesWithDeadStones} from './flow-go-engine.js';
 
 const storageKey = 'materia.flow.go';
 const ruleErrors = {occupied:'此处已有棋子。',suicide:'此处是禁入点，落子后无气。',ko:'此手会使同一方即将行棋的局面重复。'};
+
+async function analyzeGo(actions, signal) {
+  if (window.materiaDesktop?.analyzeGo) return window.materiaDesktop.analyzeGo(actions);
+  const response = await fetch('/api/flow-go/analyze', {
+    method: 'POST', headers: {'Content-Type':'application/json', 'X-Materia-Go':'1'},
+    body: JSON.stringify(actions), signal
+  });
+  if (!response.ok) throw new Error('KataGo analysis failed');
+  return response.json();
+}
 
 function metalGrain() {
   const tile = document.createElement('canvas');
@@ -147,6 +157,25 @@ export function createFlowGo(panel) {
           <div class="go-readout">
             <p data-go="status" role="status" aria-live="polite"></p>
             <p data-go="notice" role="status" aria-live="polite"></p>
+            <div class="go-review-options">
+              <label><input type="checkbox" data-go="recommend"> 推荐落点</label>
+              <label><span>历史棋局</span><select data-go="archive"></select></label>
+            </div>
+            <div data-go="replay-tools" class="go-replay" hidden>
+              <output data-go="replay-step" aria-live="polite"></output>
+              <input type="range" data-go="replay-range" min="0" value="0" aria-label="复盘进度">
+              <div class="go-count-tools">
+                <button type="button" data-go="replay-first">开局</button>
+                <button type="button" data-go="replay-prev">上一步</button>
+                <button type="button" data-go="replay-next">下一步</button>
+                <button type="button" data-go="replay-last">末步</button>
+                <button type="button" data-go="replay-analyze">分析此步</button>
+                <button type="button" data-go="replay-exit">回到对局</button>
+              </div>
+            </div>
+            <div data-go="retry-tools" class="go-count-tools" hidden>
+              <button type="button" data-go="retry">重试 KataGo</button>
+            </div>
             <div data-go="hints" class="go-hints" aria-label="候选落点"></div>
             <div data-go="count-tools" class="go-count-tools" hidden>
               <button type="button" data-go="score">提交数子</button><button type="button" data-go="resume">继续下棋</button>
@@ -184,38 +213,116 @@ export function createFlowGo(panel) {
   let saved;
   try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch {}
   const game = createGoGame(saved?.actions);
-  let winRate = estimateBlackWinRate(game.state);
-  let focused = center, worker, timer, generation = 0, hints = [], analyzing = false, confirmation = '';
+  let records = Array.isArray(saved?.records) ? saved.records.filter(record =>
+    Number.isFinite(record?.date) && Math.abs(record.date) <= 8.64e15 &&
+    Array.isArray(record.actions) && record.actions.length <= 5000) : [];
+  let recommend = saved?.recommend !== false;
+  let replay = null;
+  let gameDate = Number.isFinite(saved?.gameDate) && Math.abs(saved.gameDate) <= 8.64e15 ? saved.gameDate : Date.now();
+  const dateFormat = new Intl.DateTimeFormat(undefined, {dateStyle:'short',timeStyle:'short'});
+  let listedRecords, listedCurrent;
+  let winRate = null;
+  let focused = center, analysis, hints = [], analyzing = false, analysisFailed = false, confirmation = '';
   let marked = new Set(), notice = '', mail = '';
 
-  function persist() {
-    try { localStorage.setItem(storageKey,JSON.stringify({actions:game.history})); }
-    catch { notice = t('这盘棋未能保存，关闭应用前仍可继续。'); }
+  function persist(actions = game.history, archive = records, date = gameDate) {
+    try {
+      localStorage.setItem(storageKey,JSON.stringify({actions,records:archive,recommend,gameDate:date}));
+      return true;
+    } catch {
+      notice = t('保存棋局失败。');
+      return false;
+    }
+  }
+
+  function updateArchive() {
+    const select = get('archive');
+    const current = game.history.length > 0;
+    select.value = replay?.id ?? '';
+    if (listedRecords === records && listedCurrent === current) return;
+    listedRecords = records;
+    listedCurrent = current;
+    const options = [new Option(t('选择棋局复盘'), '')];
+    if (current) options.push(new Option(t('当前棋局'), 'current'));
+    records.forEach(({date,actions}, index)=>{
+      const {state,moves} = createGoGame(actions);
+      const result = state.phase === 'finished' ? (state.winner === BLACK ? t('黑胜') : t('白胜')) : t('未完局');
+      const time = dateFormat.format(new Date(date));
+      options.push(new Option(msg`${time} · ${moves.length} 手 · ${result}`, String(index)));
+    });
+    select.replaceChildren(...options);
+    select.value = replay?.id ?? '';
+    select.disabled = options.length === 1;
+  }
+
+  function stepReplay(index) {
+    cancelAnalysis();
+    hints = [];
+    winRate = null;
+    analysisFailed = false;
+    replay.index = Math.min(replay.actions.length, Math.max(0,index));
+    replay.position = createGoGame(replay.actions.slice(0,replay.index));
+    render();
+  }
+
+  function showReplay(id) {
+    if (!id) {
+      replay = null;
+      void nextTurn();
+      return;
+    }
+    const actions = id === 'current' ? game.history : records[Number(id)]?.actions;
+    if (!actions) return;
+    confirmation = '';
+    replay = {id,actions};
+    stepReplay(0);
+  }
+
+  async function analyzeReplay() {
+    const controller = analysis = new AbortController();
+    analysisFailed = false;
+    analyzing = true;
+    render();
+    try {
+      const result = await analyzeGo(replay.position.history, controller.signal);
+      if (controller.signal.aborted) return;
+      winRate = result.winRate;
+      hints = result.ranked.filter(point=>point !== null).slice(0,3);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.warn('KataGo analysis failed', error);
+      analysisFailed = true;
+    }
+    cancelAnalysis();
+    render();
   }
 
   function render() {
-    const {board:position,phase,turn,captures,last,score,winner} = game.state;
-    const playerTurn = phase === 'play' && turn === BLACK;
-    const moves = game.moves;
-    const rank = new Map(hints.map((point,index)=>[point,index + 1]));
+    const viewed = replay?.position ?? game;
+    const {board:position,phase,turn,captures,last,score,winner} = viewed.state;
+    const playerTurn = !replay && phase === 'play' && turn === BLACK;
+    const moves = viewed.moves;
+    const visibleHints = recommend ? hints : [];
+    const rank = new Map(visibleHints.map((point,index)=>[point,index + 1]));
     for (const [point,button] of buttons.entries()) {
       const color = position[point], candidate = rank.get(point);
       button.className = 'go-point';
       if (color) button.classList.add('has-stone',color === BLACK ? 'black' : 'white');
       if (point === last) button.classList.add('last');
-      if (marked.has(point)) button.classList.add('dead');
+      const dead = !replay && marked.has(point);
+      if (dead) button.classList.add('dead');
       if (candidate) button.classList.add('hint',candidate === 1 ? 'first' : 'alternative');
       button.firstChild.textContent = candidate || '';
       button.tabIndex = point === focused ? 0 : -1;
       button.setAttribute('aria-label',[coordinate(point),color ? t(color === BLACK ? '黑棋' : '白棋') : '',
-        candidate ? msg`推荐第 ${candidate} 位` : '',marked.has(point) ? t('拟移除') : ''].filter(Boolean).join(' · '));
-      button.setAttribute('aria-disabled',String(phase === 'scoring' ? !color : !playerTurn || analyzing || Boolean(color)));
+        candidate ? msg`推荐第 ${candidate} 位` : '',dead ? t('拟移除') : ''].filter(Boolean).join(' · '));
+      button.setAttribute('aria-disabled',String(Boolean(replay) || (phase === 'scoring' ? !color : !playerTurn || Boolean(color))));
     }
-    const winRateDigits = Math.round(winRate * 10000);
-    const world = String(winRateDigits).padStart(7,'0');
+    const winRateDigits = winRate === null ? null : Math.round(winRate * 10000);
+    const world = winRateDigits === null ? '-------' : String(winRateDigits).padStart(7,'0');
     const worldDisplay = get('world');
     if (worldDisplay.textContent !== world) {
-      const label = msg`黑棋估算胜率 ${(winRateDigits / 10000).toFixed(4)}%`;
+      const label = winRateDigits === null ? t('暂无胜率') : msg`黑棋估算胜率 ${(winRateDigits / 10000).toFixed(4)}%`;
       worldDisplay.setAttribute('aria-label',label);
       worldDisplay.title = label;
       worldDisplay.replaceChildren(...[...world].map(digit=>{
@@ -231,76 +338,94 @@ export function createFlowGo(panel) {
     for (const card of dialog.querySelectorAll('[data-go-player]')) {
       card.classList.toggle('active',phase === 'play' && Number(card.dataset.goPlayer) === turn);
     }
-    let status = playerTurn ? t(analyzing ? '正在分析候选落点…' : '轮到你 · 黑棋') : t('红莉栖正在思考…');
+    let status = turn === BLACK ? t(analyzing && recommend ? '正在分析候选落点…' : '轮到你 · 黑棋') : t('红莉栖正在思考…');
+    if (analysisFailed && !replay) status = t('KataGo 分析失败。');
     if (phase === 'scoring') status = t('双方已停一手。点选整块死棋后提交，或继续下棋。');
     if (phase === 'finished') {
       status = score ? msg`${winner === BLACK ? t('黑棋') : t('白棋')}胜 ${score.margin} 目 · 黑 ${score.black} / 白 ${score.white}` : t('你已认输，红莉栖获胜。');
     }
+    if (replay && phase !== 'finished') status = phase === 'scoring' ? t('复盘 · 双方停一手') :
+      (turn === BLACK ? t('复盘 · 黑棋待下') : t('复盘 · 白棋待下'));
+    if (replay && analyzing) status = t('KataGo 正在分析复盘局面…');
+    if (replay && analysisFailed) status = t('KataGo 分析失败。');
     get('status').textContent = status;
-    get('notice').textContent = notice;
+    get('notice').textContent = replay ? '' : notice;
     get('mail').textContent = mail || t('退回你上一手之前');
     get('count').textContent = String(moves.length);
     get('moves').innerHTML = moves.map(({color,point},i)=>
       `<li><span>${i + 1}</span><span>${t(color === BLACK ? '黑' : '白')}</span><b>${point === null ? t('停一手') : coordinate(point)}</b></li>`).join('');
-    get('hints').replaceChildren(...hints.map((point,index)=>{
+    get('hints').replaceChildren(...visibleHints.map((point,index)=>{
       const label = document.createElement('span');
       label.textContent = (index + 1) + '  ' + coordinate(point);
-      label.title = index === 0 ? t('本地引擎首选') : t('本地引擎备选');
+      label.title = index === 0 ? t('KataGo 首选') : t('KataGo 备选');
       return label;
     }));
     get('pass').disabled = !playerTurn;
-    get('resign').disabled = phase === 'finished';
-    get('undo').disabled = !game.history.some(action=>action.type === 'move' || action.type === 'pass' || action.type === 'resign');
-    get('count-tools').hidden = phase !== 'scoring';
+    get('resign').disabled = Boolean(replay) || phase === 'finished';
+    get('new').disabled = Boolean(replay);
+    get('undo').disabled = Boolean(replay) || !game.history.some(action=>action.type === 'move' || action.type === 'pass' || action.type === 'resign');
+    get('count-tools').hidden = Boolean(replay) || phase !== 'scoring';
+    get('retry-tools').hidden = Boolean(replay) || !analysisFailed;
+    get('recommend').checked = recommend;
+    get('replay-tools').hidden = !replay;
+    if (replay) {
+      const {index,actions} = replay;
+      get('replay-range').max = String(actions.length);
+      get('replay-range').value = String(index);
+      get('replay-step').textContent = msg`第 ${moves.length} 手 · 步骤 ${index} / ${actions.length}`;
+      get('replay-first').disabled = get('replay-prev').disabled = index === 0;
+      get('replay-last').disabled = get('replay-next').disabled = index === actions.length;
+      get('replay-analyze').disabled = analyzing || phase !== 'play';
+    }
     get('confirm-box').hidden = !confirmation;
-    get('question').textContent = confirmation === 'new' ? t('开始新棋局并替换当前棋谱？') : t('确认认输？');
+    get('question').textContent = confirmation === 'new' ? t('保存当前棋谱并开始新棋局？') : t('确认认输？');
   }
 
   function cancelAnalysis() {
-    generation++;
-    clearTimeout(timer);
-    worker?.terminate();
-    worker = null;
+    analysis?.abort();
+    analysis = null;
     analyzing = false;
   }
 
-  function nextTurn() {
+  async function nextTurn() {
     cancelAnalysis();
     hints = [];
-    winRate = estimateBlackWinRate(game.state);
+    winRate = null;
+    analysisFailed = false;
+    updateArchive();
     if (game.state.phase !== 'play' || !dialog.open) {
       render();
       return;
     }
-    const {board:position,turn,passes} = game.state;
-    const input = {board:position,turn,passes,seen:game.seen};
-    const token = generation;
+    const {turn} = game.state;
+    const controller = analysis = new AbortController();
     analyzing = true;
     render();
-    function finish(ranked) {
-      if (generation !== token || !dialog.open) return;
+    try {
+      const result = await analyzeGo(game.history, controller.signal);
+      if (controller.signal.aborted || !dialog.open) return;
       cancelAnalysis();
-      const legal = ranked.filter(({point})=>point === null || !placement(position,point,turn,input.seen).error);
+      winRate = result.winRate;
       if (turn === BLACK) {
-        hints = legal.filter(({point})=>point !== null).slice(0,3).map(({point})=>point);
+        hints = result.ranked.filter(point=>point !== null).slice(0,3);
         render();
       } else {
-        const choice = legal[0]?.point ?? null;
-        game.apply(choice === null ? {type:'pass'} : {type:'move',point:choice});
+        const choice = result.ranked[0];
+        if (game.apply(choice === null ? {type:'pass'} : {type:'move',point:choice})) {
+          analysisFailed = true;
+          render();
+          return;
+        }
         persist();
-        nextTurn();
+        void nextTurn();
       }
+    } catch (error) {
+      if (controller.signal.aborted || !dialog.open) return;
+      console.warn('KataGo analysis failed', error);
+      cancelAnalysis();
+      analysisFailed = true;
+      render();
     }
-    function fallback() {
-      if (generation === token) finish(rankGoMoves(input,{lookAhead:false}));
-    }
-    try {
-      worker = new Worker(new URL('./flow-go-worker.js',import.meta.url),{type:'module'});
-      worker.onmessage = event => Array.isArray(event.data) ? finish(event.data) : fallback();
-      worker.onerror = event => { event.preventDefault(); fallback(); };
-      worker.postMessage(input);
-      timer = setTimeout(fallback,1800);
-    } catch { timer = setTimeout(fallback,0); }
   }
 
   function playerMove(action) {
@@ -318,7 +443,7 @@ export function createFlowGo(panel) {
 
   function choose(point) {
     if (game.state.phase !== 'scoring') {
-      if (!analyzing) playerMove({type:'move',point});
+      playerMove({type:'move',point});
       return;
     }
     const position = game.state.board;
@@ -341,12 +466,33 @@ export function createFlowGo(panel) {
   function close() {
     cancelAnalysis();
     confirmation = '';
+    replay = null;
     dialog.close();
   }
+
+  get('recommend').addEventListener('change', event=>{
+    recommend = event.target.checked;
+    persist();
+    render();
+  });
+  get('archive').addEventListener('change', event=>showReplay(event.target.value));
+  get('replay-range').addEventListener('input', event=>stepReplay(Number(event.target.value)));
 
   dialog.addEventListener('click',event=>{
     const button = event.target.closest('button');
     if (!button) return;
+    if (replay) {
+      switch (button.dataset.go) {
+        case 'close': close(); break;
+        case 'replay-first': stepReplay(0); break;
+        case 'replay-prev': stepReplay(replay.index - 1); break;
+        case 'replay-next': stepReplay(replay.index + 1); break;
+        case 'replay-last': stepReplay(replay.actions.length); break;
+        case 'replay-analyze': void analyzeReplay(); break;
+        case 'replay-exit': showReplay(''); get('archive').focus(); break;
+      }
+      return;
+    }
     if (button.dataset.goPoint !== undefined) {
       focused = Number(button.dataset.goPoint);
       choose(focused);
@@ -354,6 +500,7 @@ export function createFlowGo(panel) {
     }
     switch (button.dataset.go) {
       case 'close': close(); break;
+      case 'retry': void nextTurn(); break;
       case 'undo':
         if (!game.undoRound()) return;
         mail = t('D-Mail 已送达。已回到你上一手之前。');
@@ -381,7 +528,21 @@ export function createFlowGo(panel) {
         render();
         break;
       case 'confirm':
-        if (confirmation === 'new') { game.reset(); mail = ''; focused = center; }
+        if (confirmation === 'new') {
+          const actions = game.history;
+          const archive = actions.length ? [{date:gameDate,actions}, ...records] : records;
+          const date = Date.now();
+          if (!persist([],archive,date)) {
+            confirmation = '';
+            render();
+            break;
+          }
+          records = archive;
+          gameDate = date;
+          game.reset();
+          mail = '';
+          focused = center;
+        }
         else if (confirmation === 'resign') game.apply({type:'resign',color:BLACK});
         confirmation = notice = '';
         marked.clear();

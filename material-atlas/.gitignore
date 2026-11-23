@@ -7,6 +7,7 @@ __pycache__/
 ml/runtime/
 test-results/
 release/
+!/desktop/vendor/katago/katago.exe
 
 # Keep API configuration, chat history and literature private
 .env

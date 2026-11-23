@@ -175,6 +175,7 @@ const notes = createNotesController({
   graphTag: tag => { if (!eligibleTags(papers()).has(tag)) { toast(tr('标签关联至少 3 篇文献后，才能在星图中筛选。')); return; } closeModal(); state.nav = 'all'; resetFilters(false); state.tag = tag; state.view = 'graph'; map.fit(); render(); },
 });
 
+let graphMetrics;
 function render() {
   observatory.sync({enabled:state.easterTheme==='observatory'&&state.ready&&!state.storageError,open:state.lobbyOpen,views:workspaceModules?.views()||[],papers:papers(),showAgent:!minimalMode,canStudy:workspaceModules?.available('literature-workbench')});
   paperActions?.close();
@@ -185,17 +186,21 @@ function render() {
   $('#toggle-sidebar').setAttribute('aria-expanded',String(state.leftPanelOpen));$('#workspace-details').setAttribute('aria-expanded',String(state.detailOpen));$('#toggle-local').classList.toggle('active',state.graphPreferences.localMode);$('#local-scope-label').hidden=!state.graphPreferences.localMode;
   $('#graph-focus').hidden = false;
   $('#graph-focus').title=state.focusGraph?tr('展开统计概览'):tr('收起统计概览');$('#graph-focus').setAttribute('aria-label',$('#graph-focus').title);
-  const all = papers(), folders = collections(), eligible = eligibleTags(all);
+  const all = papers(), folders = collections();
+  if(graphMetrics?.papers!==all){
+    const eligible=eligibleTags(all);
+    graphMetrics={papers:all,eligible,groups:tagGroups(all),links:countLinks(all,eligible)};
+  }
+  const {eligible,groups,links}=graphMetrics;
   if (state.tag && !eligible.has(state.tag)) state.tag = '';
   state.filters.tags = state.filters.tags.filter(tag => eligible.has(tag));
   state.filters.excludeTags = state.filters.excludeTags.filter(tag => eligible.has(tag));
   const filtered = visiblePapers();
   if (!filtered.some(p => p.id === state.selected)) state.selected = filtered[0]?.id || '';
-  const groups = tagGroups(all);
   $('#metric-total').innerHTML = html`${all.length}<small>篇</small>`;
   $('#metric-tags').innerHTML = html`${eligible.size}<small>个</small>`;
   $('#metric-tags').title = tr('至少关联 3 篇文献的标签');
-  $('#metric-links').innerHTML = html`${countLinks(all, eligible)}<small>条</small>`;
+  $('#metric-links').innerHTML = html`${links}<small>条</small>`;
   $('#metric-collections').innerHTML = html`${folders.length}<small>个</small>`;
   $('#all-count').textContent = all.length;
   $('#favorite-count').textContent = all.filter(p => p.favorite).length;
@@ -262,18 +267,28 @@ function render() {
   $('#legend').innerHTML = groups.slice(0, 6).map(g => html`<button data-tag="${escape(g.name)}" class="${state.tag === g.name ? 'active' : ''}" title="按 ${escape(g.name)} 筛选"><i style="background:${g.color}"></i>${escape(g.name)}</button>`).join('') + (state.tag ? tr('<button data-action="clear-tag" class="tag-filter-clear">清除筛选 ×</button>') : '');
   map.options = { showEdges: state.showEdges[state.graphPreferences.mode], showLabels: state.showLabels };
   const tagMode=state.graphPreferences.mode==='tags';
-  const scoped=tagMode?filtered.filter(paper=>state.associations.some(rule=>associationMatches(paper,rule))):filtered;
   const sharedMode=state.graphPreferences.mode==='shared-tags';
   const citationMode=state.graphPreferences.mode==='citations';
-  if(citationMode)updateCitations(all);
+  if(citationMode&&graphView)updateCitations(all);
   $('#citation-controls').hidden=!graphView||!citationMode;
   if(citationMode&&graphView)renderCitationStatus();
-  let graphPapers=scoped;
-  if(state.graphPreferences.localMode){
-    if(tagMode)graphPapers=associationLocalPapers(scoped,state.associations,state.selected,state.graphPreferences.localDepth);
-    else if(sharedMode)graphPapers=sharedTagLocalPapers(scoped,state.selected,state.graphPreferences.localDepth,state.graphPreferences.sharedTagThreshold);
-    else if(citationMode)graphPapers=citationLocalPapers(scoped,citations,state.selected,state.graphPreferences.localDepth);
-    else graphPapers=researchLocalPapers(scoped,state.selected,state.graphPreferences.localDepth,state.graphPreferences);
+  let graphPapers=filtered;
+  map.setVisible(graphView&&!state.lobbyOpen);
+  if(graphView&&!state.lobbyOpen){
+    const scoped=tagMode?filtered.filter(paper=>state.associations.some(rule=>associationMatches(paper,rule))):filtered;
+    graphPapers=scoped;
+    if(state.graphPreferences.localMode){
+      const {localDepth,sharedTagThreshold}=state.graphPreferences;
+      if(tagMode)graphPapers=associationLocalPapers(scoped,state.associations,state.selected,localDepth);
+      else if(sharedMode)graphPapers=sharedTagLocalPapers(scoped,state.selected,localDepth,sharedTagThreshold);
+      else if(citationMode)graphPapers=citationLocalPapers(scoped,citations,state.selected,localDepth);
+      else graphPapers=researchLocalPapers(scoped,state.selected,localDepth,state.graphPreferences);
+    }
+    map.citations=citationMode?citations:undefined;
+    map.configure(state.graphPreferences,folders,state.associations);
+    map.setData(graphPapers,state.selected,groups,scoped);
+  }else{
+    map.closeOrbit(false);
   }
   $('#graph-mode').value=state.graphPreferences.mode;
   $('#graph-neighbors-control').hidden=tagMode||sharedMode||citationMode;
@@ -281,14 +296,11 @@ function render() {
   document.querySelectorAll('[data-research-control]').forEach(el=>el.hidden=tagMode||sharedMode||citationMode);
   $('#graph-mode-help').textContent=sharedMode?msg`共同标签数大于 ${state.graphPreferences.sharedTagThreshold} 才连线；共同标签越多，吸引越强、目标距离越短。`:tagMode?tr('选择标签，展示匹配任一标签的文献及关联。'):tr('按所选分面与标签稀有程度识别研究星团；缺失分面不计分。显示连线数量不影响领域划分和布局。');
   document.querySelector('[data-action="associations"]').hidden=!graphView||!tagMode;
-  map.citations=citationMode?citations:undefined;
-  if (!graphView) map.closeOrbit(false);
-  map.configure(state.graphPreferences,collections(),state.associations);map.setData(graphPapers,state.selected,groups,scoped);
-  if(citationMode){
+  if(graphView&&!state.lobbyOpen&&citationMode){
     $('#network-stats').textContent=msg`${map.network.edges.length} 条库内引文`;
     $('#legend').textContent=tr('引用文献 → 被引文献');
   }
-  if(!tagMode&&!sharedMode&&!citationMode&&state.graphPreferences.colorBy==='community'){
+  if(graphView&&!state.lobbyOpen&&!tagMode&&!sharedMode&&!citationMode&&state.graphPreferences.colorBy==='community'){
     const clusters=new Map();
     for(const node of map.network.nodes){if(!clusters.has(node.community))clusters.set(node.community,{label:node.communityLabel,color:node.color,count:0});clusters.get(node.community).count++;}
     $('#legend').innerHTML=[...clusters.values()].map(c=>`<span title="${escape(c.label)}"><i style="background:${c.color}"></i>${escape(c.label)} · ${c.count}</span>`).join('');
@@ -944,23 +956,35 @@ groupActions=createGroupActions({escape,showModal,closeModal,toast,getGroups:col
 performanceEditor=createPerformanceEditor({escape,showModal,toast,getPapers:papers,close:closeModal,save:async(id,materials)=>{const p=state.papers.find(p=>p.id===id);if(!p)throw new Error(tr('找不到文献'));await putPaper(normalizePaperMaterials({...p,materials}));await reloadLibrary();render();}});
 
 async function init() {
-  await loadTagVocabulary();
   hydrateIcons();
   try {
-    minimalMode = native ? (await native.getMinimalMode?.()) === true : false;
+    if (location.protocol === 'file:' && !native) throw new Error(tr('桌面文件存储接口没有正常加载。'));
+    const settings=['themePreferences','collections','notes','journalMetrics','graphPreferences','graphAssociations','graphLayout','comparisonSelection','lastRemoval','chartPreferences','comparisonState','workspaceModules'];
+    const [,,initialPapers,desktopInfo,initialMinimal,...values]=await Promise.all([
+      loadTagVocabulary(),
+      native ? Promise.resolve() : getSetting('mode').then(mode=>mode==='own'?undefined:setSetting('mode','own')),
+      getPapers(),native?.info(),native?.getMinimalMode?.(),...settings.map(key=>getSetting(key)),
+    ]);
+    const preferences=Object.fromEntries(settings.map((key,index)=>[key,values[index]]));
+    minimalMode = initialMinimal === true;
     if(!native){try{minimalMode=localStorage.getItem(minimalModeKey)==='true';}catch{}}
     agentController.setMinimalMode(minimalMode);
-    themeController.load(await getSetting('themePreferences'));
-    state.papers = await getPapers();
-    state.collections = await getSetting('collections') || [];
-    state.notes = await getSetting('notes') || {};
-    state.journalMetrics = await getSetting('journalMetrics') || [];
-    state.graphPreferences=cleanGraphSettings(await getSetting('graphPreferences')||{});state.associations=cleanAssociations(await getSetting('graphAssociations')||[]);
-    const seededMetrics = seedJournalMetrics(state.journalMetrics);
-    if (JSON.stringify(seededMetrics) !== JSON.stringify(state.journalMetrics)) { await setSetting('journalMetrics', seededMetrics); state.journalMetrics = seededMetrics; }
-    map.setLayout(await getSetting('graphLayout') || {});
-    if (native) state.desktopInfo = await native.info();
-    if (location.protocol === 'file:' && !native) throw new Error(tr('桌面文件存储接口没有正常加载。'));
+    themeController.load(preferences.themePreferences);
+    state.papers = initialPapers;
+    state.collections = preferences.collections || [];
+    state.notes = preferences.notes || {};
+    state.journalMetrics = preferences.journalMetrics || [];
+    state.graphPreferences=cleanGraphSettings(preferences.graphPreferences||{});
+    state.associations=cleanAssociations(preferences.graphAssociations);
+    if(!native){
+      const seededMetrics=seedJournalMetrics(state.journalMetrics);
+      if(JSON.stringify(seededMetrics)!==JSON.stringify(state.journalMetrics)){
+        await setSetting('journalMetrics',seededMetrics);
+        state.journalMetrics=seededMetrics;
+      }
+    }
+    map.setLayout(preferences.graphLayout || {});
+    if (native) state.desktopInfo = desktopInfo;
     let migrated = false;
     for (const p of state.papers) if (p.notes && !state.notes[`paper:${p.id}`]) { state.notes[`paper:${p.id}`] = [{ id: `legacy-${p.id}`, body: p.notes, createdAt: p.addedAt, updatedAt: p.addedAt }]; migrated = true; }
     if (migrated) await setSetting('notes', state.notes);
@@ -968,13 +992,14 @@ async function init() {
     const oldExamples = state.papers.filter(isOldExample);
     for (const p of oldExamples) await deletePaper(p.id);
     if (oldExamples.length) { state.papers = state.papers.filter(p=>!isOldExample(p)); state.notes = removeOldExampleNotes(state.notes, new Set(oldExamples.map(p=>p.id))); await setSetting('notes',state.notes); }
-    state.compareIds = new Set((await getSetting('comparisonSelection') || []).filter(id=>state.papers.some(p=>p.id===id)));
-    lastRemoval = await getSetting('lastRemoval') || null;
-    await setSetting('mode','own');
-    comparison.loadPreferences(await getSetting('chartPreferences') || {});comparison.loadSelectionPreferences(await getSetting('comparisonState'));
+    const paperIds=new Set(state.papers.map(paper=>paper.id));
+    state.compareIds=new Set((preferences.comparisonSelection||[]).filter(id=>paperIds.has(id)));
+    lastRemoval=preferences.lastRemoval||null;
+    comparison.loadPreferences(preferences.chartPreferences||{});
+    comparison.loadSelectionPreferences(preferences.comparisonState);
     state.ready = true;
     workspaceChrome.restore(state.desktopInfo?.path||'browser');
-    await workspaceModules.loadPreferences(await getSetting('workspaceModules'));
+    await workspaceModules.loadPreferences(preferences.workspaceModules);
   } catch (error) {
     state.storageError = true;
     const banner = document.createElement('div'); banner.className = 'storage-error'; banner.textContent = msg`文献库无法读取，原数据已保留：${error.message}`; $('main').prepend(banner);

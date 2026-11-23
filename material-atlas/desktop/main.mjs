@@ -1,5 +1,6 @@
 ﻿import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage, protocol } from 'electron';
+import {createGoAnalysis} from './go-analysis.mjs';
 import {createStartup} from './startup.mjs';
 import {createLiteratureWorkbench} from './literature-workbench.mjs';
 import {WINDOWS_APP_ID, WINDOWS_APP_NAME, windowsAppDetails} from './windows-identity.mjs';
@@ -80,7 +81,9 @@ else {
   app.on('second-instance', () => { if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.focus(); } });
   app.whenReady().then(start).catch(error => { dialog.showErrorBox('Materia 无法启动', error.message); app.quit(); });
 }
+const goAnalysis = createGoAnalysis();
 app.on('window-all-closed', () => app.quit());
+app.on('will-quit', () => goAnalysis.close());
 let quitPending=false;
 app.on('before-quit',event=>{
   if(!agentHistory||quitPending)return;
@@ -93,7 +96,7 @@ async function start() {
   await mkdir(profile, { recursive: true });
   let config = {};
   try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  startup = await createStartup(appRoot, config.minimalMode === true);
+  startup = createStartup(appRoot, config.minimalMode === true);
   const antigravityChats = new AntigravityChatLinks(profile);
   const loadedAgentSettings = await agentSettings.load().catch(() => null);
   if (loadedAgentSettings && !agentSettings.config) {
@@ -118,19 +121,28 @@ async function start() {
   const previousRoot = app.isPackaged ? path.resolve(path.dirname(app.getPath('exe')), '..', '..', 'Materia-win32-x64', '文献库') : '';
   const legacyRoots=[previousRoot,path.join(path.dirname(app.getPath('exe')),'文献库'),path.resolve(appRoot,'../../../../Materia-win32-x64/文献库'),path.join(appRoot,'.local','desktop-library')];
   const startupRoot = await prepareLibraryLocation({envRoot:process.env.MATERIA_LIBRARY_DIR,configuredRoot:config.libraryPath,legacyRoots,defaultRoot});
-  library = await new LocalLibrary(startupRoot).init();
+  library = await new LocalLibrary(startupRoot).init({deferFolderSync:true});
   observeLibrary(library);
   agentHistory = new AgentHistoryFile(library.root,{memoryRoot});
   canvasStore=new CanvasFile(library.root);
   moduleServices=new DesktopModuleServices(DESKTOP_MODULES,library.root);
-  await savePreferences({libraryPath:library.root});
+  if(config.libraryPath!==library.root)await savePreferences({libraryPath:library.root});
   mainWindow = new BrowserWindow({ show: false, width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), icon: path.join(appRoot, 'desktop', 'materia.ico'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
   if (process.platform === 'win32') mainWindow.setAppDetails(windowsAppDetails(appRoot, process.execPath, app.isPackaged));
-  const revealMain=()=>{if(!mainWindow.isDestroyed()&&process.env.MATERIA_HEADLESS!=='1'){mainWindow.show();mainWindow.focus();}};
+  let initialSyncTimer;
+  const revealMain=()=>{
+    if(mainWindow.isDestroyed()||process.env.MATERIA_HEADLESS==='1')return;
+    mainWindow.show();mainWindow.focus();
+  };
+  const finishStartup=()=>{
+    clearTimeout(startupTimeout);
+    startup.finish(revealMain);
+    initialSyncTimer??=setTimeout(enableFolderSync,1500);
+  };
   // Reveal initialization errors too, rather than trapping the user behind a loader.
-  const startupTimeout=setTimeout(()=>startup.finish(revealMain),15000);
-  mainWindow.once('closed',()=>{clearTimeout(startupTimeout);startup.close();});
-  mainWindow.webContents.once('did-fail-load',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);});
+  const startupTimeout=setTimeout(finishStartup,15000);
+  mainWindow.once('closed',()=>{clearTimeout(startupTimeout);clearTimeout(initialSyncTimer);clearInterval(folderSyncInterval);startup.close();});
+  mainWindow.webContents.once('did-fail-load',finishStartup);
   const workspaceFile=path.join(appRoot,'dist','index.html');
   let lastRecovery=0;
   mainWindow.webContents.on('render-process-gone',(_event,details)=>{
@@ -158,6 +170,7 @@ async function start() {
     return fn(...args);
   });
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
+  handle('flow-go:analyze', actions => goAnalysis.analyze(actions));
   handle('notes-vault:append-tip',entry=>notesVault.appendTip(entry));
   handle('notes-vault:list',()=>notesVault.list());
   handle('notes-vault:save',payload=>notesVault.save(payload));
@@ -166,7 +179,7 @@ async function start() {
     const result=await shell.openPath(await notesVault.directory([],true));
     if(result)throw Error(result);
   });
-  handle('startup:ready',()=>{clearTimeout(startupTimeout);startup.finish(revealMain);return true;});
+  handle('startup:ready',()=>{finishStartup();return true;});
   handle('literature-workbench:open', literatureWorkbench.open);
   moduleServices.register(handle);
   let figura;
@@ -384,9 +397,18 @@ async function start() {
     if (!chosen.canceled) await writeFile(chosen.filePath,image);
     return {canceled:chosen.canceled,path:chosen.filePath};
   });
-  let folderSyncBusy=false;
-  const syncFolders=async()=>{if(folderSyncBusy||mainWindow.isDestroyed())return;folderSyncBusy=true;try{await library.syncFolders();}catch(error){console.error('文献文件夹同步：',error.message);}finally{folderSyncBusy=false;}};
-  setInterval(syncFolders,4000).unref();mainWindow.on('focus',syncFolders);
+  let folderSyncBusy=false,folderSyncInterval;
+  const syncFolders=async()=>{
+    if(folderSyncBusy||mainWindow.isDestroyed())return;
+    folderSyncBusy=true;
+    try{await library.syncFolders();}catch(error){console.error('文献文件夹同步：',error.message);}finally{folderSyncBusy=false;}
+  };
+  const enableFolderSync=()=>{
+    if(mainWindow.isDestroyed())return;
+    void syncFolders();
+    folderSyncInterval=setInterval(syncFolders,4000).unref();
+    mainWindow.on('focus',syncFolders);
+  };
   mainWindow.webContents.once('did-finish-load', () => {
     if(config.agentVoiceEnabled!==false){
       void (async()=>{

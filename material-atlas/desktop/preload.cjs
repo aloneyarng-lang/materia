@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  analyzeGo: actions => ipcRenderer.invoke('flow-go:analyze', actions),
   openLiteratureWorkbench: () => ipcRenderer.invoke('literature-workbench:open'),
   appendDailyTip: entry => ipcRenderer.invoke('notes-vault:append-tip',entry),
   onQuickTip: callback => {const listener=()=>callback();ipcRenderer.on('notes-vault:quick-tip',listener);return()=>ipcRenderer.removeListener('notes-vault:quick-tip',listener);},

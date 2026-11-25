@@ -25,7 +25,7 @@ test('all Figura schemes and publication styles render the original colors and e
   const catalog = await schemeCatalog(bundled, customFolder(root));
   const ids = JSON.parse(await readFile(path.join(bundled, 'catalog.json'), 'utf8'));
   assert.deepEqual(catalog.map(item => item.id), ids);
-  assert.equal(catalog.length, 16);
+  assert.ok(ids.includes('sock-bar-chart'));
   for (const item of catalog) {
     assert.equal(item.error, undefined, item.id);
     const {scheme, files} = await loadScheme(bundled, customFolder(root), item.id, item.version);

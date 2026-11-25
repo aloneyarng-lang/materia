@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {AntigravityChatLinks,cleanAntigravityConfig,inspectAntigravity,createAntigravityCompletion,readAntigravityReply,discoverAntigravity,antigravityVisionModel} from '../desktop/agent-antigravity.mjs';
+import {parseWindowsProxy} from '../desktop/antigravity-cli.mjs';
 import {AgentSettings,normalizeAgentConfig} from '../desktop/agent.mjs';
 import {agentCredentialIssue} from '../dist/agent-auth.js';
 import {runResearchAgent} from '../dist/ai-agent-core.js';
@@ -81,7 +82,7 @@ test('research reuses its own desktop conversation across tool rounds and preser
     if(method==='GetCascadeTrajectory')return{status:'CASCADE_RUN_STATUS_IDLE',trajectory:{steps:[...steps]}};
     throw Error('Unexpected RPC '+method);
   }});
-  const result=await runResearchAgent({question:'查看强度，并给我三个下一步选项',context:{papers:[{id:'p1',title:'授权文献'},{id:'p2',title:'范围外文献'}],scopeIds:['p1']},complete});
+  const result=await runResearchAgent({question:'查看强度，并给我三个下一步选项',offerChoice:true,context:{papers:[{id:'p1',title:'授权文献'},{id:'p2',title:'范围外文献'}],scopeIds:['p1']},complete});
   assert.equal(calls.filter(c=>c.method==='StartCascade').length,1);assert.equal(calls.filter(c=>c.method==='SendUserCascadeMessage').length,2);
   assert.match(result.answer,/123 MPa/);assert.deepEqual(result.choices,['比较条件','查看材料','讨论下一步']);assert.deepEqual(result.sources.map(s=>s.id),['p1']);
   assert.ok(!calls.some(c=>JSON.stringify(c.body).includes('范围外文献')));
@@ -193,4 +194,51 @@ test('API and desktop profiles survive switching and restart; encrypted API cred
   const reopened=new AgentSettings(root,encryption);await reopened.load();assert.equal(reopened.config.connection,'antigravity');
   await reopened.save({...reopened.publicConfig().profiles.api,apiKey:''});assert.equal(reopened.config.apiKey,api.apiKey);assert.equal(reopened.config.model,'old-model');
   assert.equal(reopened.publicConfig().profiles.antigravity.clientPath,clientPath);
+});
+
+test('host bridge clients use background text transport and migrate a saved window model',async()=>{
+  const id='gemini-3.8-flash-high';
+  const config={connection:'antigravity',model:'window-'+Buffer.from('Gemini 3.8 Flash High').toString('base64url')};
+  const options={
+    discover:async()=>[{hostBridge:true,clientPath}],
+    cliConnection:async()=>({connection:{cli:'agy.exe',clientPath},models:[{id,name:'Gemini 3.8 Flash (High)',remaining:null}]}),
+    askCli:async(binary,messages,tools,model)=>{
+      assert.equal(binary,'agy.exe');assert.equal(model,id);assert.equal(messages[0].content,'ping');
+      return '{"content":"pong","tool_calls":[]}';
+    }
+  };
+  assert.equal((await inspectAntigravity(config,options)).selectedModel,id);
+  const reply=await createAntigravityCompletion(config,options)({messages:[{role:'user',content:'ping'}]});
+  assert.equal(reply.content,'pong');assert.equal(reply.model,id);
+});
+
+test('ACP transport prefers low-latency default models and supports PNG attachments when imageSupported is enabled',async()=>{
+  const models=[
+    {id:'gemini-4-neon-high',name:'Gemini 4 Neon (High)',remaining:null,supportsPng:true},
+    {id:'gemini-3.8-flash-low',name:'Gemini 3.8 Flash (Low)',remaining:null,supportsPng:true},
+    {id:'gpt-oss-120b-medium',name:'GPT-OSS 120B (Medium)',remaining:null,supportsPng:false},
+  ];
+  let chosenModel='';
+  const options={
+    discover:async()=>[{hostBridge:true,clientPath}],
+    cliConnection:async()=>({connection:{cli:'agy.exe',acp:true,imageSupported:true,clientPath},models}),
+    askCli:async(_binary,_messages,_tools,model)=>{
+      chosenModel=model;
+      return '{"content":"ok","tool_calls":[]}';
+    },
+  };
+  await createAntigravityCompletion({connection:'antigravity',clientPath,model:''},options)({messages:[{role:'user',content:'hi'}]});
+  assert.equal(chosenModel,'gemini-3.8-flash-low');
+  assert.equal(await antigravityVisionModel({connection:'antigravity',clientPath,model:''},options),'gemini-3.8-flash-low');
+  await assert.rejects(
+    createAntigravityCompletion({connection:'antigravity',clientPath,model:'gpt-oss-120b-medium'},options)({
+      messages:[{role:'user',content:[{type:'text',text:'look'},{type:'image_url',image_url:{url:'data:image/png;base64,aW1hZ2Ux'}}]}],
+    }),
+    /支持图片/
+  );
+  assert.deepEqual(
+    parseWindowsProxy('    ProxyEnable    REG_DWORD    0x1\r\n    ProxyServer    REG_SZ    127.0.0.1:12000\r\n'),
+    {HTTP_PROXY:'http://127.0.0.1:12000',HTTPS_PROXY:'http://127.0.0.1:12000'}
+  );
+  assert.equal(parseWindowsProxy('    ProxyEnable    REG_DWORD    0x0\r\n    ProxyServer    REG_SZ    127.0.0.1:12000\r\n'),null);
 });

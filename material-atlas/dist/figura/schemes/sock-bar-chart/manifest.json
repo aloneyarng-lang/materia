@@ -1,0 +1,125 @@
+{
+  "id": "sock-bar-chart",
+  "name": "袜筒柱状图 · 吸睛统计",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "description": "用多姿态简笔腿部剪影与袜筒高度精确映射柱状图数值；封面与数据为合成示例。",
+  "category": "趣味对比",
+  "cover": "cover.svg",
+  "requires": [],
+  "fields": [
+    {
+      "key": "label",
+      "label": "类目 / 天数",
+      "type": "string"
+    },
+    {
+      "key": "value",
+      "label": "数值",
+      "type": "number"
+    }
+  ],
+  "parameters": [
+    {
+      "key": "xLabel",
+      "label": "X 轴单位",
+      "type": "text",
+      "default": "天"
+    },
+    {
+      "key": "yLabel",
+      "label": "Y 轴名称",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "width",
+      "label": "画布宽度 px",
+      "type": "number",
+      "default": 820,
+      "min": 420,
+      "max": 2400
+    },
+    {
+      "key": "height",
+      "label": "画布高度 px",
+      "type": "number",
+      "default": 560,
+      "min": 360,
+      "max": 1800
+    },
+    {
+      "key": "yMax",
+      "label": "Y 轴上限（0 为自动）",
+      "type": "number",
+      "default": 11,
+      "min": 0,
+      "max": 100000
+    },
+    {
+      "key": "sockPreset",
+      "label": "袜子配色",
+      "type": "select",
+      "default": "经典炭黑",
+      "options": [
+        "经典炭黑",
+        "深邃纯黑",
+        "日系白丝",
+        "主题配色",
+        "自定义颜色"
+      ]
+    },
+    {
+      "key": "color",
+      "label": "自定义袜色",
+      "type": "color",
+      "default": "#56514d"
+    },
+    {
+      "key": "skinTone",
+      "label": "肤色基调",
+      "type": "color",
+      "default": "#fdf0e6"
+    },
+    {
+      "key": "showValues",
+      "label": "数值标注",
+      "type": "select",
+      "default": "显示",
+      "options": [
+        "显示",
+        "隐藏"
+      ]
+    },
+    {
+      "key": "axisStyle",
+      "label": "坐标轴风格",
+      "type": "select",
+      "default": "手绘箭头",
+      "options": [
+        "手绘箭头",
+        "简洁出版"
+      ]
+    },
+    {
+      "key": "font",
+      "label": "字体",
+      "type": "select",
+      "default": "Microsoft YaHei",
+      "options": [
+        "Microsoft YaHei",
+        "Arial",
+        "Times New Roman"
+      ]
+    },
+    {
+      "key": "fontSize",
+      "label": "字号 px",
+      "type": "number",
+      "default": 15,
+      "min": 10,
+      "max": 28
+    }
+  ],
+  "dataDescription": "每行一个类目与非负数值（建议 2–12 组）。袜筒从 X 轴基线向上延伸至精确对应 Y 轴数值的高度。"
+}

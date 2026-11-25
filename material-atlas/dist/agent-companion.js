@@ -1,5 +1,5 @@
 import {characterPrompt, cleanCharacter} from './agent-character.js';
-import {cleanChoices} from './agent-choices.js';
+import {dialogueChoices} from './agent-choices.js';
 import {voiceInstructions,alignedVoice} from './agent-voice-format.js';
 import {characterPersona,hasCharacterMemory,supportsAutomaticDialogue} from './agent-persona.js';
 import {characterIdFor,cleanReplyLanguage,KURISU_ID,REPLY_LANGUAGES} from './agent-character-memory.js';
@@ -54,7 +54,7 @@ export async function runCompanionTurn({chatId='', character, history, companion
   const topic=kurisu&&!opening?undefined:candidates[(seed+chatOffset)%candidates.length];
   const language = REPLY_LANGUAGES[locale];
   const format = companion.offerChoice === true
-    ? '最后一句以一个贴合当前话题的问题结尾，并在 JSON 中加入 "choices" 数组。给出三条自然、具体、方向不同的用户回复，每条最多 120 字。'
+    ? '在 JSON 中加入 "choices" 数组。给出三条与最后一句有关、自然具体且方向不同的用户回复，每条最多 120 字。'
     : 'JSON 只包含 lines 和 recap。';
   const system = `这是 Materia 的 Galgame 自动对话。角色可以主动说话，用户随时插话。
 ${characterPrompt(character)}${persona}
@@ -76,9 +76,7 @@ ${opening?'这是一次独立的闲聊开场。用一到两句，说完等对方
   if(!turn.lines.length)throw Error('模型未返回有效台词，请重试。');
   const voice=alignedVoice(turn.lines,turn.speech,voiceLanguage);
   const output={lines:turn.lines,recap:opening?'':turn.recap,...(voice?{voice}:{})};
-  if(companion.offerChoice===true&&/[？?][」』”’"']*$/.test(turn.lines.at(-1))){
-    try { output.choices=cleanChoices(turn.choices); } catch { /* Invalid options do not block the dialogue. */ }
-  }
+  if(companion.offerChoice===true)output.choices=dialogueChoices(turn.choices,locale);
   return output;
 }
 

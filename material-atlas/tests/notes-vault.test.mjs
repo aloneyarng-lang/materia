@@ -1,12 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {mkdtemp,readFile,readdir,rm,writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {NotesVault} from '../desktop/notes-vault.mjs';
-import {notePath,dailyTipName} from '../dist/notes-vault-model.js';
+import {NOTE_LIMIT,notePath,dailyTipName} from '../dist/notes-vault-model.js';
 import {noteReferences,renderNoteMarkdown,resolveNoteLink} from '../dist/notes-markdown.js';
 import {editNoteMarkdown,noteCommandAt} from '../dist/note-edit.js';
+import {screenshotCrop} from '../dist/screenshot-selection.js';
+
+test('screenshot selection maps display fractions to bounded pixel coordinates',()=>{
+  assert.deepEqual(screenshotCrop({left:.25,top:.2,right:.75,bottom:.8},3840,2160),
+    {x:960,y:432,width:1920,height:1296});
+  assert.deepEqual(screenshotCrop({left:-.2,top:.01,right:.075,bottom:1.2},100,200),
+    {x:0,y:2,width:8,height:198});
+  assert.equal(screenshotCrop({left:.8,top:.2,right:.25,bottom:.8},400,200),null);
+  assert.equal(screenshotCrop({left:.1,top:.1,right:.1,bottom:.1},200,200),null);
+  assert.equal(screenshotCrop({left:0,top:0,right:Infinity,bottom:1},400,200),null);
+});
 
 test('Tab commands identify only the bracketed range and retain nearby text as context',()=>{
   const prefix='实验结果\n原句 ',command='【AI： 总结上文 】',body=prefix+command+' 后续正文';
@@ -82,4 +93,20 @@ test('daily tips use the local date and append concurrent entries without overwr
   await vault.save({id,body:'原有内容\r\n',revision:null});
   await Promise.all([vault.appendTip('第一条'),vault.appendTip('第二条')]);
   assert.equal(await readFile(path.join(root,id),'utf8'),'原有内容\r\n\r\n---\r\n\r\n第一条\r\n\r\n---\r\n\r\n第二条\r\n');
+});
+
+test('quick tips can save just an image as portable Markdown and leave no new assets when the note is full',async t=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'materia-tip-image-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const vault=new NotesVault(root);
+  const encoded='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2pUAAAAASUVORK5CYII=';
+  const image={id:'clipboard-image',name:'实验 [截图].png',dataUrl:'data:image/png;base64,'+encoded,width:1,height:1};
+  const note=await vault.appendTip({entry:'',attachments:[image]});
+  const [reference]=note.body.match(/tip-images\/img-[a-f\d-]+\.png/g);
+  assert.match(renderNoteMarkdown(note.body).markup,/data-note-image="tip-images\//);
+  assert.deepEqual(await vault.image(note.id,reference),{type:'image/png',bytes:Buffer.from(encoded,'base64')});
+  const files=await readdir(path.join(root,'tip-images'));
+  await vault.save({id:note.id,revision:note.revision,body:'x'.repeat(NOTE_LIMIT)});
+  await assert.rejects(vault.appendTip({entry:'still too long',attachments:[image]}),/512/);
+  assert.deepEqual(await readdir(path.join(root,'tip-images')),files);
 });

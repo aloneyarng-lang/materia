@@ -2,13 +2,14 @@ import {html} from './i18n.js';
 
 export function agentServiceForm(prefix = '') {
   const form = html`<form id="agent-config-form"><div class="agent-config-fields">
-      <label>接入方式<select id="agent-connection"><option value="api">API 服务</option><option value="antigravity">本地反重力 · Antigravity</option></select></label>
+      <label>接入方式<select id="agent-connection"><option value="api">API 服务</option><option value="local-gemini">本地 Gemini</option><option value="antigravity">本地反重力 · Antigravity</option></select></label>
+      <section id="agent-gemini-settings" hidden><p class="agent-help">使用已登录的 Gemini Windows 客户端。检测客户端可读取可用模型。</p><label>Gemini 模型<select id="agent-gemini-model"><option value="desktop-current">桌面端当前模型</option></select></label><button type="button" class="text-button" data-local-agent="test">测试 Gemini 对话</button></section>
       <section id="agent-antigravity-settings" hidden>
-        <p class="agent-help">直接连接正在运行的反重力桌面客户端，使用客户端已登录账号的模型额度。无需 CLI，也无需在 Materia 填写 API 密钥；模型回复仍需要联网。</p>
+        <p class="agent-help">Materia 在后台连接反重力。桌面接口不可用时，自动使用本机已登录的官方 agy CLI 收发文本。</p>
         <label>客户端程序<input id="agent-client-path" placeholder="自动查找 Antigravity.exe，也可选择程序" maxlength="2000" autocomplete="off" spellcheck="false"></label>
         <div class="agent-local-actions"><button type="button" class="text-button" data-local-agent="open">启动反重力</button><button type="button" class="text-button" data-local-agent="choose">选择程序</button><button type="button" class="text-button" data-local-agent="test">测试对话</button></div>
         <label>客户端可用模型<select id="agent-client-model"><option value="">使用客户端列表首个可用模型</option></select></label>
-        <p class="agent-help">保持反重力打开并登录 → 检测客户端 → 选择模型 → 保存。检测只读取模型及额度；“测试对话”会发送一句测试消息并使用少量额度。角色卡、历史、文献检索及阅读翻译均可继续使用。当前为客户端兼容接入，客户端升级后可能需要更新 Materia。</p>
+        <p class="agent-help">检测客户端 → 选择模型 → 保存。“测试对话”会发送一句测试消息并使用少量额度。角色卡、历史、文献检索及阅读翻译均可继续使用。当前为客户端兼容接入，客户端升级后可能需要更新 Materia。</p>
       </section>
       <div id="agent-api-settings">
       <label>AI 服务厂商<select id="agent-provider" aria-describedby="agent-provider-hint"></select></label>

@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cleanChoices,readChoiceReply,entryText} from '../dist/agent-choices.js';
+import {cleanChoices,readChoiceReply,entryText,rollDialogueChoices} from '../dist/agent-choices.js';
 import {emptyAgentHistory,cleanAgentHistory} from '../dist/agent-history.js';
 import {runResearchAgent} from '../dist/ai-agent-core.js';
+import {runCompanionTurn} from '../dist/agent-companion.js';
+import {defaultCharacter} from '../dist/agent-character.js';
 const choices=['先梳理已有资料','一起比较性能参数','聊聊研究方向'];
 test('optional choice metadata is bounded and separate from the visible answer',()=>{
   const text='我们可以从三个方向开始。\n<materia_choices>'+JSON.stringify(choices)+'</materia_choices>';
@@ -21,15 +23,31 @@ test('choices persist with the assistant entry and remain available to subsequen
 });
 test('normal model replies support three scene choices without another provider request',async()=>{
   let calls=0;
-  const result=await runResearchAgent({question:'你觉得下一步做什么？',context:{papers:[],notes:{},scopeIds:null},
+  const result=await runResearchAgent({question:'你觉得下一步做什么？',offerChoice:true,context:{papers:[],notes:{},scopeIds:null},
     complete:async input=>{calls++;assert.match(input.messages[0].content,/materia_choices/);return {content:'选一个方向吧\n<materia_choices>'+JSON.stringify(choices)+'</materia_choices>'};}});
   assert.equal(calls,1);assert.deepEqual(result.choices,choices);assert.equal(result.answer,'选一个方向吧');
 });
-test('ordinary answers hide unsolicited options while a concrete decision keeps them',async()=>{
+test('the shared choice roll selects exactly the interval below forty percent',()=>{
+  assert.equal(rollDialogueChoices(()=>.39999),true);
+  assert.equal(rollDialogueChoices(()=>.4),false);
+});
+test('manual replies use the draw even for factual answers or when the model omits choices',async()=>{
   const metadata='\n<materia_choices>'+JSON.stringify(choices)+'</materia_choices>';
   const complete=content=>async()=>({content:content+metadata});
   const ordinary=await runResearchAgent({question:'铝的元素符号是什么？',complete:complete('铝的元素符号是 Al。')});
   assert.deepEqual(ordinary,{answer:'铝的元素符号是 Al。',sources:[]});
-  const branch=await runResearchAgent({question:'我们聊聊我的研究吧',complete:complete('你想从哪个方向开始？')});
+  const branch=await runResearchAgent({question:'铝的元素符号是什么？',offerChoice:true,complete:complete('铝的元素符号是 Al。')});
   assert.deepEqual(branch.choices,choices);
+  const fallback=await runResearchAgent({question:'How are you?',offerChoice:true,kurisuContext:{replyLanguage:'en'},
+    complete:async()=>({content:'I’m doing well.'})});
+  assert.equal(fallback.answer,'I’m doing well.');
+  assert.match(fallback.choices[0],/^Can we/);
+  assert.equal(fallback.choices.length,3);
+});
+test('a selected automatic batch keeps choices after a statement and supplies them when invalid',async()=>{
+  const turn=async(offerChoice,options)=>runCompanionTurn({character:defaultCharacter(),history:[],companion:{locale:'zh-CN',offerChoice},
+    complete:async()=>({content:JSON.stringify({lines:['今天读到一本很有意思的书。'],choices:options})})});
+  assert.deepEqual((await turn(true,choices)).choices,choices);
+  assert.equal((await turn(true,['重复','重复','重复'])).choices.length,3);
+  assert.equal((await turn(false,choices)).choices,undefined);
 });

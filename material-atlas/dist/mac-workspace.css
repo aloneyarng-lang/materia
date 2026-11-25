@@ -34,9 +34,22 @@
 @media(max-width:850px){.workspace-command-dialog{top:8vh}}
 @media(prefers-reduced-transparency:reduce){.workspace-command-dialog{background:var(--surface);backdrop-filter:none}}
 
-#quick-tip-dialog{width:min(420px,calc(100% - 32px))}
-#quick-tip-form{padding:20px}
-#quick-tip-form h2{margin:0}
-#quick-tip-filename{font-family:var(--mono,monospace)}
-#quick-tip-body{display:block;width:100%;min-height:120px;resize:vertical}
+#workspace-tip[aria-expanded=true]{background:var(--glass-card,var(--teal-light));color:var(--teal)}
+#quick-tip-dialog{position:fixed;inset:auto 16px 16px auto;z-index:120;width:min(370px,calc(100% - 32px));max-height:calc(100dvh - 32px);box-sizing:border-box;overflow:auto;border:1px solid var(--line);border-radius:var(--card-radius,12px);background:var(--surface);color:var(--ink);box-shadow:var(--theme-menu-elevation,0 10px 32px #0003)}
+#quick-tip-form{display:grid;gap:10px;padding:14px}
+.quick-tip-heading,.quick-tip-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.quick-tip-heading h2,.quick-tip-heading p{margin:0}
+.quick-tip-heading h2{font-size:.95rem}
+#quick-tip-filename{font-family:var(--mono,monospace);font-size:.72rem}
+#quick-tip-body{display:block;width:100%;box-sizing:border-box;min-height:86px;max-height:45dvh;resize:vertical}
+#quick-tip-dialog.is-capturing{visibility:hidden}
+#quick-tip-drop-hint{margin:0;padding:6px 8px;border:1px dashed var(--line);border-radius:var(--button-radius);color:var(--muted);font-size:.75rem;text-align:center}
+#quick-tip-dialog.is-image-target #quick-tip-drop-hint{border-color:var(--teal);color:var(--teal);background:var(--teal-light)}
+.quick-tip-actions{flex-wrap:wrap;justify-content:flex-start}
+#quick-tip-save{margin-inline-start:auto}
+#quick-tip-images:not([hidden]){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#quick-tip-images figure{position:relative;margin:0;min-width:0}
+#quick-tip-images img{display:block;width:100%;height:68px;object-fit:contain;border:1px solid var(--line);border-radius:var(--button-radius);box-sizing:border-box}
+#quick-tip-images button{position:absolute;inset:2px 2px auto auto;width:24px;height:24px;background:var(--surface)}
+#quick-tip-status{margin:0;font-size:.78rem}
 #quick-tip-status:empty{display:none}

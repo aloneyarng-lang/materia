@@ -207,10 +207,11 @@ class Handler(BaseHTTPRequestHandler):
             self.out({"error": "请通过启动终端显示的本机地址打开。"}, 403)
             return
         route = urlsplit(self.path).path
-        if route == "/":
-            page = (WEB / "index.html").read_text(encoding="utf-8")
+        if route in ("/", "/takeaway-card", "/paper-canvas"):
+            page = (WEB / ("index.html" if route == "/" else "study-tool.html")).read_text(encoding="utf-8")
+            page = page.replace("__TOOL__", route[1:]).replace("__LABEL__", "速记卡" if route == "/takeaway-card" else "研究画布")
             self.reply(page.replace("__LOCAL_TOKEN__", TOKEN).encode(), "text/html; charset=utf-8")
-        elif route in ("/app.js", "/style.css"):
+        elif route in ("/app.js", "/study-tool.js", "/style.css", "/takeaway-card.js", "/takeaway-card.css"):
             media = "text/javascript" if route.endswith(".js") else "text/css"
             self.reply((WEB / route[1:]).read_bytes(), media + "; charset=utf-8")
         else:
@@ -223,9 +224,21 @@ class Handler(BaseHTTPRequestHandler):
         try:
             route = urlsplit(self.path).path
             size = int(self.headers.get("Content-Length", "0"))
-            maximum = MAX_PDF if route == "/extract" else 4 * 1024 * 1024 if route in ("/report", "/outline") else 256 * 1024
+            maximum = MAX_PDF if route in ("/extract", "/paper-text") else 4 * 1024 * 1024 if route in ("/report", "/outline") else 256 * 1024
             if not 0 < size <= maximum:
                 raise ValueError("请求为空或超过大小限制。")
+            if route == "/paper-text":
+                import fitz
+                with fitz.open(stream=self.rfile.read(size), filetype="pdf") as doc:
+                    parts = []
+                    remaining = 32000
+                    for page in doc:
+                        part = page.get_text()[:remaining]
+                        parts.append(part)
+                        remaining -= len(part)
+                        if remaining <= 0:
+                            break
+                return self.out({"text": "\n".join(parts)})
             if route == "/extract":
                 return self.upload(self.rfile.read(size))
             data = json.loads(self.rfile.read(size))

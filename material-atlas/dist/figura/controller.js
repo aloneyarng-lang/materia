@@ -1,3 +1,4 @@
+import {reportAchievement} from '../flow-achievements.js';
 import {html, msg, t} from '../i18n.js';
 import {parseDelimited, readPredictionFile} from '../prediction-import.js';
 import {browserCatalog, browserPlot, browserSample} from './browser.js';
@@ -408,7 +409,8 @@ export async function createFiguraController(context, native) {
   async function exportFigure(type) {
     const latest = await preview();
     if (!latest) throw Error(t('数据已变化，请重新导出。'));
-    await saveFigure(latest,type,draft().name,Number(find('dpi').value));
+    const result = await saveFigure(latest,type,draft().name,Number(find('dpi').value));
+    if (scheme()?.user && !result?.canceled) reportAchievement('customSchemeExports', 1, 'add');
   }
 
   async function saveFigure(latest,type,label,dpi,automatic=false) {

@@ -1,3 +1,4 @@
+import {reportAchievement} from '../flow-achievements.js';
 import {html, msg, t} from '../i18n.js';
 import {icon} from '../icons.js';
 import {actionMenu} from '../action-menus.js';
@@ -106,6 +107,7 @@ export function createMontage({dialog,on,read,write,getDraft,getProjects,plot,sa
   }
 
   function syncControls() {
+    reportAchievement('maxMontagePanels', get().panels.length);
     const full=get().panels.length>=montageLimit;
     control('current').disabled=importing||full||!getDraft();
     control('project').disabled=importing||full||!selected('projects').length;

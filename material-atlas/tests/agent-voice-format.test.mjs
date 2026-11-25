@@ -7,7 +7,7 @@ import {defaultCharacter} from '../dist/agent-character.js';
 
 test('paired research replies retain Markdown, citations and decision filtering with one completion',async()=>{
   let calls=0;
-  const result=await runResearchAgent({question:'给我三个下一步选项',context:{papers:[]},voiceLanguage:'ja',complete:async({messages})=>{
+  const result=await runResearchAgent({question:'给我三个下一步选项',offerChoice:true,context:{papers:[]},voiceLanguage:'ja',complete:async({messages})=>{
     calls++;
     assert.match(messages[0].content,/配音格式/);
     return {content:JSON.stringify({segments:[{text:'先确认实验条件。',speech:'まず実験条件を確認しましょう。'},

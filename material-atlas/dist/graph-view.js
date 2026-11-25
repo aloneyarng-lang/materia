@@ -4,12 +4,14 @@ import {CosmicBackdrop,cosmicNodeParts,cosmicPartNode} from './graph-cosmos.js';
 import {getGraphSymbols,graphSymbolNode,SymbolBackdrop} from './graph-symbols.js';
 import { createNetwork, stepNetwork, networkSnapshot, cleanLayout } from './force-layout.js';
 import {citationGeometry} from './citation-graph.js';
-import { GRAPH_DEFAULTS, cleanGraphSettings, placeNodeLabels,fitGraphViewport } from './graph-settings.js';
+import { GRAPH_DEFAULTS, cleanGraphSettings, farNodeVisibility, placeNodeLabels, fitGraphViewport } from './graph-settings.js';
 import { PALETTE } from './palette.js';
 import {computeNaturalLayout,animateNaturalLayout} from './natural-layout-client.js';
 import { ASSOCIATION_KINDS } from './associations.js';
 import {primaryTag} from './tags.js';
 import {GraphOrbit} from './graph-orbit.js';
+import {GraphSpace} from './graph-space.js';
+import {GalaxyLayer} from './graph-galaxy.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_FLOW_PATHS = 72;
@@ -28,7 +30,7 @@ export class StarMap {
     this.visible = true;
     this.motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
     this.cache = {}; this.nodes = []; this.selected = ''; this.paused = false; this.preferences={...GRAPH_DEFAULTS};this.collections=[];this.cosmos=new CosmicBackdrop(svg);
-    this.symbolBackdrop=new SymbolBackdrop(svg);this.bindInput();
+    this.symbolBackdrop=new SymbolBackdrop(svg);this.galaxies=new GalaxyLayer(svg);this.bindInput();
     this.orbit = new GraphOrbit(svg, {
       onSelect: id => this.onSelect(id),
       onCenter: id => this.focusOrbit(id),
@@ -37,27 +39,73 @@ export class StarMap {
       onClose: () => this.closeOrbit(),
     });
     this.labelCanvas=document.createElement('canvas').getContext('2d');this.labelWidths=new Map();
-    this.resizeObserver=new ResizeObserver(()=>{const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;this.bounds={width:r.width,height:r.height};const height=Math.max(430,Math.min(1200,1000*r.height/r.width));const resized=Math.abs(height-this.viewHeight)>1;if(resized)this.cancelNaturalLayout();this.y+=(height-this.viewHeight)/2;this.viewHeight=height;svg.setAttribute('viewBox',`0 0 1000 ${height}`);this.cosmos.resize(height);this.symbolBackdrop.resize(height);this.transform();if(resized)this.refreshOrbit();});this.resizeObserver.observe(svg);
+    this.resizeObserver=new ResizeObserver(()=>{const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;this.bounds={width:r.width,height:r.height};const height=Math.max(430,Math.min(1200,1000*r.height/r.width));const resized=Math.abs(height-this.viewHeight)>1;if(resized)this.cancelNaturalLayout();const dy=(height-this.viewHeight)/2;this.y+=dy;if(this.space&&this.flatCamera)this.flatCamera.y+=dy;this.viewHeight=height;svg.setAttribute('viewBox',`0 0 1000 ${height}`);this.cosmos.resize(height);this.symbolBackdrop.resize(height);this.galaxies.resize(this.bounds,height);this.transform();if(resized)this.refreshOrbit();});this.resizeObserver.observe(svg);
   }
   setVisible(visible) {
     if(this.visible===visible)return;
     this.visible=visible;
-    if(visible){if(this.heat>0)this.start(this.heat);}
-    else{this.cancelNaturalLayout();this.suspendMotion();}
+    this.orbit.setVisible(visible);
+    if(visible){this.paintGalaxies();if(this.heat>0)this.start(this.heat);}
+    else{this.releaseSpaceDrag(true);this.cancelNaturalLayout();this.suspendMotion();}
   }
   suspendMotion() {
     cancelAnimationFrame(this.frame);
     this.frame=null;
     this.svg.dataset.graphMoving='false';
   }
-  configure(value,collections=[],associations=[]){this.preferences=cleanGraphSettings(value);this.collections=collections;this.associations=associations;}
+  configure(value, collections = [], associations = []) {
+    const previous = this.preferences;
+    this.preferences = cleanGraphSettings(value);
+    this.collections = collections;
+    this.associations = associations;
+    const spatial = this.preferences.dimension === '3d';
+    const dimensionChanged = spatial !== Boolean(this.space);
+    const shapeChanged = spatial && previous.shapeGalaxies !== this.preferences.shapeGalaxies;
+    this.svg.dataset.graphDimension = this.preferences.dimension;
+    if (!dimensionChanged && !shapeChanged) {
+      if (spatial && previous.showGalaxyParticles !== this.preferences.showGalaxyParticles) {
+        if (this.preferences.showGalaxyParticles) this.paintGalaxies();
+        else this.galaxies.clear();
+      }
+      if (previous.hideNodesWhenFar !== this.preferences.hideNodesWhenFar
+        || previous.nodeFadeThreshold !== this.preferences.nodeFadeThreshold
+        || previous.showGalaxyParticles !== this.preferences.showGalaxyParticles) {
+        if (this.syncFarNodeVisibility()) this.paintCommunityLabels();
+      }
+      return;
+    }
+    this.cancelNaturalLayout();
+    this.releaseSpaceDrag();
+    if (spatial) {
+      if (dimensionChanged) this.flatCamera = {x: this.x, y: this.y, scale: this.scale};
+      this.space = new GraphSpace(this.network?.nodes || [], this.space ?? this.parkedSpace, this.preferences.shapeGalaxies);
+      this.parkedSpace = null;
+      this.autoFit3D = this.space.galaxies.size > 0;
+      if (!this.preferences.showGalaxyParticles) this.galaxies.clear();
+    } else {
+      this.parkedSpace = this.space;
+      this.space = null;
+      this.autoFit3D = false;
+      this.galaxies.clear();
+      Object.assign(this, this.flatCamera);
+    }
+    this.hitScale = null;
+    this.syncFarNodeVisibility();
+    if (!this.network || !this.viewport) return;
+    this.projectNodes();
+    if (spatial && this.network?.nodes.length) this.fitOverview();
+    this.highlightNode(this.activeId || '');
+    this.paint();
+    this.transform();
+  }
   setLayout(value) { this.closeOrbit(false);this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
   setData(papers, selected, allGroups = [], orbitPapers = papers) {
     this.orbitPapers = orbitPapers;
     const citationsChanged=this.indexedCitations!==this.citations;
-    const {orbitRings, ...networkPreferences} = this.preferences;
-    const dataKey=JSON.stringify([papers.map(p=>[p.id,p.title,p.abstract,p.tags,p.authors,p.authorDetails,p.journal,p.collection]),networkPreferences,this.associations,allGroups,this.collections,this.options,this.citations]);
-    if(this.network&&dataKey===this.dataKey){
+    const {orbitRings, dimension, showGalaxyParticles, shapeGalaxies, hideNodesWhenFar, nodeFadeThreshold, ...networkPreferences} = this.preferences;
+    const dataKey=JSON.stringify([papers.map(p=>[p.id,p.title,p.tags,p.authors,p.authorDetails,p.journal,p.collection]),networkPreferences,this.associations,allGroups,this.collections,this.options,this.citations]);
+    const abstractsUnchanged=this.paperAbstracts?.length===papers.length && papers.every((paper,i)=>paper.abstract===this.paperAbstracts[i]);
+    if(this.network&&dataKey===this.dataKey&&abstractsUnchanged){
       this.papers=papers.slice();const current=new Map(papers.map(p=>[p.id,p]));
       for(const item of this.nodes)if(item.node.type==='paper'){item.node.paper=current.get(item.node.paper.id);item.paper=item.node.paper;}
       if(this.selected!==selected){this.selected=selected;this.highlight(selected);}
@@ -65,6 +113,7 @@ export class StarMap {
       return;
     }
     this.dataKey=dataKey;
+    this.paperAbstracts=papers.map(paper=>paper.abstract);
     this.indexedCitations=this.citations;
     const wasMoving=Boolean(this.frame);this.cancelNaturalLayout();
     if(this.dataMode&&this.dataMode!==this.preferences.mode){this.modeCaches??={};this.modeCaches[this.dataMode]={...this.cache,...networkSnapshot(this.network)};this.cache=this.modeCaches[this.preferences.mode]||{};this.network=null;this.naturalUndo=null;}this.dataMode=this.preferences.mode;
@@ -96,7 +145,7 @@ export class StarMap {
     });
     this.flowLayer = el('g', { class: 'network-flow', 'aria-hidden': true });
     this.viewport.append(this.flowLayer);
-    this.nodeLayer = el('g'); this.viewport.append(this.nodeLayer);
+    this.nodeLayer = el('g', { class: 'network-nodes' }); this.viewport.append(this.nodeLayer);
     this.communityLayer=el('g',{class:'community-labels','pointer-events':'none'});this.viewport.append(this.communityLayer);
     const communities=new Map();
     for(const node of this.network.nodes)if(node.clusterSize>1){if(!communities.has(node.community))communities.set(node.community,[]);communities.get(node.community).push(node);}
@@ -139,7 +188,11 @@ export class StarMap {
         this.start(.6);
         this.saveLayout();
       });
-      group.addEventListener('contextmenu', event => { event.preventDefault(); isTag ? this.onRemoveAssociation?.(node.id) : this.onPaperMenu?.(node.paper.id,event,group); });
+      group.addEventListener('contextmenu', event => {
+        event.preventDefault();
+        if (this.space && event.button === 2) return;
+        this.openNodeMenu(node, event, group);
+      });
       group.addEventListener('pointerenter', event => {
         if (this.drag) return;
         this.highlightNode(node.id);
@@ -151,7 +204,18 @@ export class StarMap {
     });
     const allSaved=this.network.nodes.every(node=>this.cache[node.id]);
     if (first&&!allSaved) for (let i = 0; i < (this.batchedEdges?8:75); i++) stepNetwork(this.network, .8,this.preferences);
-    if(first)Object.assign(this,fitGraphViewport(this.network.nodes,1000,this.viewHeight));
+    if (this.space) {
+      this.space = new GraphSpace(this.network.nodes, this.space, this.preferences.shapeGalaxies);
+      this.projectNodes();
+    }
+    if (first) {
+      const flat = fitGraphViewport(this.network.nodes, 1000, this.viewHeight);
+      if (this.space) {
+        this.flatCamera = flat;
+        if (this.space.galaxies.size > 0) this.autoFit3D = true;
+      }
+      this.fitOverview();
+    }
     this.applyAppearance(this.naturalOverview?'':selected?'paper:'+selected:'');
     this.transform();if(!allSaved||wasMoving||citationsChanged&&this.preferences.mode==='citations'&&this.network.edges.length)this.start(.6);
     this.naturalState();
@@ -162,6 +226,7 @@ export class StarMap {
     if (!this.orbitPapers?.some(paper => paper.id === id)) return;
     clearTimeout(this.clickTimer);
     this.cancelNaturalLayout();
+    this.releaseSpaceDrag(true);
     this.onHover(null);
     this.orbitCenter = id;
     this.suspendMotion();
@@ -180,6 +245,7 @@ export class StarMap {
     const center = this.orbitCenter;
     this.orbitCenter = '';
     this.orbit.clear();
+    this.paintGalaxies();
     this.onHover(null);
     if(this.heat>0)this.start(this.heat);
     if (restoreFocus) {
@@ -214,7 +280,7 @@ export class StarMap {
     this.syncEdgeFlow();
     this.labelWidths.clear();
     this.hitScale=null;
-    if(this.network){this.paintNodes();this.paintCommunityLabels();this.highlightNode(activeId);
+    if(this.network){this.projectNodes();this.paintGalaxies();this.paintNodes();this.paintCommunityLabels();this.highlightNode(activeId);
       if(!this.batchedEdges)this.paintEdges();
     }
   }
@@ -237,20 +303,94 @@ export class StarMap {
       this.flowLayer.append(pulse);
     }
   }
-  paint() {
-    // Read label metrics before writing thousands of node transforms.
-    this.placeLabels(false);
-    this.paintCommunityLabels();
-    this.paintNodes();
-    this.paintEdges();
+  syncFarNodeVisibility() {
+    const visibility = farNodeVisibility(this.scale, this.preferences);
+    const hidden = visibility <= 0.001;
+    const wasHidden = Boolean(this.nodesFarHidden);
+    this.nodesFarHidden = hidden;
+    this.svg.dataset.nodesFarHidden = hidden ? 'true' : 'false';
+    if (hidden && !wasHidden) this.onHover?.(null);
+    const opacity = visibility >= 0.999 ? '' : hidden ? '0' : visibility.toFixed(3);
+    const vis = hidden ? 'hidden' : '';
+    const pe = visibility < 0.08 ? 'none' : '';
+    if (this.nodeLayer) {
+      this.nodeLayer.style.opacity = opacity;
+      this.nodeLayer.style.visibility = vis;
+      this.nodeLayer.style.pointerEvents = pe;
+    }
+    if (this.edgeLayer) {
+      this.edgeLayer.style.opacity = opacity;
+      this.edgeLayer.style.visibility = vis;
+    }
+    if (this.flowLayer) {
+      this.flowLayer.style.opacity = opacity;
+      this.flowLayer.style.visibility = vis;
+    }
+    return hidden !== wasHidden;
   }
-  paintNodes() {
+  paintGalaxies() {
+    if (!this.preferences.showGalaxyParticles || !this.space || !this.network || !this.visible || this.orbitCenter) return;
+    const moving = this.spaceDrag?.moved || (this.drag?.moved && !this.drag.node) || this.galaxyZooming;
+    this.galaxies.render(this.space, this.network, this.appearance,
+      {x:this.x,y:this.y,scale:this.scale,viewHeight:this.viewHeight,bounds:this.bounds,moving});
+  }
+  paint(forceLabels = false) {
+    const rotating = Boolean(this.spaceDrag?.moved);
+    this.projectNodes();
+    this.paintGalaxies();
+    if (!rotating) {
+      // Read label metrics before writing thousands of node transforms.
+      this.placeLabels(forceLabels);
+      this.paintCommunityLabels();
+    }
+    this.paintNodes(rotating);
+    this.paintEdges(rotating);
+  }
+  projectNodes() {
+    if (!this.space || !this.network) {
+      this.projection = null;
+      this.projectionNetwork = null;
+      return;
+    }
+    if (this.projectionNetwork !== this.network) {
+      this.projection = new Map(this.network.nodes.map(node => [node.id, Object.create(node)]));
+      this.projectionNetwork = this.network;
+    }
+    for (const node of this.network.nodes) {
+      const point = this.space.project(node, this.projection.get(node.id));
+      point.x = Math.round(point.x * 100) / 100;
+      point.y = Math.round(point.y * 100) / 100;
+    }
+  }
+
+  displayNode(node) { return this.projection?.get(node.id) ?? node; }
+
+  paintNodes(rotating = false) {
     for (const item of this.nodes) {
       const node = item.node;
-      const position=`translate(${node.x.toFixed(2)} ${node.y.toFixed(2)})`;
+      const point = this.displayNode(node);
+      const position=`translate(${point.x.toFixed(2)} ${point.y.toFixed(2)})`
+        + (this.space ? ` scale(${point.scale.toFixed(3)})` : '');
       if(item.position!==position){
         item.position=position;
         item.group.setAttribute('transform',position);
+      }
+      if (this.space) {
+        const alpha = point.depthFade != null ? point.depthFade.toFixed(3) : '1';
+        if (item.depthAlpha !== alpha) {
+          item.depthAlpha = alpha;
+          item.group.style.setProperty('--node-depth-alpha', alpha);
+        }
+      } else if (item.depthAlpha) {
+        item.depthAlpha = '';
+        item.group.style.removeProperty('--node-depth-alpha');
+      }
+      if (!rotating && this.space && this.hitScale) {
+        const radius = Math.max((node.visualRadius ?? node.radius) + 5, 11 / (this.hitScale * point.scale));
+        if (item.hitRadius !== radius) {
+          item.hitRadius = radius;
+          item.hit.setAttribute('r', radius);
+        }
       }
       const pinned=Boolean(node.pinned);
       if(item.isPinned!==pinned){
@@ -259,17 +399,35 @@ export class StarMap {
         item.pin.style.display=pinned?'':'none';
       }
     }
+    if (!rotating && this.nodeLayer && (this.space || this.spatialOrder)) {
+      const order = this.space ? this.nodes.slice().sort((a, b) => this.displayNode(a.node).depth - this.displayNode(b.node).depth) : this.nodes;
+      const focused = document.activeElement;
+      let next = this.nodeLayer.firstElementChild;
+      for (const {group} of order) {
+        if (next === group) next = group.nextElementSibling;
+        else if (this.nodeLayer.moveBefore) this.nodeLayer.moveBefore(group, next);
+        else this.nodeLayer.insertBefore(group, next);
+      }
+      if (focused !== document.activeElement && this.nodeLayer.contains(focused)) focused.focus({preventScroll: true});
+      this.spatialOrder = Boolean(this.space);
+    }
   }
-  paintEdges() {
+  paintEdges(rotating = false) {
     if(this.options?.showEdges===false)return;
     const batches=this.batchedEdges?[[],[],[]]:null;
     for (const edge of this.edgeNodes) {
-      const a = edge.source, b = edge.target;
+      const a = this.displayNode(edge.source), b = this.displayNode(edge.target);
       const d=this.preferences.mode==='citations'?citationGeometry(a,b):edgeGeometry(a,b,this.appearance?.edgeStyle);
-      if(batches)batches[edge.batch].push(d);else edge.path.setAttribute('d',d);
-      if(edge.pulse&&edge.pulse.getAttribute('d')!==d)edge.pulse.setAttribute('d',d);
+      if (batches) batches[edge.batch].push(d);
+      else if (edge.path.getAttribute('d') !== d) edge.path.setAttribute('d', d);
+      if (!rotating && edge.pulse && edge.pulse.getAttribute('d') !== d) edge.pulse.setAttribute('d', d);
     }
-    if(batches)for(let i=0;i<3;i++)this.edgeBatches[i].setAttribute('d',batches[i].join(''));
+    if (batches) {
+      for (let i = 0; i < batches.length; i++) {
+        const d = batches[i].join('');
+        if (this.edgeBatches[i].getAttribute('d') !== d) this.edgeBatches[i].setAttribute('d', d);
+      }
+    }
   }
   start(alpha = .5) {
     if (this.paused || !this.network || !this.network.nodes.length) return;
@@ -286,6 +444,11 @@ export class StarMap {
     let previous=0,quiet=0;const network=this.network;
     const tick = time => {
       this.frame=null;if (this.paused||this.network!==network)return;
+      if (this.spaceDrag?.moved) {
+        previous = time;
+        this.frame = requestAnimationFrame(tick);
+        return;
+      }
       if(this.motionPreference.matches){this.heat=0;for(const node of network.nodes){node.vx=0;node.vy=0;}this.svg.dataset.graphMoving='false';this.placeLabels();this.saveLayout();return;}
       const dt=previous?Math.max(.25,Math.min(2,(time-previous)/16.667)):1;previous=time;
       const held=Boolean(this.drag?.node);
@@ -294,7 +457,7 @@ export class StarMap {
       const movement=stepNetwork(network,this.heat,this.preferences,dt)/Math.max(1,network.nodes.length);
       this.paint();quiet=movement<.025?quiet+1:0;
       if(held||this.heat>.001||quiet<18)this.frame=requestAnimationFrame(tick);
-      else{this.heat=0;for(const node of network.nodes){node.vx=0;node.vy=0;}this.svg.dataset.graphMoving='false';this.placeLabels();this.saveLayout();}
+      else{this.heat=0;for(const node of network.nodes){node.vx=0;node.vy=0;}this.svg.dataset.graphMoving='false';if(this.autoFit3D&&this.space?.galaxies.size){this.autoFit3D=false;this.fitOverview();this.transform();}this.placeLabels();this.saveLayout();}
     };
     this.frame = requestAnimationFrame(tick);
   }
@@ -303,16 +466,27 @@ export class StarMap {
     const visible=this.preferences.showCommunityLabels&&this.preferences.mode==='similarity';
     this.communityLayer.style.display=visible?'':'none';
     if(!visible)return;
-    const font=13/Math.max(.12,this.scale),placed=[];
-    for(const {nodes,label} of this.communityLabels||[]){
+    const spatial=Boolean(this.space);
+    const font=(spatial?11.5:13)/Math.max(spatial?.22:.12,this.scale),placed=[];
+    if(spatial&&!this.nodesFarHidden&&this.labelPositions?.size){
+      const activeBox=this.activeId?this.labelPositions.get(this.activeId)?.box:null;
+      if(activeBox)placed.push({x:(activeBox.x+activeBox.width/2-this.x)/this.scale,y:(activeBox.y+activeBox.height/2-this.y)/this.scale,width:activeBox.width/this.scale,height:activeBox.height/this.scale});
+    }
+    for(const {nodes: members,label} of this.communityLabels||[]){
+      const fullName=members[0].communityLabel;
+      const shown=spatial&&fullName.length>22?fullName.slice(0,21)+'…':(fullName.length>58?fullName.slice(0,57)+'…':fullName);
+      if(label.firstChild&&label.firstChild.nodeType===3&&label.firstChild.nodeValue!==shown)label.firstChild.nodeValue=shown;
+      const nodes = spatial ? members.map(node => this.displayNode(node)) : members;
       const x=nodes.reduce((s,n)=>s+n.x,0)/nodes.length,top=Math.min(...nodes.map(n=>n.y-(n.visualRadius??n.radius))),bottom=Math.max(...nodes.map(n=>n.y+(n.visualRadius??n.radius)));
-      const width=Math.min(60,nodes[0].communityLabel.length)*font*.65;
-      let y=top-font*1.5;
-      for(let slot=0;slot<5;slot++){
-        y=slot<3?top-font*(1.5+slot*1.6):bottom+font*(2+(slot-3)*1.6);
-        if(!placed.some(b=>Math.abs(x-b.x)<(width+b.width)/2+font&&Math.abs(y-b.y)<font*1.6))break;
+      const width=Math.min(spatial?24:60,shown.length)*font*.65;
+      let y=spatial?bottom+font*1.45:top-font*1.5;
+      for(let slot=0;slot<6;slot++){
+        y=spatial
+          ?(slot===0?bottom+font*1.45:slot===1?top-font*1.05:slot%2===0?bottom+font*(1.45+Math.floor(slot/2)*1.9):top-font*(1.05+Math.floor(slot/2)*1.9))
+          :(slot<3?top-font*(1.5+slot*1.6):bottom+font*(2+(slot-3)*1.6));
+        if(!placed.some(b=>Math.abs(x-b.x)<(width+b.width)/2+font*(spatial?.8:1)&&Math.abs(y-b.y)<(spatial?((b.height||font*1.6)+font*1.6)*.55:font*1.6)))break;
       }
-      placed.push({x,y,width});label.setAttribute('x',x);label.setAttribute('y',y);label.style.fontSize=font+'px';
+      placed.push({x,y,width,height:font*1.6});label.setAttribute('x',x);label.setAttribute('y',y);label.style.fontSize=font+'px';
     }
   }
   saveLayout() {
@@ -334,7 +508,7 @@ export class StarMap {
     const network=this.network,controller=new AbortController(),task={network,controller};
     cancelAnimationFrame(this.frame);this.frame=null;this.heat=0;for(const node of network.nodes){node.vx=0;node.vy=0;}
     this.svg.dataset.graphMoving='false';
-    const previous={points:networkSnapshot(network),camera:{scale:this.scale,x:this.x,y:this.y},height:this.viewHeight,key:network.nodes.map(n=>n.id).sort().join('|'),overview:this.naturalOverview,activeId:this.activeId};
+    const previous={points:networkSnapshot(network),camera:{scale:this.scale,x:this.x,y:this.y},dimension:this.preferences.dimension,height:this.viewHeight,key:network.nodes.map(n=>n.id).sort().join('|'),overview:this.naturalOverview,activeId:this.activeId};
     const glyphWidths={},style=getComputedStyle(this.svg);this.labelCanvas.font=`${style.fontWeight} 10px ${style.fontFamily}`;
     for(const node of network.nodes)for(const c of String(node.paper?.title||node.label||node.tag||''))if(glyphWidths[c]===undefined)glyphWidths[c]=this.labelCanvas.measureText(c).width/10;
     const input={height:this.viewHeight,activeId:'',threshold:this.preferences.labelThreshold,showLabels:this.options?.showLabels,fontScale:(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-size'))||13)/13*(this.appearance?.labelScale||1),glyphWidths,
@@ -344,8 +518,11 @@ export class StarMap {
       const result=await computeNaturalLayout(input,options,controller.signal,progress=>{if(this.naturalTask===task){task.progress=progress;this.naturalState();}});if(this.naturalTask!==task||this.network!==network)return false;
       this.naturalUndo=previous;this.naturalState();
       const destinations=new Map(result.points.map(p=>[p.id,p]));
+      const targetCamera = this.space
+        ? fitGraphViewport(network.nodes.map(node => this.space.project({...node, ...destinations.get(node.id)})), 1000, this.viewHeight)
+        : result.camera;
       const apply=t=>{const ease=1-Math.pow(1-t,3);for(const n of network.nodes){const a=previous.points[n.id],b=destinations.get(n.id);if(!a||!b)continue;n.x=t===1?b.x:a.x+(b.x-a.x)*ease;n.y=t===1?b.y:a.y+(b.y-a.y)*ease;n.pinned=b.pinned;n.vx=0;n.vy=0;n.fx=null;n.fy=null;}
-        for(const key of ['scale','x','y'])this[key]=t===1?result.camera[key]:previous.camera[key]+(result.camera[key]-previous.camera[key])*ease;this.viewport?.setAttribute('transform',`translate(${this.x} ${this.y}) scale(${this.scale})`);this.onZoom?.(Math.round(this.scale*100));this.paint();};
+        for(const key of ['scale','x','y'])this[key]=t===1?targetCamera[key]:previous.camera[key]+(targetCamera[key]-previous.camera[key])*ease;this.viewport?.setAttribute('transform',`translate(${this.x} ${this.y}) scale(${this.scale})`);this.onZoom?.(Math.round(this.scale*100));this.syncFarNodeVisibility();this.paint();};
       if(matchMedia('(prefers-reduced-motion: reduce)').matches)apply(1);
       else{this.svg.dataset.naturalLayout='animating';await animateNaturalLayout(apply,controller.signal);}
       if(this.naturalTask!==task)return false;this.naturalOverview=true;this.highlightNode('');this.saveLayout();this.svg.dataset.naturalLayout='settled';return result;
@@ -356,7 +533,7 @@ export class StarMap {
     if(!this.naturalUndo)return false;this.cancelNaturalLayout();cancelAnimationFrame(this.frame);this.frame=null;this.heat=0;
     const previous=this.naturalUndo;this.naturalUndo=null;Object.assign(this.cache,previous.points);
     for(const node of this.network?.nodes||[]){const point=previous.points[node.id];if(point)Object.assign(node,point,{vx:0,vy:0,fx:null,fy:null});}
-    const key=this.network?.nodes.map(n=>n.id).sort().join('|');if(key===previous.key&&Math.abs(this.viewHeight-previous.height)<1)Object.assign(this,previous.camera);else Object.assign(this,fitGraphViewport(this.network?.nodes||[],1000,this.viewHeight));
+    const key=this.network?.nodes.map(n=>n.id).sort().join('|');this.projectNodes();if(this.preferences.dimension===previous.dimension&&key===previous.key&&Math.abs(this.viewHeight-previous.height)<1)Object.assign(this,previous.camera);else this.fitOverview();
     this.naturalOverview=Boolean(previous.overview);this.paint();this.transform();this.highlightNode(previous.activeId||'');this.saveLayout();this.svg.dataset.naturalLayout='restored';this.naturalState();return true;
   }
   select(id) { this.cancelNaturalLayout();this.naturalOverview=false;this.selected = id; this.highlight(id);this.orbit.select(id); }
@@ -366,12 +543,17 @@ export class StarMap {
     if(active?.type==='relation')tagIds.add(active.id);
     else if(active)for(const neighbor of this.network.adjacency.get(active.id)||[]){tagIds.add(neighbor.id);this.relatedIds.add(neighbor.id);}
     if(this.preferences.mode!=='citations')for(const edge of this.network?.edges||[])if(tagIds.has(edge.target.id)){this.relatedIds.add(edge.target.id);this.relatedIds.add(edge.source.id);}
-    for(const item of this.nodes){const chosen=item.node.id===key;item.group.classList.toggle('is-active',chosen);item.group.setAttribute('opacity',!key||chosen||!tagIds.size?1:this.relatedIds.has(item.node.id)?.9:.32);item.group.setAttribute('aria-pressed',String(item.node.type==='paper'&&item.node.paper.id===this.selected));item.ring.setAttribute('opacity',chosen?.8:0);}
-    const appearance=this.appearance||{},base=appearance.edgeOpacity??.2;
-    const edgeStyle=(path,batch)=>{path.setAttribute('stroke',batch===2?'var(--teal)':appearance.edgeColor&&appearance.edgeColor!=='auto'?appearance.edgeColor:'var(--muted)');path.setAttribute('opacity',!key||!tagIds.size?base:batch===2?Math.min(.95,base*3.4):batch===1?base*.8:base*.225);path.setAttribute('stroke-width',(batch===2?1.15:.65)*this.preferences.linkWidth*(appearance.edgeWidth||1));path.setAttribute('stroke-dasharray',appearance.edgeDash==='dashed'?'5 4':appearance.edgeDash==='dotted'?'1 4':'none');};
+    const hasFocus=Boolean(key&&tagIds.size);
+    const activeCommunity=active?.type==='paper'&&active.community!=null?active.community:null;
+    this.galaxies?.setFocus(activeCommunity,hasFocus);
+    for(const item of this.nodes){const chosen=item.node.id===key,near=chosen||this.relatedIds.has(item.node.id);item.group.classList.toggle('is-active',chosen);item.group.dataset.focusDim=hasFocus&&!near?'true':'false';item.group.dataset.focusNear=hasFocus&&near?'true':'false';item.group.setAttribute('opacity',!hasFocus||chosen?1:near?.92:.16);item.group.setAttribute('aria-pressed',String(item.node.type==='paper'&&item.node.paper.id===this.selected));item.ring.setAttribute('opacity',chosen?.85:0);}
+    const appearance=this.appearance||{},base=appearance.edgeOpacity??.2,restBase=this.space?base*.22:base;
+    const edgeStyle=(path,batch)=>{path.setAttribute('stroke',batch===2?'var(--teal)':appearance.edgeColor&&appearance.edgeColor!=='auto'?appearance.edgeColor:'var(--muted)');path.setAttribute('opacity',!key||!tagIds.size?restBase:batch===2?Math.min(.95,base*3.4):batch===1?base*.75:base*(this.space?.12:.225));path.setAttribute('stroke-width',(batch===2?1.15:.65)*this.preferences.linkWidth*(appearance.edgeWidth||1));path.setAttribute('stroke-dasharray',appearance.edgeDash==='dashed'?'5 4':appearance.edgeDash==='dotted'?'1 4':'none');};
     for(const edge of this.edgeNodes){const adjacent=edge.source.id===key||edge.target.id===key;edge.batch=adjacent?2:this.preferences.mode!=='citations'&&tagIds.has(edge.target.id)?1:0;if(edge.path)edgeStyle(edge.path,edge.batch);edge.pulse?.setAttribute('opacity',!key||!tagIds.size||edge.batch===2?.92:edge.batch===1?.58:.22);}
     if(this.batchedEdges){for(let i=0;i<3;i++)edgeStyle(this.edgeBatches[i],i);this.paintEdges();}
+    if(this.space)this.paintGalaxies();
     this.placeLabels();
+    this.paintCommunityLabels();
   }
   placeLabels(force=true){
     if(!this.network)return;
@@ -379,21 +561,119 @@ export class StarMap {
     const bounds=this.bounds||this.svg.getBoundingClientRect(),viewportScale=Math.min(bounds.width/1000,bounds.height/this.viewHeight)||1;
     const svgStyle=getComputedStyle(this.svg),family=svgStyle.fontFamily,weight=svgStyle.fontWeight,fontScale=(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-size'))||13)/13*(this.appearance?.labelScale||1),measureText=(text,font)=>{const key=font.toFixed(4)+'|'+text;if(!this.labelWidths.has(key)){this.labelCanvas.font=`${weight} ${font}px ${family}`;this.labelWidths.set(key,this.labelCanvas.measureText(text).width);}return this.labelWidths.get(key);};
     if(this.labelWidths.size>10000)this.labelWidths.clear();
-    const positions=placeNodeLabels(this.network.nodes.map(node=>({...node,radius:node.visualRadius??node.radius})),{scale:this.scale,viewportScale,measureText,fontScale,panX:this.x,panY:this.y,activeId:this.activeId,relatedIds:this.relatedIds,showLabels:this.options?.showLabels!==false,threshold:this.naturalOverview?Math.min(this.preferences.labelThreshold,this.scale*.9):this.preferences.labelThreshold,viewHeight:this.viewHeight,previous:this.labelPositions});this.labelPositions=positions;
-    const hitScale=this.scale*viewportScale;if(this.hitScale!==hitScale){this.hitScale=hitScale;this.svg.style.setProperty('--flow-dot-size',Math.min(28,3/hitScale)+'px');for(const item of this.nodes)item.hit.setAttribute('r',Math.max((item.node.visualRadius??item.node.radius)+5,11/hitScale));}
-    for(const item of this.nodes){const placed=positions.get(item.node.id);item.label.style.opacity=placed?String(placed.opacity):'0';item.label.setAttribute('aria-hidden',String(!placed));if(!placed)continue;item.label.setAttribute('x',placed.x);item.label.setAttribute('y',placed.y);item.label.setAttribute('text-anchor','start');item.label.style.fontSize=placed.font+'px';const text=placed.lines.join('|');if(item.label.dataset.lines!==text){item.label.replaceChildren(...placed.lines.map((line,index)=>el('tspan',{x:placed.x,dy:index?placed.font*1.35:0},line)));item.label.dataset.lines=text;}else for(const [index,span]of [...item.label.children].entries()){span.setAttribute('x',placed.x);span.setAttribute('dy',index?placed.font*1.35:0);}}
+    const nodes = this.projection ? [...this.projection.values()]
+      : this.network.nodes.map(node => ({...node, radius: node.visualRadius ?? node.radius}));
+    const positions=placeNodeLabels(nodes,{scale:this.scale,viewportScale,measureText,fontScale,panX:this.x,panY:this.y,activeId:this.activeId,relatedIds:this.relatedIds,showLabels:this.options?.showLabels!==false,threshold:this.naturalOverview?Math.min(this.preferences.labelThreshold,this.scale*.9):this.preferences.labelThreshold,viewHeight:this.viewHeight,previous:this.labelPositions});this.labelPositions=positions;
+    const hitScale = this.scale * viewportScale;
+    if (this.hitScale !== hitScale) {
+      this.hitScale = hitScale;
+      this.svg.style.setProperty('--flow-dot-size', Math.min(28, 3 / hitScale) + 'px');
+      for (const item of this.nodes) {
+        const factor = this.space ? this.displayNode(item.node).scale : 1;
+        item.hitRadius = Math.max((item.node.visualRadius ?? item.node.radius) + 5, 11 / (hitScale * factor));
+        item.hit.setAttribute('r', item.hitRadius);
+      }
+    }
+    for (const item of this.nodes) {
+      const placed = positions.get(item.node.id);
+      item.label.style.opacity = placed ? String(placed.opacity) : '0';
+      item.label.setAttribute('aria-hidden', String(!placed));
+      if (!placed) continue;
+      const factor = this.space ? this.displayNode(item.node).scale : 1;
+      const x = placed.x / factor, y = placed.y / factor, font = placed.font / factor;
+      item.label.setAttribute('x', x);
+      item.label.setAttribute('y', y);
+      item.label.setAttribute('text-anchor', 'start');
+      item.label.style.fontSize = font + 'px';
+      const key = placed.lines.join('|');
+      if (item.label.dataset.lines !== key) {
+        item.label.replaceChildren(...placed.lines.map(line => el('tspan', {}, line)));
+        item.label.dataset.lines = key;
+      }
+      for (const [index, span] of [...item.label.children].entries()) {
+        span.setAttribute('x', x);
+        span.setAttribute('dy', index ? font * 1.35 : 0);
+      }
+    }
   }
   point(event) { const matrix = this.svg.getScreenCTM(); return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : { x: 500, y: 300 }; }
   scenePoint(event) { const p = this.point(event); return { x: (p.x - this.x) / this.scale, y: (p.y - this.y) / this.scale }; }
-  bindInput() {
-    this.svg.addEventListener('wheel', event => { if(this.orbitCenter)return;event.preventDefault(); this.zoom(event.deltaY > 0 ? 1 / 1.12 : 1.12, this.point(event)); this.onHover(null); }, { passive: false });
+  openNodeMenu(node, event, group) {
+    if (node.type === 'relation') this.onRemoveAssociation?.(node.id);
+    else this.onPaperMenu?.(node.paper.id, event, group);
+  }
+
+  releaseSpaceDrag(repaint = false) {
+    const drag = this.spaceDrag;
+    if (!drag) return null;
+    this.spaceDrag = null;
+    if (drag.paintFrame != null) cancelAnimationFrame(drag.paintFrame);
+    this.svg.classList.remove('graph-space-rotating');
+    if (this.svg.hasPointerCapture(drag.pointer)) this.svg.releasePointerCapture(drag.pointer);
+    if (repaint && drag.moved && this.network) this.paint(true);
+    return drag;
+  }
+
+  bindSpaceInput() {
     this.svg.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || this.orbitCenter) return;
+      if (event.button !== 2 || !this.space || this.orbitCenter || this.drag || this.spaceDrag || !this.visible) return;
+      const group = event.target.closest('[data-node-id]');
+      const {width, height} = this.svg.getBoundingClientRect();
+      this.spaceDrag = {pointer: event.pointerId, x: event.clientX, y: event.clientY, group,
+        sensitivity: Math.PI / Math.max(260, Math.min(width, height))};
+      event.preventDefault();
+      this.svg.setPointerCapture(event.pointerId);
+    });
+    this.svg.addEventListener('pointermove', event => {
+      const drag = this.spaceDrag;
+      if (drag?.pointer !== event.pointerId) return;
+      if (!(event.buttons & 2)) { this.releaseSpaceDrag(true); return; }
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      if (!drag.moved) {
+        if (Math.hypot(dx, dy) < 4) return;
+        drag.moved = true;
+        this.svg.classList.add('graph-space-rotating');
+        this.onHover(null);
+      }
+      drag.x = event.clientX;
+      drag.y = event.clientY;
+      this.space.rotate(dx * drag.sensitivity, -dy * drag.sensitivity);
+      if (drag.paintFrame == null) {
+        drag.paintFrame = requestAnimationFrame(() => {
+          drag.paintFrame = null;
+          this.paint();
+        });
+      }
+    });
+    const finish = event => {
+      if (this.spaceDrag?.pointer !== event.pointerId) return;
+      const drag = this.releaseSpaceDrag(true);
+      if (!drag.moved && event.type === 'pointerup' && event.button === 2 && this.nodeLayer?.contains(drag.group)) {
+        const node = this.network?.byId.get(drag.group.dataset.nodeId);
+        if (node) this.openNodeMenu(node, event, drag.group);
+      }
+    };
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) this.svg.addEventListener(type, finish);
+    this.svg.addEventListener('contextmenu', event => {
+      if (this.space && !this.orbitCenter) event.preventDefault();
+    });
+  }
+
+  bindInput() {
+    this.bindSpaceInput();
+    this.svg.addEventListener('wheel', event => { if(this.orbitCenter)return;this.autoFit3D=false;event.preventDefault(); this.zoom(event.deltaY > 0 ? 1 / 1.12 : 1.12, this.point(event)); this.onHover(null); }, { passive: false });
+    this.svg.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || this.orbitCenter || this.spaceDrag) return;
+      this.autoFit3D = false;
       this.cancelNaturalLayout();
       clearTimeout(this.clickTimer);
       const key = event.target.closest('[data-node-id]')?.dataset.nodeId, node = this.network?.byId.get(key);
       const capture=event.target.closest('[data-node-id]')||this.svg;
       this.drag = { pointer: event.pointerId, capture, origin: this.point(event), scene: this.scenePoint(event), node, x: node?.x ?? this.x, y: node?.y ?? this.y,pinned:node?.pinned, moved: false };
+      if (node && this.space) {
+        const {x, y} = this.displayNode(node);
+        this.drag.projected = {x, y};
+      }
       if(node){node.dragging=true;node.vx=0;node.vy=0;this.start(.3);}
       capture.setPointerCapture(event.pointerId); this.svg.classList.add('dragging'); this.onHover(null);
     });
@@ -402,7 +682,13 @@ export class StarMap {
       const point = this.point(event), dx = point.x - drag.origin.x, dy = point.y - drag.origin.y;
       if(!drag.moved&&Math.hypot(dx,dy)>3)drag.moved=true;
       if (!drag.moved) return;
-      if (drag.node) { drag.node.x = drag.x + dx / this.scale; drag.node.y = drag.y + dy / this.scale; drag.node.vx = 0; drag.node.vy = 0; this.paint(); }
+      if (drag.node) {
+        const target = drag.projected && this.space
+          ? this.space.unproject({x: drag.projected.x + dx / this.scale, y: drag.projected.y + dy / this.scale}, drag.node)
+          : {x: drag.x + dx / this.scale, y: drag.y + dy / this.scale};
+        Object.assign(drag.node, target, {vx: 0, vy: 0});
+        this.paint();
+      }
       else { this.x = drag.x + dx; this.y = drag.y + dy; this.transform(); }
     });
     const finish = (event, cancel = false) => {
@@ -414,17 +700,46 @@ export class StarMap {
         if(cancel){drag.node.x=drag.x;drag.node.y=drag.y;drag.node.pinned=drag.pinned;drag.node.vx=0;drag.node.vy=0;this.paint();this.start(.2);}
         else if (drag.moved) { drag.node.pinned = Boolean(drag.pinned||event.shiftKey); this.paint();this.saveLayout();this.start(.3); }
         else if (!cancel) this.clickTimer = setTimeout(() => drag.node.type === 'relation' ? this.onRelation?.(drag.node.id) : this.onSelect(drag.node.paper.id), 260);
-      }
+      } else if (drag.moved) this.paintGalaxies();
     };
     this.svg.addEventListener('pointerup', event => finish(event));
     this.svg.addEventListener('pointercancel', event => finish(event, true));
     this.svg.addEventListener('lostpointercapture', event => finish(event, true));
   }
   zoom(factor, point = { x: 500, y: this.viewHeight/2 }) {
+    this.autoFit3D = false;
     this.cancelNaturalLayout();
     const next = Math.max(.12, Math.min(3.5, this.scale * factor)), ratio = next / this.scale;
+    if (this.space && next !== this.scale) {
+      this.galaxyZooming = true;
+      clearTimeout(this.galaxyZoomTimer);
+      this.galaxyZoomTimer = setTimeout(() => {
+        this.galaxyZooming = false;
+        this.paintGalaxies();
+      }, 120);
+    }
     this.x = point.x - (point.x - this.x) * ratio; this.y = point.y - (point.y - this.y) * ratio; this.scale = next; this.transform();
   }
-  fit() {if(this.closeOrbit())return;this.cancelNaturalLayout();Object.assign(this,fitGraphViewport(this.network?.nodes||[],1000,this.viewHeight));this.transform();}
-  transform() { this.viewport?.setAttribute('transform', `translate(${this.x} ${this.y}) scale(${this.scale})`); this.onZoom?.(Math.round(this.scale * 100)); this.placeLabels();this.paintCommunityLabels(); }
+  fitOverview() {
+    if (this.space && this.space.galaxies.size > 0) {
+      const framing = [];
+      for (const node of this.network?.nodes || []) {
+        if (node.pinned) framing.push(this.displayNode(node));
+      }
+      for (const galaxy of this.space.galaxies.values()) {
+        const meta = galaxy.meta;
+        if (!meta) continue;
+        const c = this.space.projectPoint(meta.center.x, meta.center.y, meta.center.z ?? 0);
+        framing.push({x: c.x, y: c.y, radius: meta.radius * c.scale * 1.15});
+      }
+      if (framing.length) {
+        Object.assign(this, fitGraphViewport(framing, 1000, this.viewHeight));
+        return;
+      }
+    }
+    const nodes = this.projection ? [...this.projection.values()] : this.network?.nodes || [];
+    Object.assign(this, fitGraphViewport(nodes, 1000, this.viewHeight));
+  }
+  fit() {this.autoFit3D=false;if(this.closeOrbit())return;this.cancelNaturalLayout();this.projectNodes();this.fitOverview();this.transform();}
+  transform() { const tier=this.scale<0.62?'far':this.scale<1.15?'mid':'near'; if(this.svg.dataset.zoomTier!==tier)this.svg.dataset.zoomTier=tier; this.viewport?.setAttribute('transform', `translate(${this.x} ${this.y}) scale(${this.scale})`); this.onZoom?.(Math.round(this.scale * 100)); this.syncFarNodeVisibility(); this.paintGalaxies(); this.placeLabels();this.paintCommunityLabels(); }
 }

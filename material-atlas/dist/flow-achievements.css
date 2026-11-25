@@ -1,0 +1,314 @@
+/* Materia AI Assistant -> Flow Achievements
+   Matches flow-chess / flow-go dialog chrome and Materia's 7 liquid-glass themes. */
+
+dialog.flow-achievements {
+  width: min(860px, calc(100vw - 36px));
+  max-height: min(82vh, 720px);
+  padding: 0;
+  border-radius: var(--card-radius, 20px);
+  border: 1px solid var(--glass-edge, var(--line));
+  background: var(--glass-level-3, var(--glass-floating, var(--surface)));
+  color: var(--ink);
+  box-shadow: var(--theme-menu-elevation, 0 24px 64px var(--shadow));
+  -webkit-backdrop-filter: blur(18px) saturate(1.55);
+  backdrop-filter: blur(18px) saturate(1.55);
+  overflow: hidden;
+  font-family: var(--sans);
+}
+
+dialog.flow-achievements[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.flow-achievements::backdrop {
+  background: color-mix(in srgb, var(--paper, #080a10) 42%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.flow-achievements .flow-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 14px;
+  background: var(--glass-chrome, transparent);
+  border-bottom: 1px solid var(--glass-edge, var(--line));
+}
+
+.flow-achievements .flow-heading small {
+  display: block;
+  font-size: .625rem;
+  letter-spacing: .12em;
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.flow-achievements .flow-heading h2 {
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: var(--heading-weight, 500);
+}
+
+.flow-ach-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid color-mix(in srgb, var(--glass-edge, var(--line)) 65%, transparent);
+}
+
+.flow-ach-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-edge, var(--line));
+  background: var(--glass-chrome, color-mix(in srgb, var(--ink) 5%, transparent));
+}
+
+.flow-ach-tab {
+  min-height: 28px;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .75rem;
+  cursor: pointer;
+}
+
+.flow-ach-tab[aria-selected="true"] {
+  background: var(--glass-card, var(--surface));
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 2px 6px var(--shadow), inset 0 1px 0 var(--glass-highlight, #ffffff66);
+}
+
+.flow-ach-counter {
+  font-family: var(--numeric, var(--sans));
+  font-variant-numeric: tabular-nums;
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+.flow-ach-counter strong {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.flow-ach-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 680px) {
+  .flow-ach-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.flow-ach-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-edge, var(--line));
+  background: var(--glass-field, color-mix(in srgb, var(--surface) 70%, transparent));
+  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.flow-ach-card[data-unlocked="false"] {
+  opacity: .72;
+  filter: saturate(.35);
+}
+
+.flow-ach-card[data-unlocked="true"] {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--teal) 10%, var(--glass-card, var(--surface))), var(--glass-card-bottom, transparent));
+  border-color: color-mix(in srgb, var(--teal) 42%, var(--glass-edge, var(--line)));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--teal) 12%, var(--shadow)), inset 0 1px 0 var(--glass-highlight, #ffffff80);
+}
+
+.flow-ach-card[data-unlocked="true"]:hover {
+  transform: translateY(-1px);
+}
+
+.flow-ach-emblem {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  border: 1px solid var(--glass-edge, var(--line));
+  background: var(--glass-chrome, color-mix(in srgb, var(--ink) 6%, transparent));
+  box-shadow: inset 0 1px 0 var(--glass-highlight, #ffffff66);
+}
+
+.flow-ach-card[data-unlocked="true"] .flow-ach-emblem {
+  border-color: color-mix(in srgb, var(--teal) 50%, var(--glass-edge, var(--line)));
+  background: color-mix(in srgb, var(--teal) 18%, var(--surface));
+  color: var(--teal);
+}
+
+.flow-ach-body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.flow-ach-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.flow-ach-title-row strong {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.flow-ach-date {
+  font-family: var(--numeric, var(--sans));
+  font-variant-numeric: tabular-nums;
+  font-size: .625rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.flow-ach-desc {
+  margin: 0;
+  font-size: .75rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.flow-ach-quote {
+  margin: 4px 0 0;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--teal) 9%, transparent);
+  border-left: 2px solid var(--teal);
+  font-size: .6875rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.flow-ach-progress {
+  margin-top: 6px;
+  display: grid;
+  gap: 4px;
+}
+
+.flow-ach-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--numeric, var(--sans));
+  font-variant-numeric: tabular-nums;
+  font-size: .625rem;
+  color: var(--muted);
+}
+
+.flow-ach-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+
+.flow-ach-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal);
+  transition: width .3s ease;
+}
+
+/* Unlock toast capsule in bottom-right corner */
+.flow-ach-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9800;
+  width: min(340px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--teal) 48%, var(--glass-edge, var(--line)));
+  background: var(--glass-level-3, var(--glass-floating, var(--surface)));
+  box-shadow: 0 14px 40px var(--shadow), inset 0 1px 0 var(--glass-highlight, #ffffff80);
+  -webkit-backdrop-filter: blur(18px) saturate(1.55);
+  backdrop-filter: blur(18px) saturate(1.55);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .24s ease, transform .24s ease;
+  cursor: pointer;
+}
+
+.flow-ach-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.flow-ach-toast[hidden] {
+  display: none;
+}
+
+.flow-ach-toast-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  background: color-mix(in srgb, var(--teal) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--teal) 45%, transparent);
+}
+
+.flow-ach-toast-text small {
+  display: block;
+  font-size: .625rem;
+  letter-spacing: .08em;
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.flow-ach-toast-text strong {
+  display: block;
+  font-size: .8125rem;
+  color: var(--ink);
+  margin: 1px 0 2px;
+}
+
+.flow-ach-toast-text p {
+  margin: 0;
+  font-size: .6875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-ach-card,
+  .flow-ach-bar > i,
+  .flow-ach-toast {
+    transition: none;
+  }
+}

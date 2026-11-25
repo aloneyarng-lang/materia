@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from 'node:crypto';
-import {lstat,mkdir,readdir,readFile,rename,unlink,writeFile} from 'node:fs/promises';
+import {lstat,mkdir,open,readdir,readFile,rename,unlink,writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {NOTE_LIMIT,notePath,noteBody,dailyTipName,appendTipBody} from '../dist/notes-vault-model.js';
+import {NOTE_LIMIT,TIP_IMAGE_FOLDER,notePath,noteBody,dailyTipName,appendTipBody,prepareDailyTip} from '../dist/notes-vault-model.js';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const inspect=async file=>lstat(file).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
@@ -77,10 +77,12 @@ export class NotesVault {
     await scan(root,'',0);
     return {notes,skipped};
   }
-  appendTip(entry){
-    return this.save({id:dailyTipName(),body:entry},true);
+  appendTip(payload){
+    const {entry, attachments} = typeof payload === 'string' ? {entry: payload} : payload ?? {};
+    const {body, assets} = prepareDailyTip(entry, attachments);
+    return this.save({id:dailyTipName(),body},true,assets);
   }
-  save(payload,appendTip=false){
+  save(payload,appendTip=false,assets=[]){
     const id=notePath(payload?.id),entry=noteBody(payload?.body);
     let expected=payload?.revision;
     if(!appendTip&&expected!==null&&!/^[a-f\d]{64}$/.test(expected))throw Error('笔记版本无效，请刷新。');
@@ -96,21 +98,37 @@ export class NotesVault {
         expected=previous?.revision??null;
         body=appendTipBody(previous?.body??'',entry);
       }
-      if(expected===null){
-        try{await writeFile(file,body,{encoding:'utf8',flag:'wx'});}
-        catch(error){if(error.code==='EEXIST')throw Error('已有同名笔记，请换一个名称。');throw error;}
-      }else{
-        const check=async()=>{
-          const info=await inspect(file);
-          if(!info||expected!==(await this.read(file,id,info)).revision)throw Error('笔记已在外部修改或移除。请先导出当前草稿，再重新载入文件。');
-        };
-        await check();
-        const temp=path.join(parent,'.materia-note-'+randomUUID()+'.tmp');
-        try{
-          await writeFile(temp,body,{encoding:'utf8',flag:'wx'});
+      const written = [];
+      try {
+        if (assets.length) {
+          const folder = await this.directory([TIP_IMAGE_FOLDER], true);
+          for (const {reference, dataUrl} of assets) {
+            const target = path.join(folder, path.basename(reference));
+            const handle = await open(target, 'wx');
+            written.push(target);
+            try { await handle.writeFile(Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64')); }
+            finally { await handle.close(); }
+          }
+        }
+        if(expected===null){
+          try{await writeFile(file,body,{encoding:'utf8',flag:'wx'});}
+          catch(error){if(error.code==='EEXIST')throw Error('已有同名笔记，请换一个名称。');throw error;}
+        }else{
+          const check=async()=>{
+            const info=await inspect(file);
+            if(!info||expected!==(await this.read(file,id,info)).revision)throw Error('笔记已在外部修改或移除。请先导出当前草稿，再重新载入文件。');
+          };
           await check();
-          await rename(temp,file);
-        }catch(error){await unlink(temp).catch(()=>{});throw error;}
+          const temp=path.join(parent,'.materia-note-'+randomUUID()+'.tmp');
+          try{
+            await writeFile(temp,body,{encoding:'utf8',flag:'wx'});
+            await check();
+            await rename(temp,file);
+          }catch(error){await unlink(temp).catch(()=>{});throw error;}
+        }
+      } catch (error) {
+        await Promise.allSettled(written.map(target => unlink(target)));
+        throw error;
       }
       const info=await lstat(file);
       return {id,body,revision:hash(Buffer.from(body)),updatedAt:info.mtimeMs};

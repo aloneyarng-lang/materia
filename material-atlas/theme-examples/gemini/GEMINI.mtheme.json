@@ -1,0 +1,863 @@
+{
+  "format": "materia-theme",
+  "schemaVersion": 2,
+  "name": "GEMINI",
+  "description": "星昼星穹 · 双子星图",
+  "tokens": {
+    "--graph-node-shape": "symbol",
+    "--graph-relation-shape": "symbol",
+    "--graph-node-fill": "solid",
+    "--graph-edge-style": "curve",
+    "--graph-edge-dash": "solid",
+    "--graph-background": "symbol",
+    "--graph-color-mode": "accent",
+    "--graph-node-scale": "1.45",
+    "--graph-node-stroke": "1",
+    "--graph-edge-width": "1.05",
+    "--graph-edge-opacity": "0.36",
+    "--graph-label-scale": "1.02",
+    "--graph-label-halo": "3px",
+    "--graph-glow": "2px",
+    "--graph-edge-color": "auto",
+    "--graph-node-color": "auto",
+    "--graph-relation-color": "auto",
+    "--graph-label-color": "auto",
+    "--graph-star-density": "1",
+    "--graph-star-opacity": "0.55",
+    "--graph-star-color": "#cfe3ff",
+    "--graph-nebula-intensity": "0.5",
+    "--graph-nebula-color": "#6553ab",
+    "--graph-nebula-color-secondary": "#257c9b",
+    "--graph-orbit-scale": "1.65",
+    "--graph-orbit-tilt": "25",
+    "--graph-twinkle": "off",
+    "--graph-seed": "42",
+    "--paper": "#edf0f9",
+    "--surface": "#fbfcff",
+    "--canvas": "#edf0f9",
+    "--panel": "#3b4cca14",
+    "--sidebar": "#e5eaf6",
+    "--ink": "#171d33",
+    "--muted": "#525d7d",
+    "--line": "#28366824",
+    "--teal": "#3b4cca",
+    "--teal-light": "#3b4cca1a",
+    "--on-accent": "#ffffff",
+    "--brand-mark": "var(--teal)",
+    "--warning": "#946214",
+    "--warning-soft": "#fbf0d9",
+    "--danger": "#bf2d52",
+    "--danger-soft": "#fde7ee",
+    "--shadow": "#16204820",
+    "--serif": "'Materia SF Pro', -apple-system, BlinkMacSystemFont, 'Materia Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--sans": "'Materia SF Pro', -apple-system, BlinkMacSystemFont, 'Materia Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--radius": "16px",
+    "--theme-mode": "light",
+    "--mono": "'Materia SF Mono', 'SF Mono', 'Materia Source Code Pro', Consolas, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--numeric": "'Materia SF Mono', 'SF Mono', 'Materia Source Code Pro', Consolas, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--font-size": "13px",
+    "--font-weight": "400",
+    "--line-height": "1.65",
+    "--heading-weight": "600",
+    "--heading-line-height": "1.4",
+    "--heading-scale": "1"
+  },
+  "graph": {
+    "nodeShape": "symbol",
+    "relationShape": "symbol",
+    "nodeFill": "solid",
+    "edgeStyle": "curve",
+    "edgeDash": "solid",
+    "background": "symbol",
+    "colorMode": "accent",
+    "nodeScale": 1.45,
+    "nodeStroke": 1,
+    "edgeWidth": 1.05,
+    "edgeOpacity": 0.36,
+    "labelScale": 1.02,
+    "labelHalo": 3,
+    "glow": 2,
+    "edgeColor": "auto",
+    "nodeColor": "auto",
+    "relationColor": "auto",
+    "labelColor": "auto",
+    "starDensity": 1,
+    "starOpacity": 0.55,
+    "starColor": "#cfe3ff",
+    "nebulaIntensity": 0.5,
+    "nebulaColor": "#6553ab",
+    "nebulaColorSecondary": "#257c9b",
+    "orbitScale": 1.65,
+    "orbitTilt": 25,
+    "twinkle": "off",
+    "seed": 42
+  },
+  "ui": {
+    "style": "glass",
+    "density": 1.04,
+    "radius": 16,
+    "buttonRadius": 18,
+    "cardRadius": 20,
+    "menuRadius": 18,
+    "borderWidth": 1,
+    "sidebarWidth": 224,
+    "controlHeight": 36,
+    "cardPadding": 18,
+    "menuPadding": 8,
+    "cardGap": 12,
+    "buttonStyle": "solid",
+    "cardStyle": "elevated",
+    "sidebarStyle": "tinted",
+    "shadow": "lifted"
+  },
+  "icons": {
+    "style": "rounded",
+    "strokeWidth": 1.5,
+    "size": 19,
+    "overrides": {
+      "assistant": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M10 3.2C10.5 8 12.8 10.3 17.6 10.8C12.8 11.3 10.5 13.6 10 18.4C9.5 13.6 7.2 11.3 2.4 10.8C7.2 10.3 9.5 8 10 3.2Z"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M18.2 13.6C18.5 15.8 19.4 16.7 21.6 17C19.4 17.3 18.5 18.2 18.2 20.4C17.9 18.2 17 17.3 14.8 17C17 16.7 17.9 15.8 18.2 13.6Z"
+          }
+        }
+      ],
+      "orbit": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 8.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 7.2C12.3 10.2 13.8 11.7 16.8 12C13.8 12.3 12.3 13.8 12 16.8C11.7 13.8 10.2 12.3 7.2 12C10.2 11.7 11.7 10.2 12 7.2Z"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 18.5,
+            "cy": 5.5,
+            "r": 1.2,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 1.8V3.2M12 20.8V22.2M1.8 12H3.2M20.8 12H22.2"
+          }
+        }
+      ],
+      "network": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M8 4.4C8.2 6.4 9.1 7.3 11.1 7.5C9.1 7.7 8.2 8.6 8 10.6C7.8 8.6 6.9 7.7 4.9 7.5C6.9 7.3 7.8 6.4 8 4.4Z"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 18,
+            "cy": 7,
+            "r": 2
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.5,
+            "cy": 18,
+            "r": 2
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6.5,
+            "cy": 17.5,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M10.5 7.4L16 7M8.3 10.2L15.2 16.4M7.7 10.5L6.8 15.7M17.7 9L16.8 16"
+          }
+        }
+      ],
+      "star": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 2.4C12.5 8.2 15.8 11.5 21.6 12C15.8 12.5 12.5 15.8 12 21.6C11.5 15.8 8.2 12.5 2.4 12C8.2 11.5 11.5 8.2 12 2.4Z"
+          }
+        }
+      ],
+      "library": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 3.5,
+            "y": 4,
+            "width": 17,
+            "height": 16,
+            "rx": 3
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M9.5 4V20M13 8.5H17M13 12.5H17"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6.5,
+            "cy": 8.5,
+            "r": 0.9,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "folder": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3 8.2A2.7 2.7 0 0 1 5.7 5.5H9.6L12 8H18.3A2.7 2.7 0 0 1 21 10.7V17.8A2.7 2.7 0 0 1 18.3 20.5H5.7A2.7 2.7 0 0 1 3 17.8Z"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M15.5 12C15.7 13.4 16.4 14.1 17.8 14.3C16.4 14.5 15.7 15.2 15.5 16.6C15.3 15.2 14.6 14.5 13.2 14.3C14.6 14.1 15.3 13.4 15.5 12Z"
+          }
+        }
+      ],
+      "chart": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 3,
+            "y": 3.5,
+            "width": 18,
+            "height": 17,
+            "rx": 3.5
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M6.8 16L10.4 12.4L13.5 14.2L17.4 8.6"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 17.4,
+            "cy": 8.6,
+            "r": 1.1,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "palette": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 9
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 3.4
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 3V6.2M12 17.8V21M3 12H6.2M17.8 12H21"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.6,
+            "cy": 7.4,
+            "r": 1,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "settings": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M4 6.5H20M4 12H20M4 17.5H20"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 9,
+            "cy": 6.5,
+            "r": 2
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 15.5,
+            "cy": 12,
+            "r": 2
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 10,
+            "cy": 17.5,
+            "r": 2
+          }
+        }
+      ],
+      "files": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 6.5,
+            "y": 3,
+            "width": 13.5,
+            "height": 18,
+            "rx": 2.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3.5 7V18.2A3 3 0 0 0 6.5 21.2M10.2 9H16.2M10.2 13H16.2M10.2 16.8H13.8"
+          }
+        }
+      ],
+      "tag": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3.5 5.5A2 2 0 0 1 5.5 3.5H11L20.2 12.7A2 2 0 0 1 20.2 15.5L15.5 20.2A2 2 0 0 1 12.7 20.2L3.5 11Z"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 8,
+            "cy": 8,
+            "r": 1.1,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "search": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 10.8,
+            "cy": 10.8,
+            "r": 6.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M15.8 15.8L20.6 20.6M8.5 8.5L9.5 9.5"
+          }
+        }
+      ],
+      "natural-layout": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M4.5 18C5.6 10.2 8.4 8.4 12 8.4C15.6 8.4 18 11.2 19.5 16.2"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 4.5,
+            "cy": 18,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 8.4,
+            "r": 2
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 19.5,
+            "cy": 16.2,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M18 3.2C18.2 4.8 18.8 5.4 20.4 5.6C18.8 5.8 18.2 6.4 18 8C17.8 6.4 17.2 5.8 15.6 5.6C17.2 5.4 17.8 4.8 18 3.2Z"
+          }
+        }
+      ]
+    }
+  },
+  "assets": {
+    "fonts": [],
+    "graphSymbols": {
+      "node": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 10.8,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.55,
+            "opacity": 0.36
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 7.6,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.45,
+            "opacity": 0.22
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 0.4V2.1M12 21.9V23.6M0.4 12H2.1M21.9 12H23.6",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.65,
+            "opacity": 0.55
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 3.2C12.7 8.4 15.6 11.3 20.8 12C15.6 12.7 12.7 15.6 12 20.8C11.3 15.6 8.4 12.7 3.2 12C8.4 11.3 11.3 8.4 12 3.2Z",
+            "fill": "theme-paper",
+            "stroke": "none",
+            "fill-opacity": 0.92
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 2.4C12.35 8.35 15.65 11.65 21.6 12C15.65 12.35 12.35 15.65 12 21.6C11.65 15.65 8.35 12.35 2.4 12C8.35 11.65 11.65 8.35 12 2.4Z",
+            "fill": "theme-accent",
+            "stroke": "theme-accent",
+            "stroke-width": 0.55,
+            "fill-opacity": 0.92
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M9.1 9.1L14.9 14.9M14.9 9.1L9.1 14.9",
+            "fill": "none",
+            "stroke": "theme-paper",
+            "stroke-width": 0.55,
+            "opacity": 0.65
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 8.2C12.2 10.6 13.4 11.8 15.8 12C13.4 12.2 12.2 13.4 12 15.8C11.8 13.4 10.6 12.2 8.2 12C10.6 11.8 11.8 10.6 12 8.2Z",
+            "fill": "theme-paper",
+            "stroke": "none",
+            "fill-opacity": 0.96
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1.1,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M18.6 3.5C18.7 4.8 19.2 5.3 20.5 5.4C19.2 5.5 18.7 6 18.6 7.3C18.5 6 18 5.5 16.7 5.4C18 5.3 18.5 4.8 18.6 3.5Z",
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        }
+      ],
+      "relation": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 11.4,
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.45,
+            "opacity": 0.42
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 10.2,
+            "fill": "theme-paper",
+            "stroke": "theme-warning",
+            "stroke-width": 0.95,
+            "fill-opacity": 0.94
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 6.8,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.55,
+            "opacity": 0.42
+          }
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 8.8,
+            "y1": 15.2,
+            "x2": 15.2,
+            "y2": 8.8,
+            "stroke": "theme-accent",
+            "stroke-width": 0.75,
+            "opacity": 0.55
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M5.5 5.5L7.1 7.1M16.9 16.9L18.5 18.5",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.6,
+            "opacity": 0.65
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M15.2 4.5C15.4 7.3 16.7 8.6 19.5 8.8C16.7 9 15.4 10.3 15.2 13.1C15 10.3 13.7 9 10.9 8.8C13.7 8.6 15 7.3 15.2 4.5Z",
+            "fill": "theme-accent",
+            "stroke": "theme-accent",
+            "stroke-width": 0.35
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 15.2,
+            "cy": 8.8,
+            "r": 0.9,
+            "fill": "theme-paper",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M8.8 11.3C9 13.8 10.2 15 12.7 15.2C10.2 15.4 9 16.6 8.8 19.1C8.6 16.6 7.4 15.4 4.9 15.2C7.4 15 8.6 13.8 8.8 11.3Z",
+            "fill": "theme-warning",
+            "stroke": "theme-warning",
+            "stroke-width": 0.35
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 8.8,
+            "cy": 15.2,
+            "r": 0.85,
+            "fill": "theme-paper",
+            "stroke": "none"
+          }
+        }
+      ],
+      "background": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 11.4,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.055
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 8.8,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.032
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 4.6,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.024,
+            "opacity": 0.65
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 0.2V2.2M12 21.8V23.8M0.2 12H2.2M21.8 12H23.8M3.9 3.9L5.2 5.2M18.8 18.8L20.1 20.1M20.1 3.9L18.8 5.2M5.2 18.8L3.9 20.1",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.045
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M1.6 16.4C5.4 19.4 13.8 17.2 18.6 11.8C22.2 7.8 22.8 4.4 20.4 3.4C18 2.4 11.4 5.2 6 10.6C2.4 14.2 0.6 15.6 1.6 16.4Z",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.035,
+            "opacity": 0.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M8.6 5.2L14.6 6.1M8.6 5.2L7.4 9.6L6 14.4L5 17.8M7.4 9.6L10.6 11.6L13.8 10.6M6 14.4L8.1 16.8L7.3 19.3M14.6 6.1L17.6 9.2M14.6 6.1L13.8 10.6L12.4 14.5L15.4 18M12.4 14.5L11.8 18.7",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.08
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M8.6 3.7C8.72 4.75 9.05 5.08 10.1 5.2C9.05 5.32 8.72 5.65 8.6 6.7C8.48 5.65 8.15 5.32 7.1 5.2C8.15 5.08 8.48 4.75 8.6 3.7Z",
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M14.6 4.7C14.71 5.68 15.02 5.99 16 6.1C15.02 6.21 14.71 6.52 14.6 7.5C14.49 6.52 14.18 6.21 13.2 6.1C14.18 5.99 14.49 5.68 14.6 4.7Z",
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 7.4,
+            "cy": 9.6,
+            "r": 0.34,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6,
+            "cy": 14.4,
+            "r": 0.3,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 5,
+            "cy": 17.8,
+            "r": 0.28,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 8.1,
+            "cy": 16.8,
+            "r": 0.28,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 7.3,
+            "cy": 19.3,
+            "r": 0.25,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 13.8,
+            "cy": 10.6,
+            "r": 0.32,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12.4,
+            "cy": 14.5,
+            "r": 0.3,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 15.4,
+            "cy": 18,
+            "r": 0.38,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 17.6,
+            "cy": 9.2,
+            "r": 0.26,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 11.8,
+            "cy": 18.7,
+            "r": 0.26,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 10.6,
+            "cy": 11.6,
+            "r": 0.22,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        }
+      ]
+    }
+  },
+  "variants": {
+    "light": {
+      "--theme-mode": "light",
+      "--paper": "#edf0f9",
+      "--surface": "#fbfcff",
+      "--canvas": "#edf0f9",
+      "--panel": "#3b4cca14",
+      "--sidebar": "#e5eaf6",
+      "--ink": "#171d33",
+      "--muted": "#525d7d",
+      "--line": "#28366824",
+      "--teal": "#3b4cca",
+      "--teal-light": "#3b4cca1a",
+      "--on-accent": "#ffffff",
+      "--warning": "#946214",
+      "--warning-soft": "#fbf0d9",
+      "--danger": "#bf2d52",
+      "--danger-soft": "#fde7ee",
+      "--shadow": "#16204820"
+    },
+    "dark": {
+      "--theme-mode": "dark",
+      "--paper": "#0b0f1e",
+      "--surface": "#161c33",
+      "--canvas": "#0b0f1e",
+      "--panel": "#95abff1e",
+      "--sidebar": "#101528",
+      "--ink": "#eef2ff",
+      "--muted": "#9faad0",
+      "--line": "#c8d6ff24",
+      "--teal": "#98b2ff",
+      "--teal-light": "#7b98ff2b",
+      "--on-accent": "#0c1430",
+      "--warning": "#f0c674",
+      "--warning-soft": "#3d311d",
+      "--danger": "#ff8da6",
+      "--danger-soft": "#431e2c",
+      "--shadow": "#03051066"
+    }
+  }
+}

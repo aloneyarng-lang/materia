@@ -8,8 +8,8 @@ html[data-liquid-glass=true] {
   --glass-reading:color-mix(in srgb,var(--surface) 32%,transparent);
 }
 html[data-liquid-glass=true][data-theme-mode=dark] {
-  --glass-highlight:#ffffff29;
-  --glass-edge:#ffffff19;
+  --glass-highlight:color-mix(in srgb,var(--teal) 18%,#ffffff2c);
+  --glass-edge:color-mix(in srgb,var(--teal) 14%,#ffffff1e);
   --glass-card:color-mix(in srgb,var(--surface) 92%,transparent);
   --glass-card-bottom:color-mix(in srgb,var(--surface) 80%,transparent);
   --glass-field:#ffffff0b;
@@ -101,9 +101,10 @@ html[data-liquid-glass=true] .sidebar .collection-item {font-weight:400;line-hei
 html[data-liquid-glass=true] .sidebar .nav-item {font-weight:400;}
 html[data-liquid-glass=true] .sidebar .nav-item.active {font-weight:500;}
 html[data-liquid-glass=true] :is(.paper-row,.material-library-row) {box-sizing:border-box;width:100%;min-width:0;padding:14px 18px;margin-bottom:7px;align-items:flex-start;gap:12px;}
-html[data-liquid-glass=true] .paper-row h3 {font-size:calc(1rem * var(--heading-scale));line-height:1.5;font-weight:500;margin-bottom:8px;letter-spacing:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;}
+html[data-liquid-glass=true] .paper-row h3 {font-size:calc(1rem * var(--heading-scale));line-height:1.45;font-weight:500;margin-bottom:6px;letter-spacing:-.01em;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
 html[data-liquid-glass=true] .paper-row-content {min-width:0;flex:1;}
-html[data-liquid-glass=true] .paper-row-content>.paper-row-citation {font-size:.6875rem;line-height:1.7;margin:4px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+html[data-liquid-glass=true] .paper-row-content>.paper-row-citation {font-size:.6875rem;line-height:1.65;margin:4px 0 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
+html[data-liquid-glass=true] .list-paper-badges {font-variant-numeric:tabular-nums;}
 html[data-liquid-glass=true] .paper-row-menu {align-self:center;flex-shrink:0;}
 html[data-liquid-glass=true] .detail-panel {flex-basis:280px;width:280px;padding:22px 20px;}
 html[data-liquid-glass=true] .detail-panel .paper-title {font-size:calc(1.125rem * var(--heading-scale));font-weight:500;line-height:1.5;letter-spacing:0;margin:16px 0 20px;}

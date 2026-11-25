@@ -80,7 +80,7 @@ export function createObservatory(shell) {
       </nav>
       <nav class="observatory-dock" aria-label="工作区">
         ${dockViews.map(view=>view.id==='research'&&canStudy
-          ? shortcut('data-lobby-view="literature-workbench"','files','研读')
+          ? shortcut('data-lobby-view="literature-workbench"','files','逐图研读')
           : shortcut('data-lobby-view="'+view.id+'"',view.icon,view.label)).join('')}
         ${shortcut('data-action="resume-workspace"','panel-left','返回工作区')}
       </nav>`;

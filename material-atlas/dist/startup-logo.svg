@@ -1,7 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round">
-    <circle cx="248" cy="258" r="33"/>
-    <path d="M228 232L226 123 M250 225L314 150 M279 246L379 272 M279 269L332 351 M262 288L243 389 M236 289L151 338 M217 270L114 243 M216 248L156 166"/>
+  <defs>
+    <linearGradient id="top-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="0.28" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#d97757"/>
+  <rect x="17" y="17" width="478" height="478" rx="111" fill="none" stroke="url(#top-sheen)" stroke-width="2"/>
+  <g transform="translate(256 256) scale(1.06) translate(-256 -256)">
+    <g fill="none" stroke="#ffffff" stroke-width="23" stroke-linecap="round">
+      <circle cx="250" cy="258" r="38"/>
+      <path d="M226.8 227.9L224.7 111.3 M252.3 220.1L312.5 149.6 M285.4 244.3L389.4 271.3 M285.8 270.7L333.5 344.5 M266.1 292.4L245.9 399.5 M236.3 293.4L157.2 339.0 M214.6 271.7L106.4 243.4 M213.7 246.7L159.1 172.0"/>
+    </g>
+    <circle cx="375" cy="187" r="17.5" fill="#ffffff"/>
   </g>
-  <circle cx="372" cy="191" r="18" fill="#ffffff"/>
 </svg>

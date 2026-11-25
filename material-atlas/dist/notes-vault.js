@@ -1,8 +1,8 @@
 import {html,msg,t} from './i18n.js';
 import {icon} from './icons.js';
 import {actionMenu} from './action-menus.js';
-import {getSetting,setSetting} from './storage.js';
-import {NOTE_LIMIT,notePath,noteName,noteBody,dailyTipName,appendTipBody} from './notes-vault-model.js';
+import {appendBrowserDailyTip,getSetting,setSetting} from './storage.js';
+import {NOTE_LIMIT,notePath,noteName,noteBody,dailyTipName,isTipImageReference,prepareDailyTip} from './notes-vault-model.js';
 import {createNoteEditDialog} from './note-edit-dialog.js';
 import {noteCommandAt} from './note-edit.js';
 import {renderNoteMarkdown,noteReferences,resolveNoteLink} from './notes-markdown.js';
@@ -26,12 +26,10 @@ export async function saveNote(payload){
   return saved;
 }
 
-export async function appendDailyTip(entry){
-  if(native?.appendDailyTip)return native.appendDailyTip(entry);
-  const id=dailyTipName();
-  const {notes}=await readIndex();
-  const previous=notes.find(note=>note.id.toLowerCase()===id);
-  return saveNote({id,body:appendTipBody(previous?.body??'',entry),revision:previous?.revision??null});
+export async function appendDailyTip(entry, attachments = []){
+  if(native?.appendDailyTip)return native.appendDailyTip(attachments.length ? {entry, attachments} : entry);
+  const {body, assets} = prepareDailyTip(entry, attachments);
+  return appendBrowserDailyTip(browserKey, dailyTipName(), body, assets);
 }
 
 const tool=(action,label,glyph)=>html`<button type="button" class="icon-button" data-vault-action="${action}" aria-label="${t(label)}" title="${t(label)}">${icon(glyph)}</button>`;
@@ -146,17 +144,21 @@ export function createNotesVault(host,{saveText,editNote,escape,toast}){
     const rendered=renderNoteMarkdown(editor.value);
     preview.innerHTML=rendered.markup;
     outline=rendered.outline;
-    if(active&&native?.notesVaultImage){
+    if(active){
       const note=active.id,cache=images;
       for(const image of [...preview.querySelectorAll('img[data-note-image]')].slice(0,20)){
         let reference;
         try{reference=decodeURIComponent(image.dataset.noteImage);}catch{continue;}
         if(!cache.urls.has(reference)&&cache.urls.size<20){
-          cache.urls.set(reference,native.notesVaultImage({note,reference}).then(result=>{
-            if(!result||images!==cache||cache.size+result.bytes.byteLength>24*1024*1024)return '';
-            cache.size+=result.bytes.byteLength;
-            return URL.createObjectURL(new Blob([result.bytes],{type:result.type}));
-          }).catch(()=>''));
+          if (native?.notesVaultImage) {
+            cache.urls.set(reference,native.notesVaultImage({note,reference}).then(result=>{
+              if(!result||images!==cache||cache.size+result.bytes.byteLength>24*1024*1024)return '';
+              cache.size+=result.bytes.byteLength;
+              return URL.createObjectURL(new Blob([result.bytes],{type:result.type}));
+            }).catch(()=>''));
+          } else if (isTipImageReference(reference)) {
+            cache.urls.set(reference,getSetting('notesVaultImage:' + reference).catch(()=>''));
+          }
         }
         cache.urls.get(reference)?.then(url=>{if(url&&image.isConnected)image.src=url;});
       }

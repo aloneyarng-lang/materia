@@ -24,12 +24,15 @@ export function rectFromPoints(start,end){
   width=Math.max(.003,Math.min(1,width));height=Math.max(.003,Math.min(1,height));return{x:Math.min(x,1-width),y:Math.min(y,1-height),width,height};
 }
 export const anchorMatchesPaper=(anchor,paper)=>!anchor?.fingerprint||!paper.fingerprint||anchor.fingerprint===paper.fingerprint;
+const NOTE_IMAGE_MAX_BASE64 = 1400000;
+export const NOTE_IMAGE_MAX_BYTES = NOTE_IMAGE_MAX_BASE64 / 4 * 3;
+
 export function normalizeAttachments(value=[]){
   if(!Array.isArray(value)||value.length>6)throw new Error('每条笔记最多保留 6 张图片。');
   let total=0;const ids=new Set();
   return value.map(image=>{
     if(!image||typeof image.id!=='string'||!image.id||ids.has(image.id)||typeof image.dataUrl!=='string')throw new Error('批注图片格式不正确。');ids.add(image.id);
-    const match=image.dataUrl.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z\d+/]+={0,2})$/);if(!match||match[2].length>1400000)throw new Error('批注图片需为 PNG、JPEG 或 WebP，压缩后每张不超过 1 MB。');
+    const match=image.dataUrl.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z\d+/]+={0,2})$/);if(!match||match[2].length>NOTE_IMAGE_MAX_BASE64)throw new Error('批注图片需为 PNG、JPEG 或 WebP，压缩后每张不超过 1 MB。');
     let binary;try{binary=atob(match[2]);}catch{throw new Error('批注图片已损坏。');}
     const signature=match[1]==='png'?binary.startsWith('\x89PNG\r\n\x1a\n'):match[1]==='jpeg'?binary.startsWith('\xff\xd8\xff'):binary.startsWith('RIFF')&&binary.slice(8,12)==='WEBP';
     if(!signature)throw new Error('批注图片内容与格式不一致。');

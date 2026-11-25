@@ -1,3 +1,4 @@
+import {reportAchievement} from './flow-achievements.js';
 import {convertComposition,canonicalDataset,datasetForms,scopedDataset,compositionText} from './prediction-composition.js';
 import {BASE_PROPERTIES,BASE_FEATURES,FORMS,BASIS,ELEMENTS,formLabel,basisLabel,freshWorkspace,validateWorkspace,exactNumber,parseComposition,compositionKey,validateComposition,suggestMapping,buildDataset,predictProperty,trainingRows,uid} from './prediction-model.js';
 import {trainingControls,modelReport,trainingInventory} from './prediction-report.js';
@@ -102,6 +103,9 @@ export function createPredictionController({host,load,persist,saveText,toast,isR
     worker=null;if(token!==generation)return;
     const next=structuredClone(workspace);if(model.usable)for(const m of next.models)if(m.target===target&&m.form===form&&m.basis===basis)m.active=false;
     next.models.push({...model,active:model.usable});await save(next);busy=true;completed++;reportId=model.id;
+    reportAchievement('usableModelsCount', next.models.filter(item => item.usable).length);
+    const score = model.metrics?.selection?.r2;
+    if (model.usable && Number.isFinite(score)) reportAchievement('bestModelR2Pct', Math.max(0, Math.round(score * 100)));
    }trainStatus=`已完成 ${completed} 项训练。查看下方验证结果。`;
   }finally{worker?.terminate();worker=null;if(token===generation){busy=false;render();}}
  }

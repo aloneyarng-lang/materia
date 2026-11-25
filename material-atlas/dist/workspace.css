@@ -66,9 +66,6 @@
 .graph-controls{bottom:10px;right:12px;border-radius:5px;box-shadow:none;padding:2px}
 .graph-controls .icon-button{width:25px;height:25px;padding:5px}
 .graph-controls>span{font-size:0.5625rem;width:35px}
-.map-footer{flex:0 0 auto;min-height:31px;padding:7px 14px;gap:10px;align-items:center}
-.map-footer .legend{display:flex;gap:11px;overflow:auto;white-space:nowrap;min-width:0;flex:1;scrollbar-width:none}
-.map-footer .legend button{font-size:0.5625rem;flex:0 0 auto}.map-footnote{font-size:0.5rem;flex:0 0 auto;white-space:nowrap;color:var(--muted)}
 .paper-list{flex:1;min-height:0;overflow:auto;padding:14px}
 .paper-row{padding:14px 12px;gap:12px}.paper-row h3{font-size:1.0625rem;line-height:1.45}.paper-row p{font-size:0.625rem}.paper-row-content{min-width:0}
 .list-selection-toolbar{position:static;gap:8px;align-items:center;padding-bottom:10px}.list-selection-toolbar>.text-button:first-child{font-size:0.625rem}.list-selection-toolbar .outline-button,.list-selection-toolbar .danger-button{display:none}

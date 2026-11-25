@@ -9,9 +9,10 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
   const custom=document.createElement('option');custom.value='custom';custom.textContent=tr('自定义服务 / 本机模型');provider.append(custom);
   bindStaticDOM(provider,{translated:true});
   let revision=0,timer,controller,fetching=false,lastFingerprint='',manualChoice=false;
-  const connection=$('#agent-connection'),local=()=>connection.value==='antigravity';
-  const localValue=()=>({connection:'antigravity',clientPath:$('#agent-client-path').value.trim(),model:$('#agent-client-model').value});
+  const connection=$('#agent-connection'),local=()=>connection.value!=='api';
+  const localValue=()=>connection.value==='local-gemini'?{connection:'local-gemini',model:$('#agent-gemini-model').value||'desktop-current'}:({connection:'antigravity',clientPath:$('#agent-client-path').value.trim(),model:$('#agent-client-model').value});
   connection.querySelector('[value="antigravity"]').disabled=!native?.agentDetectAntigravity;
+  connection.querySelector('[value="local-gemini"]').disabled=!native?.agentDetectAntigravity;
   const endpoint=()=>{try{return canonicalAgentUrl($('#agent-base-url').value);}catch{return '';}};
   const sameSavedEndpoint=()=>endpoint()===getConfig().baseUrl;
   function draft(){return local()?localValue():{provider:provider.value,baseUrl:$('#agent-base-url').value.trim(),protocol:$('#agent-protocol').value,model:model.value.trim(),apiKey:cleanAgentKey(key.value),rememberKey:$('#agent-remember').checked};}
@@ -22,7 +23,7 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
     fetching=false;refresh.disabled=Boolean(isBusy());refresh.textContent=tr('刷新模型');
   }
   function sync(){
-    $('#agent-api-settings').hidden=local();$('#agent-antigravity-settings').hidden=!local();
+    $('#agent-api-settings').hidden=local();$('#agent-antigravity-settings').hidden=connection.value!=='antigravity';$('#agent-gemini-settings').hidden=connection.value!=='local-gemini';
     for(const field of $('#agent-api-settings').querySelectorAll('input,select,button'))field.disabled=local()||isBusy()||(field.id===prefix+'agent-remember'&&!getConfig().canRememberKey);
     for(const field of $('#agent-antigravity-settings').querySelectorAll('input,select,button'))field.disabled=!local()||isBusy()||fetching;
     $('[data-agent-action="forget"]').hidden=local();
@@ -34,7 +35,7 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
     if(!manual.checked)model.value=picker.value;
     refresh.disabled=Boolean(isBusy())||fetching;
     const preset=agentProvider(provider.value);
-    const saved=getConfig().connection==='antigravity'?getConfig().profiles?.api:getConfig();
+    const saved=getConfig().connection?getConfig().profiles?.api:getConfig();
     const savedKey=Boolean(saved?.hasKey&&saved.baseUrl===endpoint());
     const keyStatus=$('#agent-key-status');if(keyStatus)keyStatus.textContent=savedKey?tr(saved.rememberKey?'密钥已载入，使用系统加密保存。':'密钥仅在本次运行有效，重启后需重新填写。'):tr('当前服务未载入密钥；切换接入方式不会清除另一种方式的配置。');
     $('#agent-provider-hint').textContent=preset?msg`${new URL(preset.baseUrl).host} · 填入密钥后自动获取模型。请使用该站点的 API 密钥；订阅或其他地区的密钥可能需要自定义地址。`:tr('保留自定义地址、模型与 API 协议；本机服务可不填密钥，也可点击“刷新模型”查询。');
@@ -50,10 +51,12 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
   }
   function resetModels(selected=''){lastFingerprint='';showModels([],selected);model.value=selected;}
   function fill(){
-    cancel();const active=getConfig(),config=active.connection==='antigravity'?(active.profiles?.api||{baseUrl:'https://api.openai.com/v1',provider:'openai',protocol:'chat',model:''}):active;
-    connection.value=active.connection==='antigravity'?'antigravity':'api';
+    cancel();const active=getConfig(),config=active.connection?(active.profiles?.api||{baseUrl:'https://api.openai.com/v1',provider:'openai',protocol:'chat',model:''}):active;
+    connection.value=active.connection||'api';
     const localConfig=active.connection==='antigravity'?active:active.profiles?.antigravity;
     $('#agent-client-path').value=localConfig?.clientPath||'';showLocalModels([],localConfig?.model||'');
+    const gemini=(active.connection==='local-gemini'?active:active.profiles?.['local-gemini']);
+    showGeminiModels([],gemini?.model);
     provider.value=providerForConfig(config);
     $('#agent-base-url').value=config.baseUrl;$('#agent-protocol').value=config.protocol||agentProvider(provider.value)?.protocol||'chat';
     key.value='';$('#agent-remember').checked=Boolean(config.rememberKey);
@@ -116,17 +119,29 @@ export function createAgentServiceSettings(panel,{getConfig,getBrowserKey,native
     if(selected&&![...field.options].some(o=>o.value===selected))field.append(new Option(selected,selected));
     field.value=selected;
   }
+  function showGeminiModels(models,selected='desktop-current'){
+    const field=$('#agent-gemini-model');
+    field.replaceChildren(new Option(tr('桌面端当前模型'),'desktop-current'));
+    for(const row of models)if(row.id!=='desktop-current')field.append(new Option(row.name,row.id));
+    if(selected&&![...field.options].some(o=>o.value===selected)){
+      let name=selected;
+      try{name=atob(selected.slice(7).replaceAll('-','+').replaceAll('_','/'));}catch{}
+      field.append(new Option(name,selected));
+    }
+    field.value=selected||'desktop-current';
+  }
   async function localAction(action){
     if(isBusy()||fetching)return;cancel();const turn=revision,stamp=JSON.stringify(localValue());fetching=true;sync();refresh.disabled=true;
-    status.textContent=tr(action==='test'?'正在通过反重力发送测试消息…':action==='open'?'正在启动反重力客户端…':'正在检测本地反重力客户端…');
+    status.textContent=tr(action==='test'?'正在通过桌面客户端发送测试消息…':action==='open'?'正在启动反重力客户端…':'正在检测本地桌面客户端…');
     try{
       if(!native?.agentDetectAntigravity)throw Error(tr('请使用新版 Materia 桌面版。'));
       const result=action==='choose'?await native.agentChooseAntigravity():action==='open'?await native.agentOpenAntigravity(localValue()):action==='test'?await native.agentTestAntigravity(localValue()):await native.agentDetectAntigravity(localValue());
       if(turn!==revision||!local()||stamp!==JSON.stringify(localValue()))return;
       if(!result){status.textContent='';return;}
-      if(result.clientPath)$('#agent-client-path').value=result.clientPath;
-      if(result.models)showLocalModels(result.models,$('#agent-client-model').value);
-      status.textContent=action==='test'?tr('测试对话通过，反重力账号可用。请保存设置后开始对话。'):result.message;
+      if(result.clientPath&&connection.value==='antigravity')$('#agent-client-path').value=result.clientPath;
+      if(result.models&&connection.value==='local-gemini')showGeminiModels(result.models,$('#agent-gemini-model').value);
+      if(result.models&&connection.value==='antigravity')showLocalModels(result.models,result.selectedModel??$('#agent-client-model').value);
+      status.textContent=action==='test'?tr('桌面客户端测试对话通过。请保存设置后开始对话。'):result.message;
     }catch(error){if(turn===revision)status.textContent=error.message||tr('本地反重力连接失败。');}
     finally{if(turn===revision){fetching=false;sync();}}
   }

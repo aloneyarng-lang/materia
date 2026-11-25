@@ -1,0 +1,984 @@
+{
+  "format": "materia-theme",
+  "schemaVersion": 2,
+  "name": "青冥",
+  "description": "天青极夜 · 浑仪星象",
+  "tokens": {
+    "--graph-node-shape": "symbol",
+    "--graph-relation-shape": "symbol",
+    "--graph-node-fill": "solid",
+    "--graph-edge-style": "curve",
+    "--graph-edge-dash": "solid",
+    "--graph-background": "symbol",
+    "--graph-color-mode": "accent",
+    "--graph-node-scale": "1.48",
+    "--graph-node-stroke": "1",
+    "--graph-edge-width": "1.05",
+    "--graph-edge-opacity": "0.36",
+    "--graph-label-scale": "1.02",
+    "--graph-label-halo": "3px",
+    "--graph-glow": "2px",
+    "--graph-edge-color": "auto",
+    "--graph-node-color": "auto",
+    "--graph-relation-color": "auto",
+    "--graph-label-color": "auto",
+    "--graph-star-density": "1",
+    "--graph-star-opacity": "0.55",
+    "--graph-star-color": "#cfe3ff",
+    "--graph-nebula-intensity": "0.5",
+    "--graph-nebula-color": "#6553ab",
+    "--graph-nebula-color-secondary": "#257c9b",
+    "--graph-orbit-scale": "1.65",
+    "--graph-orbit-tilt": "25",
+    "--graph-twinkle": "off",
+    "--graph-seed": "42",
+    "--paper": "#e9f2f2",
+    "--surface": "#fafefe",
+    "--canvas": "#e9f2f2",
+    "--panel": "#0b6b7014",
+    "--sidebar": "#e1ecec",
+    "--ink": "#112a2e",
+    "--muted": "#47666a",
+    "--line": "#18474c24",
+    "--teal": "#0b6b70",
+    "--teal-light": "#0b6b701a",
+    "--on-accent": "#ffffff",
+    "--brand-mark": "var(--teal)",
+    "--warning": "#916010",
+    "--warning-soft": "#faf0d8",
+    "--danger": "#b82d46",
+    "--danger-soft": "#fce7ec",
+    "--shadow": "#0d2b3020",
+    "--serif": "'Materia New York', 'Materia Source Han Sans', serif",
+    "--sans": "'Materia SF Pro', -apple-system, BlinkMacSystemFont, 'Materia Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--radius": "16px",
+    "--theme-mode": "light",
+    "--mono": "'Materia SF Mono', 'SF Mono', 'Materia Source Code Pro', Consolas, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--numeric": "'Materia SF Mono', 'SF Mono', 'Materia Source Code Pro', Consolas, 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Materia Source Han Sans', sans-serif",
+    "--font-size": "13px",
+    "--font-weight": "400",
+    "--line-height": "1.65",
+    "--heading-weight": "600",
+    "--heading-line-height": "1.4",
+    "--heading-scale": "1"
+  },
+  "graph": {
+    "nodeShape": "symbol",
+    "relationShape": "symbol",
+    "nodeFill": "solid",
+    "edgeStyle": "curve",
+    "edgeDash": "solid",
+    "background": "symbol",
+    "colorMode": "accent",
+    "nodeScale": 1.48,
+    "nodeStroke": 1,
+    "edgeWidth": 1.05,
+    "edgeOpacity": 0.36,
+    "labelScale": 1.02,
+    "labelHalo": 3,
+    "glow": 2,
+    "edgeColor": "auto",
+    "nodeColor": "auto",
+    "relationColor": "auto",
+    "labelColor": "auto",
+    "starDensity": 1,
+    "starOpacity": 0.55,
+    "starColor": "#cfe3ff",
+    "nebulaIntensity": 0.5,
+    "nebulaColor": "#6553ab",
+    "nebulaColorSecondary": "#257c9b",
+    "orbitScale": 1.65,
+    "orbitTilt": 25,
+    "twinkle": "off",
+    "seed": 42
+  },
+  "ui": {
+    "style": "glass",
+    "density": 1.04,
+    "radius": 16,
+    "buttonRadius": 18,
+    "cardRadius": 20,
+    "menuRadius": 18,
+    "borderWidth": 1,
+    "sidebarWidth": 224,
+    "controlHeight": 36,
+    "cardPadding": 18,
+    "menuPadding": 8,
+    "cardGap": 12,
+    "buttonStyle": "solid",
+    "cardStyle": "elevated",
+    "sidebarStyle": "tinted",
+    "shadow": "lifted"
+  },
+  "icons": {
+    "style": "rounded",
+    "strokeWidth": 1.5,
+    "size": 19,
+    "overrides": {
+      "assistant": [
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,2.6 19.6,7 19.6,17 12,21.4 4.4,17 4.4,7"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 7.2C12.3 10.1 13.9 11.7 16.8 12C13.9 12.3 12.3 13.9 12 16.8C11.7 13.9 10.1 12.3 7.2 12C10.1 11.7 11.7 10.1 12 7.2Z"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "orbit": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 8.8
+          }
+        },
+        {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "rx": 4.2,
+            "ry": 8.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3.8 14.8C7.6 16.6 16.4 13.4 20.2 9.2"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1.6,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "network": [
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,5.6 15.8,7.8 15.8,12.2 12,14.4 8.2,12.2 8.2,7.8"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 5,
+            "cy": 5,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 19.2,
+            "cy": 5.8,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 19.8,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M6.5 6.2L8.4 7.7M17.6 6.7L15.8 7.8M12 14.4V18"
+          }
+        }
+      ],
+      "star": [
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,2.4 14.4,7.8 20.2,7.2 16.8,12 20.2,16.8 14.4,16.2 12,21.6 9.6,16.2 3.8,16.8 7.2,12 3.8,7.2 9.6,7.8"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1.3,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "library": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 3.5,
+            "y": 3.8,
+            "width": 17,
+            "height": 16.4,
+            "rx": 3
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M9.2 3.8V20.2M12.8 8.6H17M12.8 12.4H17M12.8 16.2H15.5"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "6.4,8.6 7.8,10 6.4,11.4 5,10",
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "folder": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3 8.2A2.6 2.6 0 0 1 5.6 5.6H9.6L12 8H18.4A2.6 2.6 0 0 1 21 10.6V17.8A2.6 2.6 0 0 1 18.4 20.4H5.6A2.6 2.6 0 0 1 3 17.8Z"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "15.5,11.8 17.6,13 17.6,15.4 15.5,16.6 13.4,15.4 13.4,13"
+          }
+        }
+      ],
+      "chart": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 3,
+            "y": 3.5,
+            "width": 18,
+            "height": 17,
+            "rx": 3.5
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M6.6 16.2L10.2 12.2L13.4 14.2L17.4 8.4"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "17.4,6.7 19.1,8.4 17.4,10.1 15.7,8.4",
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "palette": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 9
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,8.4 15.1,10.2 15.1,13.8 12,15.6 8.9,13.8 8.9,10.2"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 3V5.8M12 18.2V21M3 12H5.8M18.2 12H21"
+          }
+        }
+      ],
+      "settings": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M4 6.5H20M4 12H20M4 17.5H20"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "9,4.5 11,6.5 9,8.5 7,6.5"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "15.2,10 17.2,12 15.2,14 13.2,12"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "10,15.5 12,17.5 10,19.5 8,17.5"
+          }
+        }
+      ],
+      "files": [
+        {
+          "tag": "rect",
+          "attrs": {
+            "x": 6.5,
+            "y": 3,
+            "width": 13.5,
+            "height": 18,
+            "rx": 2.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3.5 7V18.2A3 3 0 0 0 6.5 21.2M10.2 9H16.2M10.2 13H16.2M10.2 16.8H13.8"
+          }
+        }
+      ],
+      "tag": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M3.5 5.6A2.1 2.1 0 0 1 5.6 3.5H11.2L20.1 12.4A2 2 0 0 1 20.1 15.2L15.2 20.1A2 2 0 0 1 12.4 20.1L3.5 11.2Z"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "8.1,6.7 9.5,8.1 8.1,9.5 6.7,8.1",
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ],
+      "search": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 10.6,
+            "cy": 10.6,
+            "r": 6.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M15.6 15.6L20.6 20.6M10.6 7.4V8.8M10.6 12.4V13.8M7.4 10.6H8.8M12.4 10.6H13.8"
+          }
+        }
+      ],
+      "natural-layout": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M4.5 18C5.6 10.2 8.4 8.4 12 8.4C15.6 8.4 18 11.2 19.5 16.2"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 4.5,
+            "cy": 18,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,6.2 14,7.4 14,9.6 12,10.8 10,9.6 10,7.4"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 19.5,
+            "cy": 16.2,
+            "r": 1.8
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M18 3.2V7.2M16 5.2H20"
+          }
+        }
+      ],
+      "flask": [
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M9 3H15M10 3V9.4L4.8 18.2A1.8 1.8 0 0 0 6.4 21H17.6A1.8 1.8 0 0 0 19.2 18.2L14 9.4V3"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M7.6 15.2H16.4"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 17.8,
+            "r": 1,
+            "fill": "currentColor",
+            "stroke": "none"
+          }
+        }
+      ]
+    }
+  },
+  "assets": {
+    "fonts": [],
+    "graphSymbols": {
+      "node": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 10.9,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.55,
+            "opacity": 0.42
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 0.3V2.2M12 21.8V23.7M0.3 12H2.2M21.8 12H23.7",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.7,
+            "opacity": 0.78
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M20.82 6.49A10.4 3.6 -32 1 1 3.18 17.51A10.4 3.6 -32 1 1 20.82 6.49Z",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.65,
+            "opacity": 0.68
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,4.6 18.41,8.3 18.41,15.7 12,19.4 5.59,15.7 5.59,8.3",
+            "fill": "theme-paper",
+            "stroke": "none",
+            "fill-opacity": 0.94
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,5.3 17.8,8.65 17.8,15.35 12,18.7 6.2,15.35 6.2,8.65",
+            "fill": "theme-accent",
+            "stroke": "theme-accent",
+            "stroke-width": 0.5,
+            "fill-opacity": 0.92
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 5.3L12 12L17.8 15.35M12 12L6.2 15.35M12 7.9L15.55 9.95V14.05L12 16.1L8.45 14.05V9.95Z",
+            "fill": "none",
+            "stroke": "theme-paper",
+            "stroke-width": 0.48,
+            "opacity": 0.56
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 8.9C12.25 10.8 13.2 11.75 15.1 12C13.2 12.25 12.25 13.2 12 15.1C11.75 13.2 10.8 12.25 8.9 12C10.8 11.75 11.75 10.8 12 8.9Z",
+            "fill": "theme-paper",
+            "stroke": "none",
+            "fill-opacity": 0.96
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1.05,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 19.9,
+            "cy": 7.1,
+            "r": 1.05,
+            "fill": "theme-warning",
+            "stroke": "theme-paper",
+            "stroke-width": 0.35
+          }
+        }
+      ],
+      "relation": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 11.3,
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.5,
+            "opacity": 0.48
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 9.8,
+            "fill": "theme-paper",
+            "stroke": "theme-warning",
+            "stroke-width": 0.95,
+            "fill-opacity": 0.95
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 6.4,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.55,
+            "opacity": 0.48
+          }
+        },
+        {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "rx": 4.1,
+            "ry": 9.7,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.65,
+            "opacity": 0.68
+          }
+        },
+        {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "rx": 9.7,
+            "ry": 4.1,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.65,
+            "opacity": 0.68
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 2.2,
+            "r": 0.95,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 21.8,
+            "r": 0.95,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 2.2,
+            "cy": 12,
+            "r": 0.9,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 21.8,
+            "cy": 12,
+            "r": 0.9,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "polygon",
+          "attrs": {
+            "points": "12,8.4 15.6,12 12,15.6 8.4,12",
+            "fill": "theme-warning",
+            "stroke": "theme-paper",
+            "stroke-width": 0.5
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 1.1,
+            "fill": "theme-paper",
+            "stroke": "none"
+          }
+        }
+      ],
+      "background": [
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 11.4,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.06
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 10.6,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.028,
+            "opacity": 0.75
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 7.4,
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.042,
+            "opacity": 0.85
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 3.8,
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.032,
+            "opacity": 0.7
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M15.8 12H23.4M15.29 13.9L21.87 17.7M13.9 15.29L17.7 21.87M12 15.8V23.4M10.1 15.29L6.3 21.87M8.71 13.9L2.13 17.7M8.2 12H0.6M8.71 10.1L2.13 6.3M10.1 8.71L6.3 2.13M12 8.2V0.6M13.9 8.71L17.7 2.13M15.29 10.1L21.87 6.3",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.024,
+            "opacity": 0.55
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 0.2V1.6M12 22.4V23.8M0.2 12H1.6M22.4 12H23.8",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.05
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M21.34 6.39A10.9 5.8 -31 1 1 2.66 17.61A10.9 5.8 -31 1 1 21.34 6.39Z",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.045,
+            "opacity": 0.85
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 11.05L12.22 11.78L12.95 12L12.22 12.22L12 12.95L11.78 12.22L11.05 12L11.78 11.78Z",
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 12,
+            "cy": 12,
+            "r": 0.22,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M8.4 9.4L6.8 8.2L5.3 10.1L6.9 11.3Z M6.9 11.3L6.4 13.3L5.2 15.1L3.6 16.9",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.075
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 8.4,
+            "cy": 9.4,
+            "r": 0.38,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6.8,
+            "cy": 8.2,
+            "r": 0.32,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 5.3,
+            "cy": 10.1,
+            "r": 0.3,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6.9,
+            "cy": 11.3,
+            "r": 0.26,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 6.4,
+            "cy": 13.3,
+            "r": 0.36,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 5.2,
+            "cy": 15.1,
+            "r": 0.34,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 3.6,
+            "cy": 16.9,
+            "r": 0.36,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M16.6 12.8L17.6 14.4L16.4 15.8L17.9 17.1L16.5 18.8",
+            "fill": "none",
+            "stroke": "theme-warning",
+            "stroke-width": 0.07
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.6,
+            "cy": 12.8,
+            "r": 0.32,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 17.6,
+            "cy": 14.4,
+            "r": 0.36,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.4,
+            "cy": 15.8,
+            "r": 0.34,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 17.9,
+            "cy": 17.1,
+            "r": 0.3,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.5,
+            "cy": 18.8,
+            "r": 0.28,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "path",
+          "attrs": {
+            "d": "M12 12L13.2 10.7L14.2 9.4L15.2 8.1L16.6 7.6L16.1 6.2L14.7 6.8L15.2 8.1",
+            "fill": "none",
+            "stroke": "theme-accent",
+            "stroke-width": 0.055,
+            "opacity": 0.85
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.6,
+            "cy": 7.6,
+            "r": 0.34,
+            "fill": "theme-warning",
+            "stroke": "none"
+          }
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 16.1,
+            "cy": 6.2,
+            "r": 0.28,
+            "fill": "theme-accent",
+            "stroke": "none"
+          }
+        }
+      ]
+    }
+  },
+  "variants": {
+    "light": {
+      "--theme-mode": "light",
+      "--paper": "#e9f2f2",
+      "--surface": "#fafefe",
+      "--canvas": "#e9f2f2",
+      "--panel": "#0b6b7014",
+      "--sidebar": "#e1ecec",
+      "--ink": "#112a2e",
+      "--muted": "#47666a",
+      "--line": "#18474c24",
+      "--teal": "#0b6b70",
+      "--teal-light": "#0b6b701a",
+      "--on-accent": "#ffffff",
+      "--warning": "#916010",
+      "--warning-soft": "#faf0d8",
+      "--danger": "#b82d46",
+      "--danger-soft": "#fce7ec",
+      "--shadow": "#0d2b3020"
+    },
+    "dark": {
+      "--theme-mode": "dark",
+      "--paper": "#071316",
+      "--surface": "#102126",
+      "--canvas": "#071316",
+      "--panel": "#52e0d21c",
+      "--sidebar": "#0b1a1e",
+      "--ink": "#e8f7f6",
+      "--muted": "#8eb3b6",
+      "--line": "#a8ece624",
+      "--teal": "#52e0d2",
+      "--teal-light": "#42d1c329",
+      "--on-accent": "#062024",
+      "--warning": "#efc46e",
+      "--warning-soft": "#382e1a",
+      "--danger": "#ff8fa3",
+      "--danger-soft": "#421e28",
+      "--shadow": "#02080a66"
+    }
+  }
+}

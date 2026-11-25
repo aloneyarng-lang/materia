@@ -11,7 +11,7 @@ import {KURISU_ID,profileFor,recallCharacterMemory} from '../dist/agent-characte
 import {createCharacterCorpus,validateCharacterCorpus} from '../dist/agent-character-corpus.js';
 import {runResearchAgent} from '../dist/ai-agent-core.js';
 import {runCompanionTurn} from '../dist/agent-companion.js';
-import {dialogueHistory} from '../dist/agent-choices.js';
+import {dialogueChoices,dialogueHistory} from '../dist/agent-choices.js';
 
 const character=defaultCharacter();
 const other={name:'DeepSeek 娘',actorId:'deepseek',personality:'其他角色'};
@@ -49,7 +49,7 @@ test('Kurisu opens briefly without treating an earlier automatic monologue as a 
       }});
     assert.deepEqual(result.lines,['你好。','今天怎么样？']);
     assert.equal(result.recap,'');
-    assert.equal(result.choices,undefined);
+    assert.deepEqual(result.choices,dialogueChoices(undefined,'zh-CN'));
     assert.deepEqual(result.voice.segments.map(x=>x.speech),['こんにちは。','今日はどう？']);
   }
   assert.notEqual(topics[0],topics[1]);

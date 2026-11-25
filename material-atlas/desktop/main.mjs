@@ -1,10 +1,12 @@
-﻿import {CanvasFile} from './canvases.mjs';
+import {closeCliWorkers} from './antigravity-cli.mjs';
+import {CanvasFile} from './canvases.mjs';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage, protocol } from 'electron';
 import {createGoAnalysis} from './go-analysis.mjs';
 import {createStartup} from './startup.mjs';
 import {createLiteratureWorkbench} from './literature-workbench.mjs';
 import {WINDOWS_APP_ID, WINDOWS_APP_NAME, windowsAppDetails} from './windows-identity.mjs';
 import {NotesVault} from './notes-vault.mjs';
+import {captureQuickTipRegion} from './quick-tip-screenshot.mjs';
 import {DesktopModuleServices} from './module-services.mjs';
 import {DESKTOP_MODULES} from './modules/index.mjs';
 import {MachineLearningEngine} from './ml-engine.mjs';
@@ -14,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { prepareLibraryLocation,portableLibraryRoot } from './library-location.mjs';
 import { LocalLibrary } from './library.mjs';
 import { AgentSettings, completeWithProvider,testAgentConnection,listAgentModels } from './agent.mjs';
-import {AntigravityChatLinks,inspectAntigravity,findAntigravity,createAntigravityCompletion,antigravityVisionModel} from './agent-antigravity.mjs';
+import {AntigravityChatLinks,prepareAntigravity,inspectAntigravity,findAntigravity,createAntigravityCompletion,antigravityVisionModel} from './agent-antigravity.mjs';
 import { runResearchAgent } from '../dist/ai-agent-core.js';
 import { runCompanionTurn } from '../dist/agent-companion.js';
 import { AgentHistoryFile } from './agent-history.mjs';
@@ -46,7 +48,7 @@ async function studioServiceConfig() {
 }
 const literatureWorkbench = createLiteratureWorkbench(appRoot, profile,
   path.join(path.dirname(process.env.MATERIA_LIBRARY_DIR || portableLibraryRoot(appRoot,path.dirname(app.getPath('exe')))), 'AI 工作室库'),
-  {async checkService(vision, signal) {
+  {canvasStore: () => canvasStore, async checkService(vision, signal) {
     const config = await studioServiceConfig();
     if (vision && config.connection === 'antigravity') {
       return {...config, model:await antigravityVisionModel(config, {signal})};
@@ -64,6 +66,7 @@ const literatureWorkbench = createLiteratureWorkbench(appRoot, profile,
     return {answer:answer.trim(), model:model || config.model};
   }});
 app.on('will-quit', () => literatureWorkbench.close());
+app.on('will-quit', closeCliWorkers);
 app.setName(WINDOWS_APP_NAME);
 if (process.platform === 'win32') app.setAppUserModelId(WINDOWS_APP_ID);
 let mainWindow, library, agentHistory, canvasStore, moduleServices, startup;
@@ -105,6 +108,7 @@ async function start() {
       await agentSettings.save({provider:'custom',baseUrl:legacy.url,model:legacy.model,protocol:'chat'}).catch(()=>{});
     }
   }
+  void prepareAntigravity(agentSettings.config).catch(()=>{});
   await setLocale(config.locale,{persist:false});
   const savePreferences=patch=>{
     const operation=preferenceQueue.then(async()=>{
@@ -129,20 +133,27 @@ async function start() {
   if(config.libraryPath!==library.root)await savePreferences({libraryPath:library.root});
   mainWindow = new BrowserWindow({ show: false, width: 1440, height: 980, minWidth: 1000, minHeight: 700, title: t('Materia · 材料文献星图'), icon: path.join(appRoot, 'desktop', 'materia.ico'), backgroundColor: '#f7f7f2', autoHideMenuBar: true, webPreferences: { preload: path.join(appRoot, 'desktop', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true } });
   if (process.platform === 'win32') mainWindow.setAppDetails(windowsAppDetails(appRoot, process.execPath, app.isPackaged));
+  // Allow the hidden workspace to paint before the renderer signals startup readiness.
+  mainWindow.webContents.setBackgroundThrottling(false);
   let initialSyncTimer;
   const revealMain=()=>{
-    if(mainWindow.isDestroyed()||process.env.MATERIA_HEADLESS==='1')return;
-    mainWindow.show();mainWindow.focus();
+    if(mainWindow.isDestroyed())return;
+    if(process.env.MATERIA_HEADLESS!=='1')mainWindow.showInactive();
+    mainWindow.webContents.setBackgroundThrottling(true);
   };
   const finishStartup=()=>{
     clearTimeout(startupTimeout);
-    startup.finish(revealMain);
+    startup.finish(revealMain,()=>{
+      if(!mainWindow.isDestroyed()&&process.env.MATERIA_HEADLESS!=='1')mainWindow.focus();
+    });
     initialSyncTimer??=setTimeout(enableFolderSync,1500);
   };
-  // Reveal initialization errors too, rather than trapping the user behind a loader.
-  const startupTimeout=setTimeout(finishStartup,15000);
+  const startupTimeout=setTimeout(()=>{
+    startup.close();
+    if(process.env.MATERIA_HEADLESS!=='1')dialog.showErrorBox('Materia', t('工作区初始化超时，请重新启动 Materia。'));
+    app.quit();
+  },60000);
   mainWindow.once('closed',()=>{clearTimeout(startupTimeout);clearTimeout(initialSyncTimer);clearInterval(folderSyncInterval);startup.close();});
-  mainWindow.webContents.once('did-fail-load',finishStartup);
   const workspaceFile=path.join(appRoot,'dist','index.html');
   let lastRecovery=0;
   mainWindow.webContents.on('render-process-gone',(_event,details)=>{
@@ -172,6 +183,9 @@ async function start() {
   handle('canvas:get',async()=>{const store=canvasStore;return{libraryKey:store.root,state:await store.load()};});
   handle('flow-go:analyze', actions => goAnalysis.analyze(actions));
   handle('notes-vault:append-tip',entry=>notesVault.appendTip(entry));
+  handle('quick-tip:screenshot',()=>captureQuickTipRegion(mainWindow,appRoot,{
+    guide:t('拖动鼠标框选截图区域，按 Esc 取消。'),confirm:t('确定'),cancel:t('取消'),
+  }));
   handle('notes-vault:list',()=>notesVault.list());
   handle('notes-vault:save',payload=>notesVault.save(payload));
   handle('notes-vault:image',({note,reference})=>notesVault.image(note,reference));
@@ -179,7 +193,13 @@ async function start() {
     const result=await shell.openPath(await notesVault.directory([],true));
     if(result)throw Error(result);
   });
-  handle('startup:ready',()=>{finishStartup();return true;});
+  handle('startup:ready',({background,mode}={})=>{
+    if(!initialSyncTimer){
+      const color=/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(background)?background:mode==='dark'?'#17191d':'#f7f7f2';
+      mainWindow.setBackgroundColor(color);
+    }
+    finishStartup();return true;
+  });
   handle('literature-workbench:open', literatureWorkbench.open);
   moduleServices.register(handle);
   let figura;
@@ -295,7 +315,7 @@ async function start() {
     if (!['https:','http:'].includes(url.protocol)) throw new Error('只支持网页链接。');
     await shell.openExternal(url.href);
   });
-  handle('agent:save-config', async value => {if(value?.connection==='antigravity'){const checked=await inspectAntigravity(value);if(value.model&&!checked.models.some(model=>model.id===value.model))throw Error('所选反重力模型已不可用，请重新检测并选择。');value={...value,clientPath:checked.clientPath};}await agentSettings.save(value);return publicAgentConfig();});
+  handle('agent:save-config', async value => {if(['antigravity','local-gemini'].includes(value?.connection)){const checked=await inspectAntigravity(value);value={...value,model:checked.selectedModel??value.model};if(value.model&&!checked.models.some(model=>model.id===value.model))throw Error('所选反重力模型已不可用，请重新检测并选择。');value={...value,clientPath:checked.clientPath};}await agentSettings.save(value);void prepareAntigravity(value).catch(()=>{});return publicAgentConfig();});
   handle('agent:detect-antigravity',async value=>{
     modelDiscovery?.abort();const controller=new AbortController();modelDiscovery=controller;
     try{return await inspectAntigravity(value||{},{signal:controller.signal});}
@@ -308,7 +328,7 @@ async function start() {
   handle('agent:open-antigravity',async value=>{const clientPath=await findAntigravity(value?.clientPath);const error=await shell.openPath(clientPath);if(error)throw Error('反重力未能启动，请手动打开。');return{clientPath,message:'已启动反重力，请完成登录后点击“检测客户端”。'};});
   handle('agent:test-antigravity',async value=>{
     if(connectionTest)throw Error('正在检测连接，请稍候。');const controller=new AbortController();connectionTest=controller;
-    try{const result=await completeWithProvider({...value,connection:'antigravity'},{messages:[{role:'system',content:'仅回答“连接成功”，不使用工具。'},{role:'user',content:'测试连接'}],signal:controller.signal});return{ok:true,message:result.content};}
+    try{const result=await completeWithProvider({...value,connection:value?.connection==='local-gemini'?'local-gemini':'antigravity'},{messages:[{role:'system',content:'仅回答“连接成功”，不使用工具。'},{role:'user',content:'测试连接'}],signal:controller.signal});return{ok:true,message:result.content};}
     finally{if(connectionTest===controller)connectionTest=null;}
   });
   handle('agent:test-connection',async value=>{
@@ -341,17 +361,17 @@ async function start() {
       const localMemory=hasCharacterMemory(payload.character);
       if (payload.companion) {
         const complete = config.connection === 'antigravity'
-          ? createAntigravityCompletion(config,localMemory?{}:{...await antigravityChats.forChat(library.root,payload.chatId+'-auto',config,null),fullContext:true})
+          ? createAntigravityCompletion(config,{...(localMemory?{}:await antigravityChats.forChat(library.root,payload.chatId+'-auto',config,null)),chatKey:payload.chatId?JSON.stringify(['companion',library.root,payload.chatId,payload.character?.id]):undefined,fullContext:true})
           : input => completeWithProvider(config,input);
         return await runCompanionTurn({...payload,complete,signal:runSignal,findCanon:browseDesktopCorpus});
       }
       const context = { papers: structuredClone(library.getPapers()), notes: structuredClone(library.getSetting('notes') || {}), scopeIds: payload.scopeIds ?? null };
       const complete=config.connection==='antigravity'
-        ? createAntigravityCompletion(config,localMemory?{}:{...await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds),fullContext:payload.companionContext===true})
+        ? createAntigravityCompletion(config,{...(localMemory?{}:await antigravityChats.forChat(library.root,payload.chatId,config,context.scopeIds)),chatKey:payload.chatId?JSON.stringify([library.root,payload.chatId,context.scopeIds,payload.character?.id]):undefined,fullContext:payload.companionContext===true,onPreview:text=>{if(!mainWindow.isDestroyed())mainWindow.webContents.send('agent:progress',{id:payload.id,stage:'answer',text});}})
         : input=>completeWithProvider(config,input);
       return await runResearchAgent({ question: payload.question, character:payload.character, history: payload.history, context,
         signal: runSignal, companionContext:payload.companionContext===true, kurisuContext:payload.kurisuContext,findCanon:browseDesktopCorpus, voiceLanguage:payload.voiceLanguage, draftNote:payload.draftNote===true,
-        complete,
+        offerChoice:payload.offerChoice===true, complete,
         onProgress: progress => { if (!mainWindow.isDestroyed()) mainWindow.webContents.send('agent:progress', { id: payload.id, ...progress }); },
       });
     } catch (error) {
@@ -423,5 +443,6 @@ async function start() {
       })().catch(()=>{});
     }
   });
-  await mainWindow.loadFile(workspaceFile);
+  try { await mainWindow.loadFile(workspaceFile); }
+  catch(error){clearTimeout(startupTimeout);startup.close();throw error;}
 }

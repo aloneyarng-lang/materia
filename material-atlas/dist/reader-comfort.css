@@ -1,12 +1,16 @@
 /* Stable paper geometry and comfortable controls, using the active theme. */
 html:has(.pdf-reader[open]){overflow:hidden}
 .pdf-reader.reader-v2[open]{display:flex;flex-direction:column}
-.reader-v2 .reader-header{height:60px;flex:0 0 auto;padding:10px 18px}
-.reader-v2 .reader-header h2{font-size:1rem;line-height:1.5}
-.reader-v2 .reader-toolbar{flex:0 0 auto;min-height:54px;height:auto;padding:8px 14px;row-gap:8px}
+.reader-v2 .reader-header{height:44px;flex:0 0 auto;padding:6px 16px}
+.reader-v2 .reader-header h2{font-size:.9375rem;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reader-v2 .reader-toolbar{flex:0 0 auto;min-height:40px;height:auto;padding:5px 14px;row-gap:6px}
 .reader-v2 .reader-workspace{flex:1;min-height:0;height:auto}
 .reader-v2 .reader-document{background:color-mix(in srgb,var(--surface) 93%,var(--ink))}
-.reader-v2 .reader-toolbar button,.reader-v2 .reader-toolbar select{font-size:.75rem;min-height:34px}
+html[data-theme-mode=dark] .reader-v2 .reader-document{background:#16171a}
+html[data-theme-mode=dark] .reader-v2 .reader-page{box-shadow:0 2px 6px #00000055,0 14px 36px #00000045}
+.reader-v2[data-reader-comfort=dim] .reader-page canvas{filter:brightness(.9) sepia(.08) contrast(.96)}
+.reader-v2[data-reader-comfort=invert] .reader-page canvas{filter:invert(.88) hue-rotate(180deg) contrast(.94)}
+.reader-v2 .reader-toolbar button,.reader-v2 .reader-toolbar select{font-size:.75rem;min-height:30px}
 .reader-v2 .reader-mode button[data-reader-mode=read]{font-size:.75rem}
 .reader-v2 .reader-mode button[data-reader-mode=read]:after{display:none}
 .reader-v2 .reader-mode{flex-wrap:wrap}

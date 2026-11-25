@@ -61,7 +61,8 @@ export class LocalLibrary {
     const metrics = seedJournalMetrics(this.data.settings.journalMetrics || []);
     if (JSON.stringify(metrics) !== JSON.stringify(this.data.settings.journalMetrics)) { this.data.settings.journalMetrics = metrics; await this.save(this.data); }
     if(this.data.settings.translationPreferences?.instant===true){this.data.settings.translationPreferences=cleanTranslationPreferences(this.data.settings.translationPreferences);await this.save(this.data);}
-    if(deferFolderSync&&this.data.settings.folderSync&&this.data.settings.importActivity)return this;
+    // An empty snapshot may have papers on disk that have not been indexed yet.
+    if(deferFolderSync&&this.data.papers.length&&this.data.settings.folderSync&&this.data.settings.importActivity)return this;
     const next=structuredClone(this.data);
     next.settings.importActivity ||= seedImportActivity(next.papers);
     // The first upgrade exports the existing memberships before reading physical folders.

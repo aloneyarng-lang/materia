@@ -1,10 +1,12 @@
-import {askWindow} from './antigravity-window.mjs';
+import {askWindow,windowModels} from './antigravity-window.mjs';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {access,mkdir,readFile,rename,unlink,writeFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
 import https from 'node:https';
 import path from 'node:path';
+import os from 'node:os';
+import {acpModels,findAgyBinary,prepareCli,runCliTurn} from './antigravity-cli.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const links=new Map();
@@ -49,6 +51,11 @@ export class AntigravityChatLinks {
 // The desktop client owns login. Its ephemeral local CSRF token stays in memory;
 // no OAuth tokens, account databases or API keys are read or persisted here.
 export function cleanAntigravityConfig(value={}){
+  if(value.connection==='local-gemini'){
+    const model=String(value.model||'desktop-current');
+    if(model!=='desktop-current'&&!/^window-[a-zA-Z0-9_-]{1,180}$/.test(model))throw Error('Gemini 模型 ID 无效。');
+    return {connection:'local-gemini',provider:'local-gemini',protocol:'local-gemini',baseUrl:'',apiKey:'',rememberKey:false,model,clientPath:'local-gemini'};
+  }
   const clientPath=String(value.clientPath||'').trim(),model=String(value.model||'').trim();
   if(clientPath.length>2000||/[\r\n\0]/.test(clientPath)||clientPath&&(!path.isAbsolute(clientPath)||!/^Antigravity\.exe$/i.test(path.basename(clientPath))))throw Error('请选择反重力桌面客户端的 Antigravity.exe。');
   if(model.length>200||model&&!/^[a-z\d][a-z\d._:/+@~-]*$/i.test(model))throw Error('反重力模型 ID 无效，请重新检测客户端并选择模型。');
@@ -60,7 +67,7 @@ export async function findAntigravity(explicit='',env=process.env){
   for(const file of candidates)try{await access(file);return file;}catch{}
   throw Error('未找到反重力客户端，请点击“选择程序”指定 Antigravity.exe。');
 }
-const processQuery=`$items=@();Get-CimInstance Win32_Process -Filter "Name = 'language_server.exe'" -ErrorAction Stop | ForEach-Object { $p=$_; if($p.CommandLine -match '--override_ide_name[= ]+antigravity') { $m=[regex]::Match($p.CommandLine,'--csrf_token[= ]+([^ "]+)'); if($m.Success) { $ports=@(Get-NetTCPConnection -OwningProcess $p.ProcessId -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LocalPort -Unique);$items+=@{pid=$p.ProcessId;token=$m.Groups[1].Value;ports=$ports;binary=$p.ExecutablePath} } elseif($p.CommandLine -match '--read_host_bridge_token_from_stdin(?:\s|$)') { $items+=@{hostBridge=$true;binary=$p.ExecutablePath} } } };ConvertTo-Json -InputObject @($items) -Compress`;
+const processQuery=String.raw`$items=@();Get-CimInstance Win32_Process -Filter "Name = 'language_server.exe'" -ErrorAction Stop | ForEach-Object { $p=$_; if($p.CommandLine -match '--override_ide_name[= ]+antigravity') { $m=[regex]::Match($p.CommandLine,'--csrf_token[= ]+([^ "]+)'); if($m.Success) { $ports=@(Get-NetTCPConnection -OwningProcess $p.ProcessId -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty LocalPort -Unique);$items+=@{pid=$p.ProcessId;token=$m.Groups[1].Value;ports=$ports;binary=$p.ExecutablePath} } elseif($p.CommandLine -match '--read_host_bridge_token_from_stdin(?:\s|$)') { $items+=@{hostBridge=$true;binary=$p.ExecutablePath} } } };ConvertTo-Json -InputObject @($items) -Compress`;
 export async function discoverAntigravity({signal,clientPath,exec=promisify(execFile)}={}){
   signal?.throwIfAborted();if(process.platform!=='win32')throw Error('当前桌面客户端直连暂支持 Windows。');
   let rows;
@@ -70,7 +77,7 @@ export async function discoverAntigravity({signal,clientPath,exec=promisify(exec
   const matching=rows.filter(row=>typeof row.binary==='string'&&(!clientPath||
     path.resolve(path.dirname(row.binary),'../..','Antigravity.exe').toLowerCase()===path.resolve(clientPath).toLowerCase()));
   if(matching.length&&matching.every(row=>row.hostBridge===true)){
-    return [{window:true,clientPath:path.resolve(path.dirname(matching[0].binary),'../..','Antigravity.exe')}];
+    return [{hostBridge:true,clientPath:path.resolve(path.dirname(matching[0].binary),'../..','Antigravity.exe')}];
   }
   return matching.flatMap(row=>Number.isInteger(row.pid)&&typeof row.token==='string'&&/^[a-z\d-]{16,150}$/i.test(row.token)&&typeof row.binary==='string'?(row.ports||[]).filter(p=>Number.isInteger(p)&&p>0&&p<65536).map(port=>({port,token:row.token,pid:row.pid,clientPath:path.resolve(path.dirname(row.binary),'../..','Antigravity.exe')})):[]);
 }
@@ -107,14 +114,62 @@ export function antigravityModels(status){
     supportsPng:row.supportedMimeTypes?.['image/png'] ?? (row.supportsImages === true),
   }));
 }
+async function cliConnection(config,signal,{refresh=false}={}){
+  const binary=findAgyBinary();
+  if(!binary)return null;
+  let info;
+  try{
+    info=await acpModels(binary,signal,{refresh});
+  }catch(error){
+    signal?.throwIfAborted();
+    throw Error(error?.message||'反重力后台无法读取模型。请检查网络，并在终端运行 agy 完成首次登录。');
+  }
+  if(!info)return null;
+  const clientPath=config.clientPath||await findAntigravity('',process.env).catch(()=>'');
+  return {connection:{cli:binary,acp:true,imageSupported:info.imageSupported,clientPath},models:info.models};
+}
+
+async function askCli(binary,messages,tools,model,jsonOutput,signal,onPreview,chatKey,imageSupported=false){
+  const {media,textMessages}=separateAttachments(messages);
+  if(media.length&&!imageSupported)throw Error('当前反重力后台通道仅支持文本，请为图解选择支持图片的服务。');
+  const format=jsonOutput?'按消息要求输出 JSON。':'只输出 {"content":"回答","tool_calls":[]}。调用 Materia 工具时，每项包含 id、name 和 JSON 字符串 arguments。';
+  const input=format+' 仅依据所给消息回答，禁止使用 CLI 工具。\n'+JSON.stringify({messages:textMessages,tools});
+  if(Buffer.byteLength(input)>800000)throw Error('上下文过大，请新建对话或缩小文献范围。');
+  // Reuse only an exact retained prefix, including system instructions and tool definitions.
+  const digest=rows=>createHash('sha256').update(JSON.stringify([tools,rows])).digest('hex');
+  const context=chatKey&&!jsonOutput?{
+    key:chatKey,count:textMessages.length+1,
+    digestWithReply:raw=>{
+      const reply=readAntigravityReply(raw,tools);
+      const assistant={role:'assistant',content:reply.content};
+      if(reply.tool_calls.length){assistant.content||=null;assistant.tool_calls=reply.tool_calls;}
+      return digest([...textMessages,assistant]);
+    },
+    prefixMatches:(count,hash)=>textMessages.length>count&&digest(textMessages.slice(0,count))===hash,
+    continuation:count=>format+' 继续当前对话，以下为 Materia 的后续消息。\n'+JSON.stringify(textMessages.slice(count))
+  }:null;
+  return runCliTurn(binary,model,input,signal,onPreview,context,media);
+}
+
 async function connect(value,options={}){
+  if(value.connection==='local-gemini')return {connection:{window:true,clientPath:'local-gemini'},models:[{id:'desktop-current',name:'Gemini 桌面端当前模型'}]};
   const config=cleanAntigravityConfig(value),rpc=options.rpc||antigravityRPC;
-  const cacheable=!options.rpc&&!options.discover;
-  const key=config.clientPath.toLowerCase(),cached=cacheable?links.get(key):null;
+  const cacheable=!options.rpc&&!options.discover&&!options.cliConnection;
+  const key=(config.clientPath||'antigravity-acp').toLowerCase(),cached=cacheable?links.get(key):null;
   if(!options.refresh&&cached&&Date.now()<cached.until)return cached;
-  const rows=await(options.discover||discoverAntigravity)({...options,clientPath:config.clientPath});
-  const candidates=rows.filter(row=>!config.clientPath||path.resolve(row.clientPath).toLowerCase()===path.resolve(config.clientPath).toLowerCase());
-  if(candidates[0]?.window)return {connection:candidates[0],models:[{id:'desktop-current',name:'桌面端当前模型',remaining:null,supportsPng:false}]};
+  if(cacheable){
+    const linked=await cliConnection(config,options.signal,{refresh:options.refresh});
+    if(linked){
+      linked.until=Date.now()+30*60*1000;
+      links.set(key,linked);
+      if(linked.connection.clientPath)links.set(linked.connection.clientPath.toLowerCase(),linked);
+      return linked;
+    }
+  }
+  let rows=[],discoveryError;
+  try{rows=await(options.discover||discoverAntigravity)({...options,clientPath:config.clientPath});}
+  catch(error){options.signal?.throwIfAborted();discoveryError=error;}
+  const candidates=rows.filter(row=>row.port&&(!config.clientPath||path.resolve(row.clientPath).toLowerCase()===path.resolve(config.clientPath).toLowerCase()));
   const probes=new AbortController(),signal=AbortSignal.any([probes.signal,...(options.signal?[options.signal]:[])]);
   try{
     const linked=await Promise.any(candidates.map(async connection=>{
@@ -128,6 +183,15 @@ async function connect(value,options={}){
     return linked;
   }catch(error){
     options.signal?.throwIfAborted();
+    if(options.cliConnection){
+      const linked=await options.cliConnection(config,options.signal);
+      if(linked){
+        linked.until=Date.now()+5*60*1000;
+        return linked;
+      }
+    }
+    if(rows.some(row=>row.hostBridge))throw Error('此版本反重力需要安装并登录官方 agy CLI 才能后台连接。');
+    if(discoveryError)throw discoveryError;
     const loggedOut=error.errors?.find(item=>/尚未提供/.test(item.message));
     if(loggedOut)throw loggedOut;
     throw Error('未连接到运行中的反重力客户端。请先打开并登录反重力，再点击“检测客户端”。');
@@ -135,14 +199,34 @@ async function connect(value,options={}){
     probes.abort();
   }
 }
-export async function inspectAntigravity(value={},options={}){
-  const {connection,models}=await connect(value,{...options,refresh:true});
-  return{ok:true,clientPath:connection.clientPath,models:models.map(({selector,supportsPng,...row})=>row),message:connection.window?'已检测到反重力桌面端，测试对话可验证窗口收发。':'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
+function backgroundModelId(id,models){
+  if(!id||id==='desktop-current')return '';
+  if(!id.startsWith('window-'))return id;
+  const normalize=name=>name.toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+  const name=normalize(Buffer.from(id.slice(7),'base64url').toString());
+  return models.find(model=>normalize(model.name)===name)?.id??id;
 }
 
+export async function prepareAntigravity(config){
+  if(config?.connection!=='antigravity')return;
+  const {connection,models}=await connect(config,{signal:AbortSignal.timeout(30000)});
+  if(connection.cli){
+    const selected=selectModel(models,backgroundModelId(config.model,models),false);
+    await prepareCli(connection.cli,selected.id);
+  }
+}
+
+export async function inspectAntigravity(value={},options={}){
+  const {connection,models}=await connect(value,{...options,refresh:true});
+  const available=connection.window?await windowModels(connection.clientPath,options.signal||AbortSignal.timeout(20000)):models;
+  return{ok:true,...(connection.cli?{selectedModel:backgroundModelId(value.model,models)}:{}),clientPath:connection.clientPath,models:available.map(({selector,supportsPng,...row})=>row),message:value.connection==='local-gemini'?'已检测到 Gemini 桌面客户端。':connection.cli?'已读取反重力后台模型。可用“测试对话”验证收发。':'已连接反重力桌面客户端，模型列表与额度已读取。使用现有客户端账号，无需 API 密钥。'};
+}
+
+const FAST_DEFAULTS=['gemini-3.8-flash-low','gemini-3.8-flash-medium','gemini-4-neon-low','gemini-4-argon-low'];
 function selectModel(models, id, vision){
   const eligible=vision?models.filter(model=>model.supportsPng):models;
-  const selected=id?models.find(model=>model.id===id):eligible.find(model=>model.remaining!==0)||eligible[0];
+  const preferred=!id&&FAST_DEFAULTS.map(fid=>eligible.find(model=>model.remaining!==0&&model.id===fid)).find(Boolean);
+  const selected=id?models.find(model=>model.id===id):preferred||eligible.find(model=>model.remaining!==0)||eligible[0];
   if(id&&!selected)throw Error('所选反重力模型已不可用，请重新检测并选择模型。');
   if(vision&&!selected?.supportsPng)throw Error('图解需要支持图片的反重力模型。请在「设置 → AI 服务」重新检测客户端并选择支持识图的模型。');
   if(selected.remaining===0)throw Error('所选反重力模型的额度已用完，请更换模型或等待额度恢复。');
@@ -152,7 +236,7 @@ function selectModel(models, id, vision){
 export async function antigravityVisionModel(value, options={}){
   const config=cleanAntigravityConfig(value);
   const {models}=await connect(config,options);
-  return selectModel(models,config.model,true).id;
+  return selectModel(models,backgroundModelId(config.model,models),true).id;
 }
 
 function separateAttachments(messages){
@@ -187,6 +271,7 @@ export function readAntigravityReply(text,tools=[]){
 }
 export function createAntigravityCompletion(value,options={}){
   const config=cleanAntigravityConfig(value);
+  const localChatKey=options.chatKey||(!options.askCli?'turn-'+randomUUID():undefined);
   let session,stepOffset=0,sentCount=0,attached=false;
   return async({messages,tools=[],signal})=>{
     const combined=AbortSignal.any([...(signal?[signal]:[]),AbortSignal.timeout(options.timeout||120000)]);
@@ -195,9 +280,15 @@ export function createAntigravityCompletion(value,options={}){
       let linked,id;
       if(!session){
         linked=await connect(config,{...options,signal:combined});
+        if(linked.connection.cli){
+          const hasMedia=messages.some(m=>Array.isArray(m?.content)&&m.content.some(p=>p?.type==='image_url'));
+          const selected=selectModel(linked.models,backgroundModelId(config.model,linked.models),hasMedia);
+          const response=await (options.askCli?options.askCli(linked.connection.cli,messages,tools,selected.id,options.jsonOutput,combined,options.onPreview,options.chatKey):askCli(linked.connection.cli,messages,tools,selected.id,options.jsonOutput,combined,options.onPreview,localChatKey,Boolean(linked.connection.imageSupported)));
+          return {...(options.jsonOutput?{content:response}:readAntigravityReply(response,tools)),model:selected.id};
+        }
         if(linked.connection.window){
-          const response=await askWindow(linked.connection.clientPath,messages,tools,options.jsonOutput,combined);
-          return {...(options.jsonOutput?{content:response}:readAntigravityReply(response,tools)),model:'desktop-current'};
+          const response=await askWindow(linked.connection.clientPath,messages,tools,options.jsonOutput,combined,config.model.startsWith('window-')?Buffer.from(config.model.slice(7),'base64url').toString():'');
+          return {...(options.jsonOutput?{content:response}:readAntigravityReply(response,tools)),model:config.model||'desktop-current'};
         }
         id=options.previousId;
         if(id){
@@ -265,7 +356,7 @@ export function createAntigravityCompletion(value,options={}){
     }catch(error){
       if(error.code==='stale_connection'){links.clear();}
       if(signal?.aborted)throw new DOMException('已停止生成。','AbortError');
-      if(combined.aborted)throw Error('反重力本次响应超时，请在客户端检查模型和额度后重试。');
+      if(combined.aborted)throw Error('本地客户端响应超时，请检查客户端中的生成状态后重试。');
       throw error;
     }
     finally{if(waiting&&session)await session.rpc(session.connection,'CancelCascadeInvocation',{cascadeId:session.id},AbortSignal.timeout(3000)).catch(()=>{});}

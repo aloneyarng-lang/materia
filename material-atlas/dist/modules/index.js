@@ -10,8 +10,10 @@ export const WORKSPACE_MODULES = [
   {id:'materials',label:'材料',title:'材料列表',icon:'library',panelId:'material-list',navigation:'ribbon',create:context=>context.builtin('materials')},
   {id:'notes',label:'笔记',title:'研究笔记',icon:'notebook',panelId:'notes-library',navigation:'ribbon',libraryView:true,create:context=>context.builtin('notes')},
   predictionModule,
-  {id:'research',label:'研究',title:'研究',icon:'files',panelId:'research-workspace',navigation:'ribbon',create:({setCount})=>({render:()=>setCount('')})},
-  {...literatureWorkbenchModule,parentView:'research'},
+  {id:'research',label:'研读',title:'研读',icon:'files',panelId:'research-workspace',navigation:'ribbon',create:({setCount})=>({render:()=>setCount('')})},
+  ...[['literature-workbench','逐图研读'], ['takeaway-card','速记卡'], ['paper-canvas','研究画布']].map(([id,label]) => ({
+    ...literatureWorkbenchModule, id, label, title:label, panelId:id, parentView:'research',
+  })),
   ...timelineModules,
   figuraModule,
   betaModule,

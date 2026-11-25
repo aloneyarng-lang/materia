@@ -1,0 +1,49 @@
+.screenshot-selection {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  background: #192026;
+  color: #fff;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+.screenshot-selection :is(img,canvas) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.screenshot-toolbar, .screenshot-confirmation {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #202b36;
+  color: #fff;
+  font: 14px system-ui, sans-serif;
+  cursor: default;
+}
+.screenshot-toolbar { top: 18px; left: 50%; transform: translateX(-50%); }
+.screenshot-toolbar[hidden], .screenshot-confirmation[hidden] { display: none; }
+.screenshot-selection button { color: #fff; background: #394959; border: 0; border-radius: 5px; padding: 5px 9px; cursor: pointer; }
+.screenshot-confirmation { gap: 6px; padding: 6px; }
+.screenshot-confirmation button:last-child { color: #15242a; background: #5cf1d4; }
+.screenshot-rectangle {
+  position: absolute;
+  outline: 2px solid #5cf1d4;
+  box-shadow: 0 0 0 200vmax #1019228f;
+  pointer-events: none;
+}

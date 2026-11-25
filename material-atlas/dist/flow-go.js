@@ -1,7 +1,9 @@
-import {html,msg,t} from './i18n.js';
+import {reportAchievement} from './flow-achievements.js';
+import {getLocale,html,msg,t} from './i18n.js';
 import {icon} from './icons.js';
 import {SIZE,POINTS,BLACK,WHITE,files,coordinate,createGoGame,groupAt} from './flow-go-rules.js';
 import {agreesWithDeadStones} from './flow-go-engine.js';
+import {createGoCommentary,selectGoSpeech} from './flow-go-commentary.js';
 
 const storageKey = 'materia.flow.go';
 const ruleErrors = {occupied:'此处已有棋子。',suicide:'此处是禁入点，落子后无气。',ko:'此手会使同一方即将行棋的局面重复。'};
@@ -104,7 +106,7 @@ function drawSignal(canvas, moves) {
   ctx.shadowBlur = 0;
 }
 
-export function createFlowGo(panel) {
+export function createFlowGo(panel, options = {}) {
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
   stylesheet.href = new URL('./flow-go.css',import.meta.url).href;
@@ -157,8 +159,14 @@ export function createFlowGo(panel) {
           <div class="go-readout">
             <p data-go="status" role="status" aria-live="polite"></p>
             <p data-go="notice" role="status" aria-live="polite"></p>
+            <div class="go-commentary-box" data-go="commentary-box" hidden>
+              <span class="go-commentary-tag">KURISU</span>
+              <p data-go="commentary" role="status" aria-live="polite"></p>
+              <button type="button" class="go-commentary-replay" data-go="commentary-replay" aria-label="重听红莉栖吐槽" title="重听">▶</button>
+            </div>
             <div class="go-review-options">
               <label><input type="checkbox" data-go="recommend"> 推荐落点</label>
+              <label><input type="checkbox" data-go="voice"> 红莉栖语音吐槽</label>
               <label><span>历史棋局</span><select data-go="archive"></select></label>
             </div>
             <div data-go="replay-tools" class="go-replay" hidden>
@@ -217,6 +225,7 @@ export function createFlowGo(panel) {
     Number.isFinite(record?.date) && Math.abs(record.date) <= 8.64e15 &&
     Array.isArray(record.actions) && record.actions.length <= 5000) : [];
   let recommend = saved?.recommend !== false;
+  let voiceEnabled = saved?.voiceEnabled !== false;
   let replay = null;
   let gameDate = Number.isFinite(saved?.gameDate) && Math.abs(saved.gameDate) <= 8.64e15 ? saved.gameDate : Date.now();
   const dateFormat = new Intl.DateTimeFormat(undefined, {dateStyle:'short',timeStyle:'short'});
@@ -224,10 +233,28 @@ export function createFlowGo(panel) {
   let winRate = null;
   let focused = center, analysis, hints = [], analyzing = false, analysisFailed = false, confirmation = '';
   let marked = new Set(), notice = '', mail = '';
+  const commentary = createGoCommentary();
+  let lastRemark = null, lastBlackWinRate = null, lastBlackHints = [], pendingBlackMove = null, hasGreeted = false;
 
+  function deliverRemark(picked, { manual = false } = {}) {
+    if (!picked?.entry || replay || !dialog.open) return;
+    const state = options.getVoiceState?.() || { available: false, enabled: true, language: 'follow' };
+    const spoken = selectGoSpeech(picked.entry, state.language || 'follow', getLocale());
+    lastRemark = { entry: picked.entry, ...spoken };
+    render();
+    if (options.speakCommentary && (manual || voiceEnabled)) {
+      void options.speakCommentary({ ...spoken, manual }).catch(() => {});
+    }
+  }
+
+  let countedDate = game.state.phase === 'finished' ? gameDate : null;
   function persist(actions = game.history, archive = records, date = gameDate) {
+    if (actions === game.history && game.state.phase === 'finished' && countedDate !== gameDate) {
+      countedDate = gameDate;
+      reportAchievement('flowGamesFinished', 1, 'add');
+    }
     try {
-      localStorage.setItem(storageKey,JSON.stringify({actions,records:archive,recommend,gameDate:date}));
+      localStorage.setItem(storageKey,JSON.stringify({actions,records:archive,recommend,voiceEnabled,gameDate:date}));
       return true;
     } catch {
       notice = t('保存棋局失败。');
@@ -350,6 +377,9 @@ export function createFlowGo(panel) {
     if (replay && analysisFailed) status = t('KataGo 分析失败。');
     get('status').textContent = status;
     get('notice').textContent = replay ? '' : notice;
+    const remarkBox = get('commentary-box');
+    remarkBox.hidden = Boolean(replay) || !lastRemark;
+    if (!remarkBox.hidden) get('commentary').textContent = lastRemark.text;
     get('mail').textContent = mail || t('退回你上一手之前');
     get('count').textContent = String(moves.length);
     get('moves').innerHTML = moves.map(({color,point},i)=>
@@ -367,6 +397,7 @@ export function createFlowGo(panel) {
     get('count-tools').hidden = Boolean(replay) || phase !== 'scoring';
     get('retry-tools').hidden = Boolean(replay) || !analysisFailed;
     get('recommend').checked = recommend;
+    get('voice').checked = voiceEnabled;
     get('replay-tools').hidden = !replay;
     if (replay) {
       const {index,actions} = replay;
@@ -408,13 +439,27 @@ export function createFlowGo(panel) {
       winRate = result.winRate;
       if (turn === BLACK) {
         hints = result.ranked.filter(point=>point !== null).slice(0,3);
+        lastBlackWinRate = result.winRate;
+        lastBlackHints = hints.slice();
         render();
       } else {
+        if (pendingBlackMove) {
+          const blackRemark = commentary.onBlackEvaluated({ ...pendingBlackMove, nextWinRate: result.winRate });
+          pendingBlackMove = null;
+          if (blackRemark) deliverRemark(blackRemark);
+        }
         const choice = result.ranked[0];
         if (game.apply(choice === null ? {type:'pass'} : {type:'move',point:choice})) {
           analysisFailed = true;
           render();
           return;
+        }
+        const whiteCaptured = game.moves.at(-1)?.captured || 0;
+        if (game.state.phase === 'finished') {
+          deliverRemark(commentary.onGameEnd({ reason: 'score', winner: game.state.winner, margin: game.state.score?.margin }));
+        } else if (whiteCaptured > 0) {
+          const whiteRemark = commentary.onWhiteMove({ captured: whiteCaptured, moveCount: game.moves.length });
+          if (whiteRemark) deliverRemark(whiteRemark);
         }
         persist();
         void nextTurn();
@@ -436,8 +481,19 @@ export function createFlowGo(panel) {
       render();
       return;
     }
+    pendingBlackMove = {
+      captured: game.moves.at(-1)?.captured || 0,
+      moveCount: game.moves.length,
+      prevWinRate: lastBlackWinRate,
+      playedTopHint: action.type === 'move' && lastBlackHints[0] === action.point,
+      isPass: action.type === 'pass',
+    };
     notice = '';
     persist();
+    if (game.state.phase === 'finished') {
+      pendingBlackMove = null;
+      deliverRemark(commentary.onGameEnd({ reason: 'score', winner: game.state.winner, margin: game.state.score?.margin }));
+    }
     nextTurn();
   }
 
@@ -465,6 +521,7 @@ export function createFlowGo(panel) {
 
   function close() {
     cancelAnalysis();
+    options.stopCommentary?.();
     confirmation = '';
     replay = null;
     dialog.close();
@@ -472,6 +529,12 @@ export function createFlowGo(panel) {
 
   get('recommend').addEventListener('change', event=>{
     recommend = event.target.checked;
+    persist();
+    render();
+  });
+  get('voice').addEventListener('change', event=>{
+    voiceEnabled = event.target.checked;
+    if (!voiceEnabled) options.stopCommentary?.();
     persist();
     render();
   });
@@ -505,8 +568,11 @@ export function createFlowGo(panel) {
         if (!game.undoRound()) return;
         mail = t('D-Mail 已送达。已回到你上一手之前。');
         confirmation = notice = '';
+        pendingBlackMove = null;
+        lastBlackWinRate = null;
         marked.clear();
         persist();
+        deliverRemark(commentary.onUndo(game.moves.length));
         nextTurn();
         break;
       case 'pass': playerMove({type:'pass'}); break;
@@ -514,10 +580,17 @@ export function createFlowGo(panel) {
         if (agreesWithDeadStones(game.state.board,marked,game.seen)) {
           notice = '';
           settle({type:'score',dead:[...marked]});
+          if (game.state.phase === 'finished') {
+            deliverRemark(commentary.onGameEnd({ reason: 'score', winner: game.state.winner, margin: game.state.score?.margin }));
+          }
         } else {
           notice = t('红莉栖对死棋有异议，继续下棋解决。');
+          deliverRemark(commentary.onDispute());
           settle({type:'resume'});
         }
+        break;
+      case 'commentary-replay':
+        if (lastRemark) deliverRemark({ entry: lastRemark.entry }, { manual: true });
         break;
       case 'resume': notice = ''; settle({type:'resume'}); break;
       case 'new':
@@ -540,10 +613,26 @@ export function createFlowGo(panel) {
           records = archive;
           gameDate = date;
           game.reset();
+          commentary.reset();
+          lastRemark = null;
+          pendingBlackMove = null;
+          lastBlackWinRate = null;
+          lastBlackHints = [];
+          hasGreeted = true;
           mail = '';
           focused = center;
+          confirmation = notice = '';
+          marked.clear();
+          persist();
+          deliverRemark(commentary.onOpening());
+          nextTurn();
+          buttons[focused].focus({preventScroll:true});
+          break;
         }
-        else if (confirmation === 'resign') game.apply({type:'resign',color:BLACK});
+        else if (confirmation === 'resign') {
+          game.apply({type:'resign',color:BLACK});
+          deliverRemark(commentary.onGameEnd({ reason: 'resign', winner: WHITE }));
+        }
         confirmation = notice = '';
         marked.clear();
         persist();
@@ -573,6 +662,10 @@ export function createFlowGo(panel) {
       if (dialog.open) return;
       dialog.showModal();
       nextTurn();
+      if (!hasGreeted && game.state.phase === 'play' && game.moves.length === 0) {
+        hasGreeted = true;
+        deliverRemark(commentary.onOpening());
+      }
       buttons[focused].focus({preventScroll:true});
     },
     hide() { if (dialog.open) close(); },

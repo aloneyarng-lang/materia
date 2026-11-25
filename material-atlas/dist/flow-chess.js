@@ -1,3 +1,4 @@
+import {reportAchievement} from './flow-achievements.js';
 import {Chess,SQUARES} from './vendor/chess/chess.js';
 import {chooseChessMove} from './flow-chess-engine.js';
 import {html,t} from './i18n.js';
@@ -41,7 +42,12 @@ export function createFlowChess(panel){
     if(Array.isArray(saved)&&saved.length<=512)for(const san of saved)game.move(san);
   }catch{game.reset();}
 
+  let completionCounted = game.isGameOver();
   function remember(){
+    if (!completionCounted && game.isGameOver()) {
+      completionCounted = true;
+      reportAchievement('flowGamesFinished', 1, 'add');
+    }
     try{localStorage.setItem(storageKey,JSON.stringify(game.history().slice(0,512)));}catch{}
   }
   function stateText(){
@@ -142,7 +148,7 @@ export function createFlowChess(panel){
     if(button.dataset.flowPromote&&promotion)play({...promotion,promotion:button.dataset.flowPromote});
     if(button.dataset.flow==='close')dialog.close();
     if(button.dataset.flow==='new'){
-      cancelThinking();game.reset();selected='';promotion=null;focused='e2';remember();render();
+      cancelThinking();game.reset();completionCounted=false;selected='';promotion=null;focused='e2';remember();render();
     }
     if(button.dataset.flow==='undo'){
       cancelThinking();

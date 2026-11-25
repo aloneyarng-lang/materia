@@ -8,7 +8,7 @@ export function createWorkspaceModules(config){
   const researchNav=document.createElement('nav');
   researchNav.className='research-navigation';
   researchNav.hidden=true;
-  container.insertBefore(researchNav,container.querySelector('.map-footer'));
+  container.append(researchNav);
   function available(id){
     if(!registry.enabled.has(id))return false;
     const {parentView}=registry.definitions.get(id);
@@ -20,7 +20,7 @@ export function createWorkspaceModules(config){
     const settingsMenu=document.getElementById('workspace-menu').parentElement;
     document.querySelectorAll('[data-ribbon-view]').forEach(button=>button.remove());
     tabs.replaceChildren();for(const definition of registry.list()){
-      if(!document.getElementById(definition.panelId)){const host=document.createElement('section');host.id=definition.panelId;host.hidden=true;container.insertBefore(host,container.querySelector('.map-footer'));}
+      if(!document.getElementById(definition.panelId)){const host=document.createElement('section');host.id=definition.panelId;host.hidden=true;container.append(host);}
       if(definition.parentView)continue;
       if(definition.navigation==='ribbon'){
         const button=document.createElement('button'),label=t(definition.label);
@@ -36,7 +36,7 @@ export function createWorkspaceModules(config){
       const parent=workspaceTab(config.getView());
       config.setView(available(parent)?parent:views()[0].id);
     }
-    researchNav.setAttribute('aria-label',t('研究'));
+    researchNav.setAttribute('aria-label',t('研读'));
     researchNav.replaceChildren(...registry.list().filter(child=>child.parentView==='research').map(child=>{
       const button=document.createElement('button');
       button.type='button';

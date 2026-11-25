@@ -1,4 +1,4 @@
-#literature-workbench iframe {
+:is(#literature-workbench, #takeaway-card, #paper-canvas) iframe {
   display: block;
   width: 100%;
   height: max(480px, calc(100vh - 165px));
@@ -6,6 +6,6 @@
   border-radius: var(--card-radius, var(--radius, 12px));
 }
 
-#literature-workbench > :is(p, button) {
+:is(#literature-workbench, #takeaway-card, #paper-canvas) > :is(p, button) {
   margin: 16px;
 }

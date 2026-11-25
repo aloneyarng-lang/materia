@@ -605,6 +605,8 @@ function choose(document) {
   const version = ++revision;
   current = paper = null;
   original = document;
+  $("work").dataset.paperId = document.id;
+  $("work").dataset.paperYear = document.year || "";
   $("paper-title").textContent = document.title || document.filename;
   $("paper-header").hidden = false;
   $("empty").hidden = true;

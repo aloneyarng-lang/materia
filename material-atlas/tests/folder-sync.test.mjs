@@ -24,14 +24,22 @@ test('app assignment, Explorer moves, folder renames and a restart preserve the 
 });
 test('desktop startup can load an established catalog before reconciling external PDFs',async()=>{
   const lib=await fresh();
+  await writeFile(path.join(lib.root,'papers/indexed.pdf'),pdf('indexed'));
+  await lib.syncFolders();
   await writeFile(path.join(lib.root,'papers/external.pdf'),pdf('deferred'));
   const reopened=await new LocalLibrary(lib.root).init({deferFolderSync:true});
-  assert.equal(reopened.getPapers().length,0);
-  await reopened.setSetting('graphLayout',{'paper:test':{x:100,y:200,pinned:true}});
-  assert.equal(reopened.getPapers().length,0);
-  assert.equal((await reopened.syncFolders()).added,1);
   assert.equal(reopened.getPapers().length,1);
+  await reopened.setSetting('graphLayout',{'paper:test':{x:100,y:200,pinned:true}});
+  assert.equal(reopened.getPapers().length,1);
+  assert.equal((await reopened.syncFolders()).added,1);
+  assert.equal(reopened.getPapers().length,2);
   assert.equal(reopened.getSetting('graphLayout')['paper:test'].pinned,true);
+});
+test('desktop startup reconciles an empty catalog before displaying it',async()=>{
+  const lib=await fresh();
+  await writeFile(path.join(lib.root,'papers/external.pdf'),pdf('unindexed'));
+  const reopened=await new LocalLibrary(lib.root).init({deferFolderSync:true});
+  assert.equal(reopened.getPapers().length,1);
 });
 test('empty and nested folders import, external PDFs count once, copied duplicates and removed records never reappear',async()=>{
   const lib=await fresh();await mkdir(path.join(lib.root,'papers/新组/子组'),{recursive:true});await writeFile(path.join(lib.root,'papers/新组/子组/new.pdf'),pdf('new'));

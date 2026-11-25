@@ -7,7 +7,7 @@ import {discoverAgentModels,agentHeaders} from './agent-models.mjs';
 import {cleanAntigravityConfig,completeWithAntigravity} from './agent-antigravity.mjs';
 
 export function normalizeAgentConfig(value = {}, {requireModel=true}={}) {
-  if(value.connection==='antigravity')return cleanAntigravityConfig(value);
+  if(['antigravity','local-gemini'].includes(value.connection))return cleanAntigravityConfig(value);
   const {baseUrl,provider,protocol}=providerEndpoint(value);
   const model=normalizeAgentModel(value.model,baseUrl);
   if ((requireModel&&!model)||model.length>200) throw new Error('请填写服务支持的模型名称。');
@@ -24,13 +24,13 @@ export class AgentSettings {
     let saved;
     try { saved = JSON.parse(await readFile(this.file, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw new Error('AI 配置文件无法读取，请检查桌面配置目录。'); }
     if (saved?.model||saved?.connection==='antigravity') {
-      for(const source of [saved.profiles?.api,saved.profiles?.antigravity,saved].filter(Boolean)){
+      for(const source of [saved.profiles?.api,saved.profiles?.antigravity,saved.profiles?.['local-gemini'],saved].filter(Boolean)){
       const config = normalizeAgentConfig({ ...source, apiKey: '' });
       if (source.encryptedKey && this.canRememberKey && config.connection!=='antigravity') {
         try { const encrypted=Buffer.from(source.encryptedKey,'base64'); const decoded=await (this.encryption.decryptStringAsync ? this.encryption.decryptStringAsync(encrypted) : this.encryption.decryptString(encrypted)); config.apiKey=typeof decoded==='string'?decoded:decoded.result; } catch { config.rememberKey = false; }
       }
       if (!config.apiKey) config.rememberKey = false;
-      this.profiles[config.connection==='antigravity'?'antigravity':'api']=config;
+      this.profiles[config.connection||'api']=config;
       this.config=config;
       }
     }
@@ -41,17 +41,17 @@ export class AgentSettings {
     const profiles=Object.fromEntries(Object.entries(this.profiles).map(([name,{apiKey,...profile}])=>[name,{...profile,hasKey:Boolean(apiKey)}]));
     return { ...config, hasKey: Boolean(apiKey), canRememberKey: this.canRememberKey,profiles };
   }
-  resolve(value,options){const clean=normalizeAgentConfig(value,options);if(clean.connection==='antigravity')return clean;const previous=this.profiles.api||this.config;return{...clean,apiKey:value.clearKey?'':(clean.apiKey||(previous?.baseUrl===clean.baseUrl?previous.apiKey:''))};}
+  resolve(value,options){const clean=normalizeAgentConfig(value,options);if(['antigravity','local-gemini'].includes(clean.connection))return clean;const previous=this.profiles.api||this.config;return{...clean,apiKey:value.clearKey?'':(clean.apiKey||(previous?.baseUrl===clean.baseUrl?previous.apiKey:''))};}
   save(value) {
     const operation = this.queue.then(async () => {
       const next = this.resolve(value);
       if (next.rememberKey && !await this.encryptionAvailable()) throw new Error('系统加密不可用。请取消“记住密钥”，仅在本次运行使用。');
-      const profiles={...this.profiles,[next.connection==='antigravity'?'antigravity':'api']:next},serialized={};
+      const profiles={...this.profiles,[next.connection||'api']:next},serialized={};
       for(const [name,{apiKey,...profile}] of Object.entries(profiles)){
         if(apiKey&&profile.rememberKey)profile.encryptedKey=(await(this.encryption.encryptStringAsync?this.encryption.encryptStringAsync(apiKey):this.encryption.encryptString(apiKey))).toString('base64');
         serialized[name]=profile;
       }
-      const stored={...serialized[next.connection==='antigravity'?'antigravity':'api'],profiles:serialized};
+      const stored={...serialized[next.connection||'api'],profiles:serialized};
       await mkdir(path.dirname(this.file), { recursive: true });
       const temp = `${this.file}.${randomUUID()}.tmp`;
       await writeFile(temp, JSON.stringify(stored, null, 2), { mode: 0o600 });
@@ -123,7 +123,7 @@ function providerBody(config, messages, tools) {
 }
 
 export async function completeWithProvider(configValue, { messages, tools = [], signal }, fetcher = fetch) {
-  if(configValue?.connection==='antigravity')return completeWithAntigravity(configValue,{messages,tools,signal});
+  if(['antigravity','local-gemini'].includes(configValue?.connection))return completeWithAntigravity(configValue,{messages,tools,signal});
   const config = normalizeAgentConfig(configValue);
   const issue=agentCredentialIssue(config);if(issue)throw new Error(issue);
   const abort = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(90000)]);

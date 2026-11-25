@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SIZE,POINTS,BLACK,WHITE,KOMI,neighbors,placement,positionKey,areaScore,createGoGame} from '../dist/flow-go-rules.js';
 import {rankGoMoves,agreesWithDeadStones,estimateBlackWinRate} from '../dist/flow-go-engine.js';
+import {GO_COMMENTARY_LINES,createGoCommentary,selectGoSpeech} from '../dist/flow-go-commentary.js';
 
 const at = (x,y) => y * SIZE + x;
 function position(black,white) {
@@ -106,4 +107,58 @@ test('black win estimate reacts to play, reverses on undo and gives the actual r
   assert.equal(estimateBlackWinRate(game.state),0);
   const scored = createGoGame([{type:'move',point:0},{type:'pass'},{type:'pass'},{type:'score'}]);
   assert.equal(estimateBlackWinRate(scored.state),100);
+});
+
+test('Go commentary triggers in-character remarks for blunders, brilliant moves, captures, undo, disputes, and endgame',()=>{
+  let clock = 1000;
+  const commentary = createGoCommentary({now:()=>clock});
+
+  const open = commentary.onOpening();
+  assert.equal(open.category,'opening');
+  assert.ok(GO_COMMENTARY_LINES.opening.some(item=>item.id===open.entry.id));
+
+  // Blunder triggers even on Move 1 right after opening greeting, and respects cooldown on immediate next ply
+  const blunder = commentary.onBlackEvaluated({prevWinRate:52,nextWinRate:39,captured:1,moveCount:1});
+  assert.equal(blunder.category,'blunder');
+  assert.equal(commentary.onBlackEvaluated({prevWinRate:40,nextWinRate:26,moveCount:2}),null);
+
+  clock += 12000;
+  const whiteCap = commentary.onWhiteMove({captured:3,moveCount:22});
+  assert.equal(whiteCap.category,'white_big_capture');
+
+  // Brilliant surge requires live winrate window and longer medium cooldown
+  assert.equal(commentary.onBlackEvaluated({prevWinRate:35,nextWinRate:45,moveCount:23}),null);
+  clock += 21000;
+  const brilliant = commentary.onBlackEvaluated({prevWinRate:35,nextWinRate:45,moveCount:27});
+  assert.equal(brilliant.category,'brilliant');
+
+  // Midgame top KataGo recommendation also counts as brilliant once cooled down
+  clock += 21000;
+  const topMove = commentary.onBlackEvaluated({prevWinRate:50,nextWinRate:51,moveCount:32,playedTopHint:true});
+  assert.equal(topMove.category,'brilliant');
+
+  // Line bank rotation avoids immediate repeats
+  clock += 15000;
+  const secondBlunder = commentary.onBlackEvaluated({prevWinRate:55,nextWinRate:40,moveCount:36});
+  assert.equal(secondBlunder.category,'blunder');
+  assert.notEqual(secondBlunder.entry.id,blunder.entry.id);
+
+  // D-Mail undo, dispute, resign, and win/loss remarks
+  clock += 15000;
+  assert.equal(commentary.onUndo(38).category,'undo');
+  assert.equal(commentary.onDispute().category,'dispute');
+  assert.equal(commentary.onGameEnd({reason:'resign',winner:WHITE}).category,'resign');
+  assert.equal(commentary.onGameEnd({reason:'score',winner:BLACK,margin:3.5}).category,'black_win');
+  assert.equal(commentary.onGameEnd({reason:'score',winner:WHITE,margin:5.5}).category,'white_win');
+
+  // Direct language mapping without extra translation
+  const sample = GO_COMMENTARY_LINES.blunder[0];
+  const followJa = selectGoSpeech(sample,'follow','ja');
+  assert.equal(followJa.language,'ja');
+  assert.equal(followJa.text,sample.ja);
+  assert.equal(followJa.speech,sample.ja);
+  const crossVoice = selectGoSpeech(sample,'ja','zh-CN');
+  assert.equal(crossVoice.language,'ja');
+  assert.equal(crossVoice.text,sample.zh);
+  assert.equal(crossVoice.speech,sample.ja);
 });

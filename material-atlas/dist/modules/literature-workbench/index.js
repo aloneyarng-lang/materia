@@ -107,9 +107,9 @@ export const literatureWorkbenchModule = {
         const url = await desktop.openLiteratureWorkbench();
         if (signal.aborted) return;
         frame = document.createElement('iframe');
-        frame.title = '研读';
+        frame.title = host.getAttribute('aria-label') || ({'takeaway-card':'速记卡','paper-canvas':'研究画布'}[host.id] || '逐图研读');
         frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-downloads');
-        frame.src = url;
+        frame.src = host.id === 'literature-workbench' ? url : new URL('/' + host.id, url).href;
         host.append(frame);
         status.hidden = true;
       } catch (error) {

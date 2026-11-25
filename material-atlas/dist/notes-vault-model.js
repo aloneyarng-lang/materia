@@ -1,3 +1,5 @@
+import {normalizeAttachments} from './note-model.js';
+
 export const NOTE_LIMIT=512*1024;
 
 export function notePath(value){
@@ -27,4 +29,18 @@ export function appendTipBody(previous, entry){
   const newline = previous.includes('\r\n') ? '\r\n' : '\n';
   const separator = /\r?\n\r?\n$/.test(previous) ? '' : previous.endsWith('\n') ? newline : newline + newline;
   return noteBody(previous + separator + '---' + newline + newline + text.replace(/\r?\n/g, newline) + newline);
+}
+
+export const TIP_IMAGE_FOLDER = 'tip-images';
+export const isTipImageReference = reference => /^tip-images\/img-[a-f\d-]{36}\.(?:png|jpeg|webp)$/i.test(reference);
+
+export function prepareDailyTip(entry, attachments) {
+  const body = noteBody(entry).trim();
+  const assets = normalizeAttachments(attachments).map(image => {
+    const extension = image.dataUrl.slice('data:image/'.length, image.dataUrl.indexOf(';'));
+    const reference = TIP_IMAGE_FOLDER + '/img-' + crypto.randomUUID() + '.' + extension;
+    const name = image.name.replace(/[\r\n]/g, ' ').replace(/[\\[\]]/g, '\\$&');
+    return {reference, dataUrl: image.dataUrl, markdown: '![' + name + '](' + reference + ')'};
+  });
+  return {body: noteBody([body, ...assets.map(asset => asset.markdown)].filter(Boolean).join('\n\n')), assets};
 }

@@ -1,3 +1,4 @@
+import {reportAchievement} from './flow-achievements.js';
 import {loadTagVocabulary} from './tag-facets.js';
 import {t as tr,html,msg} from './i18n.js';
 import {LANGUAGES,getLocale,setLocale,initializeLocale,bindStaticDOM,onLocaleChange} from './i18n.js';
@@ -71,6 +72,7 @@ function updateCitations(all) {
   if (citationKey === key) return;
   citationKey = key;
   citations = citationLinks(all, new Map([...citationCache].map(([id,row])=>[id,row.refs])));
+  reportAchievement('citationEdgeCount', citations.length);
 }
 function renderCitationStatus() {
   const button = $('#citation-scan'), status = $('#citation-status');
@@ -126,7 +128,7 @@ function visiblePapers() {
 }
 const emptyWorkbenchFilters = () => ({filters:emptyFilters(), year:'', readingStatus:'', collection:''});
 let workbenchFilters = emptyWorkbenchFilters();
-const inWorkbench = () => state.view === 'literature-workbench';
+const inWorkbench = () => ['literature-workbench','takeaway-card','paper-canvas'].includes(state.view);
 const catalogFilterState = () => inWorkbench() ? workbenchFilters : state;
 const workbenchPapers = () => papers().filter(paper => paper.file?.desktop);
 const workbenchMatches = (criteria = workbenchFilters) =>
@@ -170,7 +172,14 @@ const notes = createNotesController({
   saveText, onTabChange:()=>render(), editNote:(...args)=>agentController.editNote(...args),
   escape, showModal, toast, getPapers: papers, getNotes: () => state.notes, openReader:(id,noteId)=>reader.open(id,noteId),
   canEdit: () => state.mode === 'own' && !state.storageError,
-  persist: async value => { await setSetting('notes', value); state.notes = value; render(); },
+  persist: async value => {
+    await setSetting('notes', value);
+    state.notes = value;
+    const max = Object.entries(value).reduce((best, [key, items]) =>
+      key.startsWith('paper:') && Array.isArray(items) ? Math.max(best, items.filter(item => item.anchor).length) : best, 0);
+    reportAchievement('maxAnnotationsPerPaper', max);
+    render();
+  },
   jumpPaper: id => { closeModal(); state.nav = 'all'; resetFilters(false); state.selected = id; render(); selectPaper(id, true); },
   graphTag: tag => { if (!eligibleTags(papers()).has(tag)) { toast(tr('标签关联至少 3 篇文献后，才能在星图中筛选。')); return; } closeModal(); state.nav = 'all'; resetFilters(false); state.tag = tag; state.view = 'graph'; map.fit(); render(); },
 });
@@ -188,6 +197,7 @@ function render() {
   $('#graph-focus').title=state.focusGraph?tr('展开统计概览'):tr('收起统计概览');$('#graph-focus').setAttribute('aria-label',$('#graph-focus').title);
   const all = papers(), folders = collections();
   if(graphMetrics?.papers!==all){
+    reportAchievement('deepReadCount', all.filter(paper => readingStatusOf(paper) === 'studied').length);
     const eligible=eligibleTags(all);
     graphMetrics={papers:all,eligible,groups:tagGroups(all),links:countLinks(all,eligible)};
   }
@@ -256,7 +266,6 @@ function render() {
   $('#filter-button').setAttribute('aria-label', filterLabel);
   $('#filter-dialog-title').textContent = filterLabel;
   $('#advanced-filter-dialog').classList.toggle('paper-filters-only', !graphView);
-  $('.map-footer').hidden = standaloneView||noteView||state.view==='list';
   const filterCount = countCatalogFilters(state);
   $('#active-filter-count').textContent = filterCount;
   $('#active-filter-count').hidden = !filterCount;
@@ -264,7 +273,6 @@ function render() {
   $('#restore-hidden').hidden = !state.hiddenIds.size && !state.hiddenTagNodes.size;
   $('#restore-hidden').innerHTML=icon('eye')+tr('<span>恢复隐藏文献</span>',false);$('#restore-hidden').title=msg`恢复隐藏的 ${state.hiddenIds.size} 篇文献`;
   $('#hide-node').disabled = !state.selected;
-  $('#legend').innerHTML = groups.slice(0, 6).map(g => html`<button data-tag="${escape(g.name)}" class="${state.tag === g.name ? 'active' : ''}" title="按 ${escape(g.name)} 筛选"><i style="background:${g.color}"></i>${escape(g.name)}</button>`).join('') + (state.tag ? tr('<button data-action="clear-tag" class="tag-filter-clear">清除筛选 ×</button>') : '');
   map.options = { showEdges: state.showEdges[state.graphPreferences.mode], showLabels: state.showLabels };
   const tagMode=state.graphPreferences.mode==='tags';
   const sharedMode=state.graphPreferences.mode==='shared-tags';
@@ -298,12 +306,6 @@ function render() {
   document.querySelector('[data-action="associations"]').hidden=!graphView||!tagMode;
   if(graphView&&!state.lobbyOpen&&citationMode){
     $('#network-stats').textContent=msg`${map.network.edges.length} 条库内引文`;
-    $('#legend').textContent=tr('引用文献 → 被引文献');
-  }
-  if(graphView&&!state.lobbyOpen&&!tagMode&&!sharedMode&&!citationMode&&state.graphPreferences.colorBy==='community'){
-    const clusters=new Map();
-    for(const node of map.network.nodes){if(!clusters.has(node.community))clusters.set(node.community,{label:node.communityLabel,color:node.color,count:0});clusters.get(node.community).count++;}
-    $('#legend').innerHTML=[...clusters.values()].map(c=>`<span title="${escape(c.label)}"><i style="background:${c.color}"></i>${escape(c.label)} · ${c.count}</span>`).join('');
   }
   if(state.view==='graph')$('#visible-count').textContent=msg`${graphPapers.length} 篇文献`;
   if(state.graphPreferences.localMode&&state.view==='graph')$('#visible-count').textContent=msg`局部 ${graphPapers.length} / 筛选 ${filtered.length} 篇`;
@@ -661,8 +663,11 @@ function renderGraphPreferences(){
     else input.value=String(value);
   });
   document.querySelectorAll('[data-graph-output]').forEach(output=>{
-    output.textContent=state.graphPreferences[output.dataset.graphOutput];
+    const key=output.dataset.graphOutput,value=state.graphPreferences[key];
+    output.textContent=key==='nodeFadeThreshold'?`${Math.round(value*100)}%`:value;
   });
+  const fadeControl=$('#graph-node-fade-control');
+  if(fadeControl)fadeControl.hidden=!state.graphPreferences.hideNodesWhenFar;
 }
 function saveGraphPreferences(){clearTimeout(graphPreferenceTimer);graphPreferenceTimer=setTimeout(()=>setSetting('graphPreferences',state.graphPreferences).catch(error=>toast(error.message,true)),400);}
 document.addEventListener('input',event=>{const key=event.target.dataset.graphSetting;if(!key)return;if(key==='appearance'){state.graphPreferences=cleanGraphSettings({...state.graphPreferences,appearance:event.target.value});map.configure(state.graphPreferences,collections(),state.associations);map.applyAppearance();saveGraphPreferences();return;}state.graphPreferences=cleanGraphSettings({...state.graphPreferences,[key]:event.target.type==='checkbox'?event.target.checked:event.target.type==='range'?Number(event.target.value):event.target.value});render();saveGraphPreferences();});
@@ -702,7 +707,7 @@ const actions = {
   themes: () => themeController.open(), settings: settingsModal, 'ai-service-settings': aiServiceSettingsModal, 'storage-info': settingsModal, export: exportLibrary, 'export-paper-tags': exportPaperTags, restore: () => $('#backup-input').click(),
   help: helpModal, shortcuts: shortcutsModal,
   'zoom-in': () => map.zoom(1.2), 'zoom-out': () => map.zoom(1 / 1.2), fit: () => map.fit(),
-  'clear-tag': () => { state.tag = ''; render(); }, 'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.naturalTask?map.cancelNaturalLayout():map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
+  'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.naturalTask?map.cancelNaturalLayout():map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
   'reset-filters': () => {
     if (!inWorkbench()) return resetFilters();
     workbenchFilters = emptyWorkbenchFilters();
@@ -950,7 +955,12 @@ comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.vie
 materialList=createMaterialList({escape,showModal,closeModal,toast,comparison,getPapers:papers,isVisible:()=>state.view==='materials',onCount:(count,total)=>{$('#visible-count').textContent=msg`${count} / ${total} 个材料`;}});
 batch=createBatchImporter({escape,showModal,toast,bytesLabel,normalizeTags,folderOptions,getPapers:papers,isOpen:()=>modalContext==='import',putPapers,saveText,persistNotes:async incoming=>{const next=mergeImportNotes(await getSetting('notes') || {},incoming);await setSetting('notes',next);},reload:reloadLibrary,onDone:id=>{closeModal();state.nav='all';state.mode='own';state.selected=id || '';resetFilters(false);map.fit();render();}});
 bulkEditor=createBulkEditor({escape,showModal,toast,normalizeTags,getPapers:papers,getCollections:collections,getSelection:()=>state.compareIds,save:bulkEdit,reload:reloadLibrary,done:()=>{closeModal();render();}});
-readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>catalogFilterState().readingStatus,isVisible:()=>inWorkbench()||Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>inWorkbench()?workbenchMatches({...workbenchFilters,readingStatus:''}):filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{catalogFilterState().readingStatus=value;if(!inWorkbench()){state.listLimit=100;state.selected='';}render();},persist:setReadingStatus,reload:async()=>{await reloadLibrary();render();}});
+async function persistReadingStatus(ids,status){
+  const result=await setReadingStatus(ids,status);
+  if(status==='studied'&&result.count>0)reportAchievement('dailyDeepReads',result.count,'add');
+  return result;
+}
+readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>catalogFilterState().readingStatus,isVisible:()=>inWorkbench()||Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>inWorkbench()?workbenchMatches({...workbenchFilters,readingStatus:''}):filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{catalogFilterState().readingStatus=value;if(!inWorkbench()){state.listLimit=100;state.selected='';}render();},persist:persistReadingStatus,reload:async()=>{await reloadLibrary();render();}});
 paperActions=createPaperActions({escape,showModal,closeModal,toast,setReadingStatus:(ids,status)=>readingStatusController.set(ids,status),locate:native?.openPaperFolder? id=>native.openPaperFolder(id):null,parameters:id=>{selectPaper(id);performanceEditor.open(id);},hide:id=>{state.hiddenIds.add(id);render();},canEdit:ensureStorage,getPapers:papers,getCollections:collections,getVisible:visiblePapers,getSelection:()=>state.compareIds,selectPaper,hasPDF:p=>Boolean(p.file||p.pdfPath),isReaderOpen:()=>reader.isOpen(),read:id=>reader.open(id),edit:ids=>{if(ids.length===1){selectPaper(ids[0]);editModal();}else bulkEditor.open(null,ids);},notes:id=>notes.open('paper',id),remove:deleteModal,selectComparison:ids=>comparison.selectIds(ids),assign:bulkEdit,reload:async()=>{await reloadLibrary();render();},star:async(ids,favorite)=>{await putPapers(papers().filter(p=>ids.includes(p.id)).map(p=>({...p,favorite})));},createEmpty:async name=>{if(collections().some(c=>c.name===name))throw new Error(tr('已有同名分组，请直接选择该分组。'));await setSetting('collections',[...collections(),{id:uid('folder'),name,color:PALETTE[0]}]);}});
 groupActions=createGroupActions({escape,showModal,closeModal,toast,getGroups:collections,openFolder:native?.openGroupFolder?id=>native.openGroupFolder(id):null,save:groups=>setSetting('collections',groups),reload:async()=>{await reloadLibrary();render();}});
 performanceEditor=createPerformanceEditor({escape,showModal,toast,getPapers:papers,close:closeModal,save:async(id,materials)=>{const p=state.papers.find(p=>p.id===id);if(!p)throw new Error(tr('找不到文献'));await putPaper(normalizePaperMaterials({...p,materials}));await reloadLibrary();render();}});
@@ -1006,7 +1016,14 @@ async function init() {
   }
   render();
   $('.import-main').disabled = !state.ready || state.storageError;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>native?.startupReady?.().catch(()=>{})));
+  const root=document.documentElement;
+  delete root.dataset.workspaceLoading;
+  document.body.inert=false;
+  if(native?.startupReady){
+    const background=getComputedStyle(root).getPropertyValue('--paper').trim();
+    const mode=root.dataset.themeMode;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>native.startupReady({background,mode}).catch(()=>{})));
+  }
 }
 workspaceModules=createWorkspaceModules({native,openAISettings:()=>aiServiceSettingsModal().catch(error=>toast(error.message,true)),libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
  workbenchFilterResults:()=>({ids:workbenchMatches().map(paper=>paper.id), count:countCatalogFilters(workbenchFilters,true)}),

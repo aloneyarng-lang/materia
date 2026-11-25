@@ -8,7 +8,7 @@ import {LocalLibrary} from '../desktop/library.mjs';
 const example=JSON.parse(await readFile('theme-examples/blueprint.mtheme.json','utf8'));
 const file=pack=>({name:'test.mtheme.json',text:JSON.stringify(pack)});
 test('curated themes share glass geometry, have two color modes and round trip their design',()=>{
- const profiles=BUILTIN_THEMES.map(row=>resolveTheme({selected:row.id}));assert.equal(profiles.length,7);assert.equal(new Set(profiles.map(p=>p.tokens['--teal'])).size,7);
+ const profiles=BUILTIN_THEMES.map(row=>resolveTheme({selected:row.id}));assert.equal(profiles.length,9);assert.equal(new Set(profiles.map(p=>p.tokens['--teal'])).size,9);
  for(const profile of profiles){
   assert.equal(profile.ui.style,'glass');assert.equal(profile.ui.cardRadius,20);assert.equal(profile.ui.menuRadius,18);
   for(const mode of ['light','dark']){

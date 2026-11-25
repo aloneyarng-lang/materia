@@ -8,6 +8,7 @@ import {cleanMaterialGroups,mergeMaterialGroups} from './material-list-model.js'
 import {cleanMaterialSelection} from './material-selection.js';
 import {cleanImportActivity,seedImportActivity,recordImports,mergeImportActivity} from './import-activity.js';
 import {planReadingStatus,preserveReadingStatus,cleanReadingStatus} from './reading-status.js';
+import {appendTipBody} from './notes-vault-model.js';
 export const DB_NAME = 'materia-library-v1';
 export const BACKUP_FORMAT = 'materia-backup';
 let connection;
@@ -92,6 +93,29 @@ export const deletePaper = id => native ? native.deletePaper(id) : transaction('
 export const getSetting = async key => native ? native.getSetting(key) : (await transaction('settings', 'readonly', store => store.get(key)))?.value;
 export const setSetting = async (key, value) => { if(key==='notes'){value=normalizeNotes(value);await assertRichNoteSupport(value);}if(key==='readerDrafts')await assertRichNoteSupport({drafts:(value||[]).map(row=>row.note)});return native ? native.setSetting(key, value) : transaction('settings', 'readwrite', store => store.put({ key, value })); };
 export async function getImportActivity(){const saved=await getSetting('importActivity');return saved?cleanImportActivity(saved):seedImportActivity(await getPapers());}
+export async function appendBrowserDailyTip(key, id, entry, assets) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('settings', 'readwrite');
+    const store = tx.objectStore('settings');
+    const request = store.get(key);
+    let note, failure;
+    request.onsuccess = () => {
+      try {
+        const notes = request.result?.value ?? [];
+        const previous = notes.find(row => row.id.toLowerCase() === id);
+        note = {id, body: appendTipBody(previous?.body ?? '', entry), revision: crypto.randomUUID(), updatedAt: Date.now()};
+        for (const {reference, dataUrl} of assets) store.add({key: 'notesVaultImage:' + reference, value: dataUrl});
+        store.put({key, value: [...notes.filter(row => row !== previous), note]});
+      } catch (error) {
+        failure = error;
+        tx.abort();
+      }
+    };
+    tx.oncomplete = () => resolve(note);
+    tx.onabort = () => reject(failure || tx.error || Error('保存已取消。'));
+  });
+}
 export async function setReadingStatus(ids,status){
   if(native){if(typeof native.setReadingStatus!=='function')throw Error('请完全退出并重开 Materia，启用阅读状态保存。');return native.setReadingStatus(ids,status);}
   const db=await openDatabase();return new Promise((resolve,reject)=>{const tx=db.transaction('papers','readwrite'),store=tx.objectStore('papers'),request=store.getAll();let count=0,failure;

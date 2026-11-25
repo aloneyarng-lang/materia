@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="560" viewBox="0 0 820 560" font-family="Microsoft YaHei,'PingFang SC',sans-serif">
+  <defs><linearGradient id="thigh-fade" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#fcfbf9" stop-opacity="1"/>
+  <stop offset="0.11" stop-color="#fcfbf9" stop-opacity="0"/>
+</linearGradient>
+<clipPath id="sock-leg-clip-0"><path d="M 22 0 C 20 38 30 76 36 106 C 39 124 27 148 25 170 C 23 196 31 232 33 260 L 58 260 C 57 232 61 198 68 172 C 74 148 80 124 81 102 C 83 70 84 34 80 0 Z"/></clipPath>
+<clipPath id="sock-leg-clip-1"><path d="M 26 0 C 24 38 28 74 22 104 C 17 124 26 150 34 176 C 42 204 48 234 50 260 L 74 260 C 73 230 71 198 67 170 C 64 146 61 124 65 104 C 72 74 79 38 78 0 Z"/></clipPath>
+<clipPath id="sock-leg-clip-2"><path d="M 24 0 C 24 42 30 78 33 108 C 35 128 31 154 31 180 C 31 206 32 234 30 260 L 55 260 C 57 234 65 204 69 176 C 72 150 70 126 73 106 C 78 76 83 40 80 0 Z"/></clipPath>
+<clipPath id="sock-leg-clip-3"><path d="M 28 0 C 25 40 24 78 26 108 C 28 130 30 156 32 184 C 34 210 35 236 35 260 L 60 260 C 61 234 66 206 69 178 C 72 152 68 128 70 106 C 75 74 82 38 82 0 Z"/></clipPath>
+<clipPath id="sock-leg-clip-4"><path d="M 34 0 C 31 38 30 76 31 106 C 32 128 24 156 23 182 C 22 208 29 234 32 260 L 56 260 C 56 234 62 204 68 176 C 74 150 72 126 75 104 C 81 74 87 38 86 0 Z"/></clipPath>
+<clipPath id="sock-leg-clip-5"><path d="M 22 0 C 23 40 28 76 34 108 C 37 128 28 156 29 184 C 31 210 37 236 38 260 L 62 260 C 64 234 71 206 72 178 C 74 152 69 128 71 106 C 75 74 79 38 77 0 Z"/></clipPath></defs>
+  <rect x="0" y="0" width="820" height="560" fill="#fcfbf9"/>
+  
+  <g class="axes">
+    <line x1="74.0" y1="512.0" x2="74.0" y2="37.0" stroke="#2b2623" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="52.0" y1="494.0" x2="771.0" y2="494.0" stroke="#2b2623" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M 68.0 46.0 L 74.0 36.0 L 80.0 46.0" fill="none" stroke="#2b2623" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 762.0 489.0 L 772.0 494.0 L 762.0 499.0" fill="none" stroke="#2b2623" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    
+      <line x1="69.0" y1="453.1" x2="78.0" y2="453.1" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="458.2" text-anchor="end" font-size="13" fill="#24201e">1</text>
+    
+      <line x1="69.0" y1="412.2" x2="78.0" y2="412.2" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="417.3" text-anchor="end" font-size="13" fill="#24201e">2</text>
+    
+      <line x1="69.0" y1="371.3" x2="78.0" y2="371.3" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="376.4" text-anchor="end" font-size="13" fill="#24201e">3</text>
+    
+      <line x1="69.0" y1="330.4" x2="78.0" y2="330.4" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="335.5" text-anchor="end" font-size="13" fill="#24201e">4</text>
+    
+      <line x1="69.0" y1="289.5" x2="78.0" y2="289.5" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="294.6" text-anchor="end" font-size="13" fill="#24201e">5</text>
+    
+      <line x1="69.0" y1="248.5" x2="78.0" y2="248.5" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="253.6" text-anchor="end" font-size="13" fill="#24201e">6</text>
+    
+      <line x1="69.0" y1="207.6" x2="78.0" y2="207.6" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="212.7" text-anchor="end" font-size="13" fill="#24201e">7</text>
+    
+      <line x1="69.0" y1="166.7" x2="78.0" y2="166.7" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="171.8" text-anchor="end" font-size="13" fill="#24201e">8</text>
+    
+      <line x1="69.0" y1="125.8" x2="78.0" y2="125.8" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="130.9" text-anchor="end" font-size="13" fill="#24201e">9</text>
+    
+      <line x1="69.0" y1="84.9" x2="78.0" y2="84.9" stroke="#2b2623" stroke-width="1.4" stroke-linecap="round"/>
+      <text x="62.0" y="90.0" text-anchor="end" font-size="13" fill="#24201e">10</text>
+    
+    <text x="770.0" y="523.0" text-anchor="end" font-size="15" fill="#24201e">··· 天</text>
+  </g>
+  <g class="sock-bars">
+    
+      <g class="sock-bar" data-index="0">
+        <g transform="translate(82.0 84.5) scale(0.9775 1.5750)">
+          <path d="M 22 0 C 20 38 30 76 36 106 C 39 124 27 148 25 170 C 23 196 31 232 33 260 L 58 260 C 57 232 61 198 68 172 C 74 148 80 124 81 102 C 83 70 84 34 80 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-0)">
+            <path d="M -6 140.5 Q 50 146.5 106 140.5 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 140.5 Q 50 146.5 104 140.5" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 22 0 C 20 38 30 76 36 106 C 39 124 27 148 25 170 C 23 196 31 232 33 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 80 0 C 84 34 83 70 81 102 C 80 124 74 148 68 172 C 61 198 57 232 58 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 47 110 C 49 116 48 122 46 126" fill="none" stroke="#2b2623" stroke-width="1.33" stroke-linecap="round" stroke-opacity="0.55"/>
+        </g>
+        <text x="130.8" y="297.8" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">4.6</text>
+        <text x="130.8" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">1</text>
+      </g>
+    
+
+      <g class="sock-bar" data-index="1">
+        <g transform="translate(195.6 84.5) scale(0.9775 1.5750)">
+          <path d="M 26 0 C 24 38 28 74 22 104 C 17 124 26 150 34 176 C 42 204 48 234 50 260 L 74 260 C 73 230 71 198 67 170 C 64 146 61 124 65 104 C 72 74 79 38 78 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-1)">
+            <path d="M -6 57.4 Q 50 52.4 106 57.4 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 57.4 Q 50 52.4 104 57.4" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 26 0 C 24 38 28 74 22 104 C 17 124 26 150 34 176 C 42 204 48 234 50 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 78 0 C 79 38 72 74 65 104 C 61 124 64 146 67 170 C 71 198 73 230 74 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          
+        </g>
+        <text x="244.5" y="166.9" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">7.8</text>
+        <text x="244.5" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">2</text>
+      </g>
+    
+
+      <g class="sock-bar" data-index="2">
+        <g transform="translate(309.3 84.5) scale(0.9775 1.5750)">
+          <path d="M 24 0 C 24 42 30 78 33 108 C 35 128 31 154 31 180 C 31 206 32 234 30 260 L 55 260 C 57 234 65 204 69 176 C 72 150 70 126 73 106 C 78 76 83 40 80 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-2)">
+            <path d="M -6 15.8 Q 50 9.8 106 15.8 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 15.8 Q 50 9.8 104 15.8" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 24 0 C 24 42 30 78 33 108 C 35 128 31 154 31 180 C 31 206 32 234 30 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 80 0 C 83 40 78 76 73 106 C 70 126 72 150 69 176 C 65 204 57 234 55 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          
+        </g>
+        <text x="358.2" y="101.5" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">9.4</text>
+        <text x="358.2" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">3</text>
+      </g>
+    
+
+      <g class="sock-bar" data-index="3">
+        <g transform="translate(423.0 84.5) scale(0.9775 1.5750)">
+          <path d="M 28 0 C 25 40 24 78 26 108 C 28 130 30 156 32 184 C 34 210 35 236 35 260 L 60 260 C 61 234 66 206 69 178 C 72 152 68 128 70 106 C 75 74 82 38 82 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-3)">
+            <path d="M -6 86.0 Q 50 81.0 106 86.0 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 86.0 Q 50 81.0 104 86.0" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 28 0 C 25 40 24 78 26 108 C 28 130 30 156 32 184 C 34 210 35 236 35 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 82 0 C 82 38 75 74 70 106 C 68 128 72 152 69 178 C 66 206 61 234 60 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          
+        </g>
+        <text x="471.8" y="211.9" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">6.7</text>
+        <text x="471.8" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">4</text>
+      </g>
+    
+
+      <g class="sock-bar" data-index="4">
+        <g transform="translate(536.6 84.5) scale(0.9775 1.5750)">
+          <path d="M 34 0 C 31 38 30 76 31 106 C 32 128 24 156 23 182 C 22 208 29 234 32 260 L 56 260 C 56 234 62 204 68 176 C 74 150 72 126 75 104 C 81 74 87 38 86 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-4)">
+            <path d="M -6 135.3 Q 50 131.3 106 135.3 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 135.3 Q 50 131.3 104 135.3" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 34 0 C 31 38 30 76 31 106 C 32 128 24 156 23 182 C 22 208 29 234 32 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 86 0 C 87 38 81 74 75 104 C 72 126 74 150 68 176 C 62 204 56 234 56 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 54 108 C 56 115 55 122 53 126" fill="none" stroke="#2b2623" stroke-width="1.33" stroke-linecap="round" stroke-opacity="0.55"/>
+        </g>
+        <text x="585.5" y="289.6" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">4.8</text>
+        <text x="585.5" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">5</text>
+      </g>
+    
+
+      <g class="sock-bar" data-index="5">
+        <g transform="translate(650.3 84.5) scale(0.9775 1.5750)">
+          <path d="M 22 0 C 23 40 28 76 34 108 C 37 128 28 156 29 184 C 31 210 37 236 38 260 L 62 260 C 64 234 71 206 72 178 C 74 152 69 128 71 106 C 75 74 79 38 77 0 Z" fill="#fdf0e6" stroke="none"/>
+          <g clip-path="url(#sock-leg-clip-5)">
+            <path d="M -6 184.7 Q 50 179.7 106 184.7 L 106 270 L -6 270 Z" fill="#56514d" stroke="none"/>
+            <path d="M -4 184.7 Q 50 179.7 104 184.7" fill="none" stroke="#2b2623" stroke-width="2.15" stroke-opacity="0.72"/>
+            <rect x="0" y="0" width="100" height="260" fill="url(#thigh-fade)"/>
+          </g>
+          <path d="M 22 0 C 23 40 28 76 34 108 C 37 128 28 156 29 184 C 31 210 37 236 38 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 77 0 C 79 38 75 74 71 106 C 69 128 74 152 72 178 C 71 206 64 234 62 260" fill="none" stroke="#2b2623" stroke-width="1.84" stroke-linecap="round"/>
+          <path d="M 50 110 C 51 116 50 122 48 126" fill="none" stroke="#2b2623" stroke-width="1.33" stroke-linecap="round" stroke-opacity="0.55"/>
+        </g>
+        <text x="699.2" y="367.4" text-anchor="middle" font-size="12" font-weight="600" fill="#24201e" opacity="0.72">2.9</text>
+        <text x="699.2" y="523.0" text-anchor="middle" font-size="15" fill="#24201e">6</text>
+      </g>
+    
+  </g>
+</svg>

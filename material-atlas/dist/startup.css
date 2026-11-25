@@ -7,6 +7,7 @@ body{border-radius:20px;clip-path:inset(0 round 20px)}
 main{position:relative;height:100vh;min-height:400px;border-radius:20px;overflow:hidden;background:#d97757;transition:opacity .18s ease,filter .18s ease;-webkit-app-region:drag;user-select:none}
 .brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-75%);display:flex;flex-direction:column;align-items:center;gap:18px}
 .app-icon{display:block;width:112px;height:112px}
+.playing .app-icon{animation:logo-turn .82s cubic-bezier(.2,.65,.35,1) both}
 .wordmark{font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:28px;font-weight:400;letter-spacing:-.8px;line-height:1;color:#ffffff}
 .wordmark span{color:#ffffff}
 .companion{position:absolute;left:24px;bottom:26px;width:116px;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -17,9 +18,17 @@ main{position:relative;height:100vh;min-height:400px;border-radius:20px;overflow
 h1{font-family:"Materia Source Han Sans","Yu Gothic",sans-serif;font-size:12px;line-height:1.5;font-weight:400;letter-spacing:1px;margin:0;position:relative}
 .dots{position:absolute;left:100%;letter-spacing:2px;margin-left:3px;animation:dots 1.8s ease-in-out infinite}
 .loading{position:absolute;left:50%;bottom:74px;transform:translateX(-50%);width:260px;height:4px;border-radius:4px;overflow:hidden;background:#ffffff40}
-.loading span{display:block;width:90px;height:100%;border-radius:inherit;background:#ffffff;animation:loading 1.8s ease-in-out infinite}
+.loading span{display:block;width:90px;height:100%;border-radius:inherit;background:#ffffff}
+.playing .loading span{animation:loading .82s linear infinite alternate}
 .caption{font-family:"Materia Inter","Materia Source Han Sans",sans-serif;margin-top:5px;font-size:7px;font-weight:400;letter-spacing:1.4px;color:#ffffff}
 .depart main{opacity:0;filter:blur(4px)}
 @keyframes dots{0%,100%{opacity:.3}50%{opacity:1}}
-@keyframes loading{0%{transform:translateX(-90px)}100%{transform:translateX(260px)}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.loading span{transform:translateX(85px)}}
+@keyframes logo-turn{from{transform:rotate(-65deg)}to{transform:rotate(0)}}
+@keyframes loading{from{transform:translateX(0)}to{transform:translateX(170px)}}
+@keyframes logo-fade{from{opacity:.35}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  main{transition:none}
+  .loading span{transform:translateX(85px)}
+  .playing .loading span{animation:none}
+  .playing .app-icon{animation:logo-fade .65s ease-out both}
+}

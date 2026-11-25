@@ -1,3 +1,5 @@
+import {cleanCanvasStore, serializeCanvasRules} from '../dist/research-canvas-model.js';
+import {buildPaperCanvasPrompt, findExistingPaperCanvas, standardCanvasName, upsertPaperCanvas} from './literature-workbench-canvas.mjs';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {existsSync} from 'node:fs';
@@ -9,6 +11,10 @@ import {renderReport, unwrapMarkdown} from './literature-workbench/web/markdown.
 
 const origin = 'materia-workbench://local';
 const markdownAssets = new Map([
+  ['/paper-canvas.css', ['desktop/literature-workbench/web/paper-canvas.css', 'text/css']],
+  ['/paper-canvas.js', ['desktop/literature-workbench/web/paper-canvas.js', 'text/javascript']],
+  ['/takeaway-card.js', ['desktop/literature-workbench/web/takeaway-card.js', 'text/javascript']],
+  ['/takeaway-card.css', ['desktop/literature-workbench/web/takeaway-card.css', 'text/css']],
   ['/markdown.js', ['desktop/literature-workbench/web/markdown.js', 'text/javascript']],
   ['/report.css', ['desktop/literature-workbench/web/report.css', 'text/css']],
   ['/dist/vendor/markdown-it.mjs', ['dist/vendor/markdown-it.mjs', 'text/javascript']],
@@ -16,8 +22,8 @@ const markdownAssets = new Map([
   ['/dist/vendor/katex/katex.mjs', ['dist/vendor/katex/katex.mjs', 'text/javascript']],
 ]);
 const routes = new Map([
-  ['GET', new Set(['/', '/app.js', '/style.css'])],
-  ['POST', new Set(['/extract', '/render', '/interpret', '/process', '/report', '/outline', '/cancel', '/saved-report', '/follow-up', '/edit-report', '/export-report', '/presets', '/display-preferences'])],
+  ['GET', new Set(['/', '/takeaway-card', '/paper-canvas', '/study-tool.js', '/app.js', '/style.css'])],
+  ['POST', new Set(['/paper-text', '/extract', '/render', '/interpret', '/process', '/report', '/outline', '/cancel', '/saved-report', '/follow-up', '/edit-report', '/export-report', '/presets', '/display-preferences'])],
 ]);
 
 async function readWorkerResponse(response, limit) {
@@ -59,7 +65,7 @@ export function workbenchPython() {
   return {executable,args:executable === 'py' ? ['-3'] : []};
 }
 
-export function createLiteratureWorkbench(appRoot, profile, output, {complete, checkService} = {}) {
+export function createLiteratureWorkbench(appRoot, profile, output, {complete, checkService, canvasStore: resolveCanvasStore = () => null} = {}) {
   let child;
   let starting;
 
@@ -153,6 +159,45 @@ export function createLiteratureWorkbench(appRoot, profile, output, {complete, c
         return new Response(await readFile(path.join(appRoot, file)), {headers:{
           'Content-Type': media + '; charset=utf-8', 'X-Content-Type-Options':'nosniff',
         }});
+      }
+      if (hostname === 'local' && pathname === '/paper-canvas' && searchParams.has('paperId') && request.method === 'GET') {
+        try {
+          const storeApi = resolveCanvasStore();
+          if (!storeApi) return Response.json({board: null});
+          const store = cleanCanvasStore(await storeApi.load());
+          const paperId = searchParams.get('paperId') || '';
+          const paperTitle = searchParams.get('title') || '';
+          const year = searchParams.get('year') || '';
+          const name = standardCanvasName({paperTitle, year});
+          const board = findExistingPaperCanvas(store, {paperId, canvasName: name});
+          if (!board) return Response.json({board: null, name});
+          return Response.json({board, rules: serializeCanvasRules(board), name: board.name});
+        } catch (error) {
+          return Response.json({error: error.message}, {status: 500});
+        }
+      }
+      if (hostname === 'local' && pathname === '/paper-canvas' && request.method === 'POST') {
+        try {
+          const storeApi = resolveCanvasStore();
+          if (!storeApi) return Response.json({error: '当前未连接研究画布存储（请在 main.mjs 传入 canvasStore）。'}, {status: 503});
+          const payload = await request.json();
+          const canvasName = standardCanvasName({paperTitle: payload.paperTitle, year: payload.year});
+          const prompt = buildPaperCanvasPrompt({...payload, canvasName});
+          const aiResult = await complete(prompt, [], request.signal);
+          request.signal?.throwIfAborted();
+          if (storeApi !== resolveCanvasStore()) throw Error("文献库已切换，请重新生成。");
+          const saved = await upsertPaperCanvas({
+            canvasStore: storeApi,
+            paperId: payload.paperId,
+            paperTitle: payload.paperTitle,
+            year: payload.year,
+            rulesSource: aiResult?.answer || '',
+            createNewCopy: Boolean(payload.createNewCopy),
+          });
+          return Response.json(saved);
+        } catch (error) {
+          return Response.json({error: error.message || '生成研究画布失败。'}, {status: 500});
+        }
       }
       if (hostname === 'local' && pathname === '/service' && request.method === 'GET') {
         try {

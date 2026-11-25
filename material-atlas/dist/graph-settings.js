@@ -1,14 +1,19 @@
 import {THEME_ALIASES} from './theme-variants.js';
 import {GRAPH_PRESETS} from './graph-appearance.js';
-export const GRAPH_DEFAULTS = {mode:'similarity',clusterBasis:'combined',neighbors:3,similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65,sharedTagThreshold:6,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,showCommunityLabels:true,colorBy:'community',localMode:false,localDepth:1,appearance:'theme',orbitRings:6};
+export const GRAPH_DEFAULTS = {mode:'similarity',clusterBasis:'combined',neighbors:3,similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65,sharedTagThreshold:6,center:.35,repulsion:2.2,linkStrength:.65,linkDistance:145,inertia:.5,nodeSize:1,linkWidth:.8,labelThreshold:1.3,showRelations:true,showCommunityLabels:true,colorBy:'community',localMode:false,localDepth:1,appearance:'theme',orbitRings:6,dimension:'2d',showGalaxyParticles:true,shapeGalaxies:true,hideNodesWhenFar:false,nodeFadeThreshold:.85};
 export function cleanGraphSettings(value = {}) {
-  const output={...GRAPH_DEFAULTS},limits={neighbors:[1,12],center:[0,2],repulsion:[.25,4],linkStrength:[.1,2],linkDistance:[40,250],inertia:[0,1],nodeSize:[.6,2],linkWidth:[.3,2.5],labelThreshold:[.5,2.5],localDepth:[0,2]};
+  const output={...GRAPH_DEFAULTS},limits={neighbors:[1,12],center:[0,2],repulsion:[.25,4],linkStrength:[.1,2],linkDistance:[40,250],inertia:[0,1],nodeSize:[.6,2],linkWidth:[.3,2.5],labelThreshold:[.5,2.5],localDepth:[0,2],nodeFadeThreshold:[.2,2]};
   for(const [key,[min,max]]of Object.entries(limits))if(Number.isFinite(Number(value[key])))output[key]=Math.max(min,Math.min(max,Number(value[key])));
+  output.nodeFadeThreshold=Math.round(output.nodeFadeThreshold*100)/100;
   Object.assign(output,{similarityThreshold:.2,mutualKnn:false,resolution:1,clusterStrength:.65});
   for(const [key,min,max] of [['similarityThreshold',.01,1],['resolution',.3,2.5],['clusterStrength',0,2]])if(Number.isFinite(Number(value[key])))output[key]=Math.max(min,Math.min(max,Number(value[key])));
   if(typeof value.mutualKnn==='boolean')output.mutualKnn=value.mutualKnn;
   if(['combined','方向','体系'].includes(value.clusterBasis))output.clusterBasis=value.clusterBasis;
   if(['similarity','tags','citations'].includes(value.mode))output.mode=value.mode;
+  output.dimension = value.dimension === '3d' ? '3d' : '2d';
+  output.showGalaxyParticles = value.showGalaxyParticles !== false;
+  output.shapeGalaxies = value.shapeGalaxies !== false;
+  output.hideNodesWhenFar = value.hideNodesWhenFar === true;
   if(value.sharedTagThreshold!==undefined&&Number.isFinite(Number(value.sharedTagThreshold)))output.sharedTagThreshold=Math.round(Math.max(6,Math.min(29,Number(value.sharedTagThreshold))));
   output.neighbors=Math.round(output.neighbors);
   output.localDepth=Math.round(output.localDepth);
@@ -24,6 +29,20 @@ export function cleanGraphSettings(value = {}) {
   if(value.appearance==='theme'||Object.hasOwn(GRAPH_PRESETS,value.appearance)||/^theme:[a-z][a-z\d-]{0,100}$/i.test(value.appearance||''))output.appearance=value.appearance;
   if(output.appearance.startsWith('theme:')&&THEME_ALIASES[output.appearance.slice(6)])output.appearance='theme:'+THEME_ALIASES[output.appearance.slice(6)].id;
   return output;
+}
+
+export function farNodeVisibility(scale, preferences = {}) {
+  if (preferences.dimension !== '3d' || preferences.showGalaxyParticles === false || !preferences.hideNodesWhenFar) return 1;
+  const s = Number(scale);
+  if (!Number.isFinite(s)) return 1;
+  const threshold = Number.isFinite(Number(preferences.nodeFadeThreshold))
+    ? Number(preferences.nodeFadeThreshold)
+    : GRAPH_DEFAULTS.nodeFadeThreshold;
+  const band = 0.25;
+  if (s <= threshold) return 0;
+  if (s >= threshold + band) return 1;
+  const t = (s - threshold) / band;
+  return t * t * (3 - 2 * t);
 }
 
 export function localPapers(papers,groups,id,depth=1) {

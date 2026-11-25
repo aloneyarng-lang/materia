@@ -74,7 +74,7 @@ html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var
 }
 #star-map[data-orbit-focus] .graph-overview,
 #star-map[data-orbit-focus] :is(.cosmic-backdrop, .theme-symbol-backdrop),
-.graph-wrap:has(#star-map[data-orbit-focus]) .graph-controls { display: none; }
+.graph-wrap:has(#star-map[data-orbit-focus]) :is(.graph-controls, .galaxy-starfield-canvas) { display: none; }
 .graph-orbit-toolbar {
   position: absolute;
   z-index: 2;
@@ -96,6 +96,12 @@ html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var
   color: #f0f5ff;
 }
 .graph-orbit-toolbar small { display: block; margin-top: 3px; color: #aabbd9; }
+.graph-orbit-toolbar .graph-orbit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
 .graph-wrap:has(#star-map[data-orbit-focus]) .graph-orbit-toolbar button {
   pointer-events: auto;
   white-space: nowrap;
@@ -105,19 +111,32 @@ html[data-theme-mode="light"] #star-map .nova-orbit{stroke:color-mix(in srgb,var
   border: 1px solid #53617d;
 }
 .graph-wrap:has(#star-map[data-orbit-focus]) .graph-orbit-toolbar button:hover { color: #fff; background: #2a3b59; }
-.graph-orbit-scene { animation: graph-orbit-reveal .3s ease-out; }
+.graph-orbit-toolbar button[hidden] { display: none; }
+@media(prefers-reduced-motion:no-preference) {
+  .graph-orbit-scene.is-new,
+  .graph-orbit-scene.is-transitioning :is(.graph-orbit-rings, .graph-orbit-halo) {
+    animation: graph-orbit-reveal .3s ease-out;
+  }
+}
 .graph-orbit-starfield { fill: #c6dbfc; pointer-events: none; }
-.graph-orbit-rear, .graph-orbit-front { fill: none; stroke: #a4bbde; pointer-events: none; }
-.graph-orbit-rear { opacity: .27; stroke-width: .85; stroke-dasharray: 2 5; }
-.graph-orbit-front { opacity: .51; stroke-width: 1.1; }
+.graph-orbit-line { fill: none; stroke: #a4bbde; stroke-width: 1; opacity: .42; pointer-events: none; }
+#star-map.graph-orbit-rotating, #star-map.graph-orbit-rotating .graph-orbit-planet { cursor: grabbing; }
+#star-map.graph-space-rotating, #star-map.graph-space-rotating .graph-node { cursor: grabbing; }
+#star-map.graph-space-rotating :is(.node-label, .tag-node-label, .community-labels, .network-flow, .cosmic-node-effects) { display: none; }
+#star-map.graph-space-rotating .graph-node .node-core { filter: none; }
+#star-map[data-graph-twinkle].graph-space-rotating .cosmic-twinkle { animation-play-state: paused; }
+.graph-orbit-scene:not(.is-transitioning) .graph-orbit-track.is-behind { mask: url(#graph-orbit-behind-center); }
+.graph-orbit-departing { pointer-events: none; }
 .graph-orbit-planet { cursor: pointer; outline: none; }
-.graph-orbit-body { pointer-events: none; }
+.graph-orbit-body, .graph-orbit-halo { pointer-events: none; }
 .graph-orbit-target { fill: transparent; stroke: transparent; stroke-width: 1.4; }
 .graph-orbit-planet[aria-pressed="true"] .graph-orbit-target { stroke: #afdcfc; }
 .graph-orbit-planet:is(:hover, :focus-visible) .graph-orbit-target { stroke: #fff0c4; }
 .graph-orbit-planet:focus-visible .graph-orbit-target { stroke-dasharray: 3 3; }
+.graph-orbit-reversal { fill: none; stroke: #ffce80; stroke-width: 1.8; opacity: 0; pointer-events: none; }
+.graph-orbit-planet.is-reversing .graph-orbit-reversal { animation: graph-orbit-reverse 1.8s ease-out; }
+@keyframes graph-orbit-reverse { 0%, 30% { opacity: .95; } 100% { opacity: 0; } }
 @keyframes graph-orbit-reveal { from { opacity: 0; } to { opacity: 1; } }
-@media(prefers-reduced-motion:reduce) { .graph-orbit-scene { animation: none; } }
 
 .graph-mode-help{flex:0 0 auto;margin:0;padding:0 22px 8px;color:var(--muted);font-size:.75rem;line-height:1.5}
 #graph-mode{max-width:150px;min-width:0;padding:6px 8px;font-size:.78rem}
@@ -140,8 +159,37 @@ svg[data-graph-density="dense"] .graph-node{transition:none}
 
 .visualization-column:has(#graph-wrap[hidden]) .graph-mode-bar{display:none}
 .graph-neighbors-control input[type="checkbox"]{width:14px;height:14px;padding:0}
-#legend>span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 
 .community-label{fill:var(--ink);font-weight:600;letter-spacing:.02em;paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round;pointer-events:none}
 #graph-mode-help[hidden]{display:none}
-.graph-mode-bar{justify-content:flex-start;gap:12px 24px} #legend>span>i{width:6px;height:6px;flex:none;border-radius:50%} .community-label{vector-effect:non-scaling-stroke}
+.graph-mode-bar{justify-content:flex-start;gap:8px 16px;padding:4px 14px 6px} .community-label{vector-effect:non-scaling-stroke}
+
+/* Focus+Context dimming and Semantic Zoom clarity. */
+#star-map .graph-node[data-focus-dim="true"]{opacity:.16;filter:saturate(.45)}
+#star-map .graph-node.is-active .node-core{filter:drop-shadow(0 0 max(4px,var(--render-glow,0px)) var(--node-color))}
+#star-map[data-zoom-tier="far"] .graph-node:not(.is-active):not([data-focus-near="true"]) .node-label{opacity:0!important}
+#star-map[data-zoom-tier="far"] .community-label{opacity:.96}
+@media(prefers-reduced-motion:reduce){#star-map .graph-node[data-focus-dim="true"]{transition:none}}
+
+/* 3D Star-River Particle Canvas & Layering */
+.graph-wrap{position:relative}
+.galaxy-starfield-canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+  display:block;
+}
+#star-map{position:relative;z-index:1}
+#star-map[data-graph-dimension="3d"]{background:transparent}
+#star-map[data-graph-dimension="3d"] .graph-node .node-core{stroke-width:.5px}
+#star-map[data-graph-dimension="3d"][data-graph-fill="hollow"] .graph-node .node-core{
+  fill:color-mix(in srgb,var(--node-color) 28%,transparent);
+  stroke:var(--node-color);
+  stroke-width:1px;
+}
+#star-map[data-graph-dimension="3d"] .graph-node:not(.is-active):not([data-focus-dim="true"]):not([data-focus-near="true"]){opacity:var(--node-depth-alpha,1)}
+#star-map[data-graph-dimension="3d"] .community-label{stroke-width:4px;font-weight:600;letter-spacing:.03em;opacity:.92}
+.graph-range[hidden]{display:none!important}

@@ -1,7 +1,5 @@
 export const timelineModules = [
-  ['innovation-timeline', '创新点时间线', ['innovations']],
-  ['limitation-timeline', '局限性时间线', ['limitations']],
-  ['combined-timeline', '创新点与局限性时间线', ['innovations', 'limitations']],
+  ['combined-timeline', '创新性和局限性时间线', ['innovations', 'limitations']],
 ].map(([id, label, fields]) => ({
   id,
   label,

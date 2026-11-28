@@ -26,6 +26,8 @@ for (const output of paths) {
   const themeValidator=(await readFile(path.join(root,'scripts/validate-theme-design.mjs'),'utf8')).replaceAll("'../dist/","'../resources/app/dist/");
   await writeFile(path.join(output,'scripts/validate-theme-design.mjs'),themeValidator);
   await cp(path.join(root,'theme-examples'),path.join(output,'theme-examples'),{recursive:true});
+  await copyFile(path.resolve(root,'../CHANGELOG.md'),path.join(output,'CHANGELOG.md'));
+  await cp(path.resolve(root,'../展览库/潮汐排印'),path.join(output,'展览库/潮汐排印'),{recursive:true});
   await copyFile(path.join(root,'AI_AGENT.md'),path.join(output,'AI_AGENT.md'));
   await copyFile(path.join(root,'PREDICTION.md'),path.join(output,'PREDICTION.md'));
   await copyFile(path.join(root,'MODULES.md'),path.join(output,'MODULES.md'));

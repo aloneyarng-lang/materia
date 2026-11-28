@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SIZE,POINTS,BLACK,WHITE,KOMI,neighbors,placement,positionKey,areaScore,createGoGame} from '../dist/flow-go-rules.js';
 import {rankGoMoves,agreesWithDeadStones,estimateBlackWinRate} from '../dist/flow-go-engine.js';
-import {GO_COMMENTARY_LINES,createGoCommentary,selectGoSpeech} from '../dist/flow-go-commentary.js';
+import {
+  GO_COMMENTARY_LINES,
+  buildGoCommentaryMessages,
+  createGoCommentary,
+  parseGoCommentaryReply,
+  selectGoSpeech,
+} from '../dist/flow-go-commentary.js';
 
 const at = (x,y) => y * SIZE + x;
 function position(black,white) {
@@ -109,42 +115,92 @@ test('black win estimate reacts to play, reverses on undo and gives the actual r
   assert.equal(estimateBlackWinRate(scored.state),100);
 });
 
-test('Go commentary triggers in-character remarks for blunders, brilliant moves, captures, undo, disputes, and endgame',()=>{
-  let clock = 1000;
-  const commentary = createGoCommentary({now:()=>clock});
+test('Go commentary speaks continuously on every move with contextual & multi-move continuity',()=>{
+  const commentary = createGoCommentary();
 
   const open = commentary.onOpening();
   assert.equal(open.category,'opening');
   assert.ok(GO_COMMENTARY_LINES.opening.some(item=>item.id===open.entry.id));
 
-  // Blunder triggers even on Move 1 right after opening greeting, and respects cooldown on immediate next ply
-  const blunder = commentary.onBlackEvaluated({prevWinRate:52,nextWinRate:39,captured:1,moveCount:1});
+  // Consecutive moves with zero time/move cooldown still speak every single turn
+  const corner = commentary.onTurnEvaluated({blackPoint:at(3,3),prevWinRate:50,nextWinRate:50.5,moveCount:2});
+  assert.equal(corner.category,'opening_corner');
+
+  const flow = commentary.onTurnEvaluated({blackPoint:at(9,3),prevWinRate:50.5,nextWinRate:51,moveCount:18});
+  assert.equal(flow.category,'opening_flow');
+
+  const blunder = commentary.onTurnEvaluated({blackPoint:at(10,10),prevWinRate:52,nextWinRate:39,blackCaptured:1,moveCount:34});
   assert.equal(blunder.category,'blunder');
-  assert.equal(commentary.onBlackEvaluated({prevWinRate:40,nextWinRate:26,moveCount:2}),null);
 
-  clock += 12000;
-  const whiteCap = commentary.onWhiteMove({captured:3,moveCount:22});
-  assert.equal(whiteCap.category,'white_big_capture');
+  const doubleBlunder = commentary.onTurnEvaluated({blackPoint:at(11,10),prevWinRate:39,nextWinRate:26,moveCount:36});
+  assert.equal(doubleBlunder.category,'double_blunder');
 
-  // Brilliant surge requires live winrate window and longer medium cooldown
-  assert.equal(commentary.onBlackEvaluated({prevWinRate:35,nextWinRate:45,moveCount:23}),null);
-  clock += 21000;
-  const brilliant = commentary.onBlackEvaluated({prevWinRate:35,nextWinRate:45,moveCount:27});
+  const recover = commentary.onTurnEvaluated({blackPoint:at(12,10),prevWinRate:26,nextWinRate:27,moveCount:38});
+  assert.equal(recover.category,'recover_after_blunder');
+
+  const whiteBigCap = commentary.onTurnEvaluated({blackPoint:at(12,11),whiteCaptured:3,prevWinRate:27,nextWinRate:24,moveCount:40});
+  assert.equal(whiteBigCap.category,'white_big_capture');
+
+  const blackBigCap = commentary.onTurnEvaluated({blackPoint:at(13,11),blackCaptured:3,prevWinRate:24,nextWinRate:30,moveCount:42});
+  assert.equal(blackBigCap.category,'black_big_capture');
+
+  const brilliant = commentary.onTurnEvaluated({blackPoint:at(6,6),prevWinRate:35,nextWinRate:45,moveCount:44});
   assert.equal(brilliant.category,'brilliant');
 
-  // Midgame top KataGo recommendation also counts as brilliant once cooled down
-  clock += 21000;
-  const topMove = commentary.onBlackEvaluated({prevWinRate:50,nextWinRate:51,moveCount:32,playedTopHint:true});
-  assert.equal(topMove.category,'brilliant');
+  const streak = commentary.onTurnEvaluated({blackPoint:at(6,7),prevWinRate:45,nextWinRate:46,playedTopHint:true,moveCount:46});
+  assert.equal(streak.category,'streak_brilliant');
 
-  // Line bank rotation avoids immediate repeats
-  clock += 15000;
-  const secondBlunder = commentary.onBlackEvaluated({prevWinRate:55,nextWinRate:40,moveCount:36});
-  assert.equal(secondBlunder.category,'blunder');
-  assert.notEqual(secondBlunder.entry.id,blunder.entry.id);
+  const swingBlack = commentary.onTurnEvaluated({blackPoint:at(7,7),prevWinRate:45,nextWinRate:56,moveCount:48});
+  assert.equal(swingBlack.category,'lead_swing_black');
+
+  const swingWhite = commentary.onTurnEvaluated({blackPoint:at(7,8),prevWinRate:54,nextWinRate:47,moveCount:50});
+  assert.equal(swingWhite.category,'lead_swing_white');
+
+  const localFight = commentary.onTurnEvaluated({blackPoint:at(5,5),prevWhitePoint:at(6,5),prevWinRate:44,nextWinRate:45,moveCount:52});
+  assert.equal(localFight.category,'local_fight');
+
+  const tenuki = commentary.onTurnEvaluated({blackPoint:at(15,15),prevWhitePoint:at(5,5),prevWinRate:45,nextWinRate:46,moveCount:54});
+  assert.equal(tenuki.category,'tenuki');
+
+  const closeGame = commentary.onTurnEvaluated({blackPoint:at(10,15),prevWhitePoint:at(14,15),prevWinRate:49,nextWinRate:50,moveCount:56});
+  assert.equal(closeGame.category,'close_game');
+  const closeGame2 = commentary.onTurnEvaluated({blackPoint:at(10,16),prevWhitePoint:at(14,16),prevWinRate:50,nextWinRate:51,moveCount:58});
+  assert.equal(closeGame2.category,'close_game');
+  assert.notEqual(closeGame2.entry.id,closeGame.entry.id);
+
+  const blackAhead = commentary.onTurnEvaluated({blackPoint:at(10,16),prevWhitePoint:at(14,16),prevWinRate:60,nextWinRate:61,moveCount:60});
+  assert.equal(blackAhead.category,'black_ahead');
+
+  const whiteAhead = commentary.onTurnEvaluated({blackPoint:at(10,16),prevWhitePoint:at(14,16),prevWinRate:35,nextWinRate:34,moveCount:62});
+  assert.equal(whiteAhead.category,'white_ahead');
+
+  const endgame = commentary.onTurnEvaluated({blackPoint:at(2,2),prevWhitePoint:at(16,16),prevWinRate:50,nextWinRate:50,moveCount:142});
+  assert.equal(endgame.category,'endgame_push');
+
+  const passMove = commentary.onTurnEvaluated({blackPass:true,prevWinRate:50,nextWinRate:50,moveCount:144});
+  assert.equal(passMove.category,'pass_move');
+
+  // Record spoken continuity and build live LLM continuation prompt
+  commentary.recordSpoken({moveCount:56,category:'close_game',text:closeGame.entry.zh,speech:closeGame.entry.zh});
+  commentary.recordSpoken({moveCount:58,category:'close_game',text:closeGame2.entry.zh,speech:closeGame2.entry.zh});
+  assert.equal(commentary.getRecentDialogue().length,2);
+
+  const messages = buildGoCommentaryMessages({
+    turn:{moveCount:60,blackPoint:at(3,3),whitePoint:at(15,15),prevWhitePoint:at(14,15),prevWinRate:50,nextWinRate:52.4,categoryHint:'tenuki'},
+    recentDialogue:commentary.getRecentDialogue(),
+    displayLocale:'zh-CN',
+    voiceLanguage:'ja',
+  });
+  assert.equal(messages.length,2);
+  assert.match(messages[0].content,/接着上一轮的话题/);
+  assert.match(messages[1].content,/"moveCount":60/);
+
+  const parsedCross = parseGoCommentaryReply('```json\n{"text":"你居然真的脱先了。","speech":"本当に手を抜いたのね。"}\n```',{displayLocale:'zh-CN',voiceLanguage:'ja'});
+  assert.deepEqual(parsedCross,{text:'你居然真的脱先了。',speech:'本当に手を抜いたのね。',language:'ja'});
+  const parsedPlain = parseGoCommentaryReply('「这步棋还算冷静。」',{displayLocale:'zh-CN',voiceLanguage:'follow'});
+  assert.deepEqual(parsedPlain,{text:'这步棋还算冷静。',speech:'这步棋还算冷静。',language:'zh'});
 
   // D-Mail undo, dispute, resign, and win/loss remarks
-  clock += 15000;
   assert.equal(commentary.onUndo(38).category,'undo');
   assert.equal(commentary.onDispute().category,'dispute');
   assert.equal(commentary.onGameEnd({reason:'resign',winner:WHITE}).category,'resign');

@@ -128,18 +128,40 @@ export async function createFiguraController(context, native) {
     }
   }
 
+  function syncCategoryPills(current) {
+    const pillsHost = find('category-pills');
+    if (!pillsHost) return;
+    const select = find('category');
+    const categories = [...select.options].map(opt => opt.value);
+    pillsHost.innerHTML = categories.map(cat =>
+      `<button type="button" data-fig-category-pill="${escape(cat)}" aria-pressed="${cat === current}">${escape(cat || t('全部'))}</button>`
+    ).join('');
+  }
+
   function gallery() {
     const query = find('query').value.trim().normalize('NFKC').toLowerCase(), category = find('category').value;
+    syncCategoryPills(category);
+    const validCount = schemes.filter(item => !item.error).length;
+    const countBadge = find('scheme-count');
+    if (countBadge) countBadge.textContent = String(validCount);
     find('schemes').innerHTML = schemes.filter(item => {
       const info = state.metadata[item.id] || item;
       return (!category || item.category === category) && [info.name, info.description, item.category, item.id].join(' ').normalize('NFKC').toLowerCase().includes(query);
-    }).map(item => {
+    }).map((item, idx) => {
       const info = state.metadata[item.id] || item, active = item === scheme();
+      const num = String(idx + 1).padStart(2, '0');
       return html`<button type="button" class="figura-scheme" data-fig-action="select-scheme" data-id="${escape(item.id)}" aria-pressed="${active}" ${item.error ? 'disabled' : ''} title="${escape(item.error || info.description || info.name)}">
-        ${item.error ? '' : `<img src="${escape(info.cover?.startsWith('data:') ? info.cover : item.coverURL)}" alt="" loading="lazy">`}
-        <span><strong>${escape(info.name)}</strong><small>${escape(item.error || item.category)}${item.user ? ' · ' + t('自定义') : ''}</small></span></button>`;
+        <div class="figura-scheme-thumb">
+          <span class="figura-scheme-num">${num}</span>
+          ${item.error ? '' : `<img src="${escape(info.cover?.startsWith('data:') ? info.cover : item.coverURL)}" alt="" loading="lazy">`}
+        </div>
+        <div class="figura-scheme-meta">
+          <strong>${escape(info.name)}</strong>
+          <small>${escape(item.error || item.category)}${item.user ? ' · ' + t('自定义') : ''}</small>
+        </div>
+      </button>`;
     }).join('') || html`<p class="figura-help">没有匹配的方案。</p>`;
-    context.setCount(msg`${schemes.filter(item => !item.error).length} 个方案`);
+    context.setCount(msg`${validCount} 个方案`);
   }
 
   function updateCatalog() {
@@ -147,6 +169,7 @@ export async function createFiguraController(context, native) {
     const categories = [...new Set(schemes.map(item => item.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'zh'));
     select.innerHTML = html`<option value="">全部分类</option>` + categories.map(category => `<option>${escape(category)}</option>`).join('');
     if (categories.includes(current)) select.value = current;
+    syncCategoryPills(select.value);
     gallery();
   }
 
@@ -207,6 +230,12 @@ export async function createFiguraController(context, native) {
     button('save').disabled = !value;
     find('name').disabled = !value;
     find('name').value = value?.name || '';
+    const activeBadge = find('active-scheme');
+    if (activeBadge) {
+      const info = item ? (state.metadata[item.id] || item) : null;
+      activeBadge.hidden = !info;
+      activeBadge.textContent = info ? `${info.name} · ${item.category}` : '';
+    }
     find('requirements').textContent = item?.dataDescription || '';
     button('style-sample').hidden = !item?.samples.includes('style-example.csv');
     find('sheets').hidden = !imported;
@@ -517,6 +546,11 @@ export async function createFiguraController(context, native) {
 
   const actions = {
     'select-scheme': control => selectScheme(control.dataset.id),
+    'toggle-gallery': control => {
+      const layoutEl = host.querySelector('.figura-layout');
+      const collapsed = layoutEl?.classList.toggle('is-gallery-collapsed');
+      control.setAttribute('aria-pressed', String(Boolean(collapsed)));
+    },
     'preview-tab': () => chooseTab('preview'),
     'data-tab': () => chooseTab('data'),
     refresh: () => preview(),
@@ -678,9 +712,29 @@ export async function createFiguraController(context, native) {
   });
 
   context.on(host, 'click', event => {
+    const catPill = event.target.closest('[data-fig-category-pill]');
+    if (catPill) {
+      find('category').value = catPill.dataset.figCategoryPill;
+      gallery();
+      return;
+    }
+    const bgBtn = event.target.closest('[data-fig-stage-bg]');
+    if (bgBtn) {
+      const stage = find('stage');
+      stage.dataset.stageBg = bgBtn.dataset.figStageBg;
+      host.querySelectorAll('[data-fig-stage-bg]').forEach(btn => btn.setAttribute('aria-pressed', String(btn === bgBtn)));
+      return;
+    }
+    const zoomBtn = event.target.closest('[data-fig-stage-zoom]');
+    if (zoomBtn) {
+      const stage = find('stage');
+      stage.dataset.stageZoom = zoomBtn.dataset.figStageZoom;
+      host.querySelectorAll('[data-fig-stage-zoom]').forEach(btn => btn.setAttribute('aria-pressed', String(btn === zoomBtn)));
+      return;
+    }
     const control = event.target.closest('[data-fig-action]'), action = control?.dataset.figAction;
     if (!action || !Object.hasOwn(actions, action) || control.disabled) return;
-    if (action === 'done' || action === 'choose-data' || action === 'import-project' || action === 'choose-markdown') actions[action](control);
+    if (action === 'done' || action === 'choose-data' || action === 'import-project' || action === 'choose-markdown' || action === 'toggle-gallery') actions[action](control);
     else run(() => actions[action](control));
   });
 

@@ -1,4 +1,5 @@
 import {reportAchievement} from './flow-achievements.js';
+import {initEasterEggs} from './easter-eggs.js';
 import {loadTagVocabulary} from './tag-facets.js';
 import {t as tr,html,msg} from './i18n.js';
 import {LANGUAGES,getLocale,setLocale,initializeLocale,bindStaticDOM,onLocaleChange} from './i18n.js';
@@ -11,6 +12,10 @@ import {createMaterialList} from './material-list.js';
 import {createWorkspaceModules} from './workspace-modules.js';
 import {agentServiceForm} from './agent-service-form.js';
 import {createAgentServiceSettings} from './agent-service-settings.js';
+import {createAiUsagePanel} from './ai-usage-panel.js';
+import {createGraphTelescope} from './graph-telescope.js';
+import {DEFAULT_THEME_TRANSITION,THEME_TRANSITION_VALUES,initWorkspaceMotion,normalizeThemeTransition,prefersReducedMotion,previewThemeTransition,setBrandOrbitActivity} from './ui-motion.js';
+import {getPomodoroAnimation,getPomodoroAuraEnabled,normalizePomodoroAnimation,previewPomodoroAnimation,setPomodoroAnimation,setPomodoroAuraEnabled} from './pomodoro.js';
 import {createQuickTip} from './quick-tip.js';
 import {createWorkspaceChrome} from './workspace-chrome.js';
 import {createObservatory,observatorySettingsHTML} from './observatory.js';
@@ -59,6 +64,21 @@ const state = { papers: [], collections: [], notes: {}, compareIds: new Set(), h
 let modalContext = '';
 const minimalModeKey = 'materia.minimal-mode';
 let minimalMode = false;
+const startupAnimationKey = 'materia.startup-animation';
+const STARTUP_ANIMATIONS = [['aperture','陶土光圈'],['prism','虹彩晶窟'],['chrome','液态铂金'],['drafting','制图台标尺'],['obsidian','黑曜晶格'],['telemetry','仪器遥测'],['diffraction','电子衍射'],['telescope','天文目镜'],['monolith','矿物碑刻'],['horology','精密机芯'],['classic','经典旋转'],['off','完全关闭']];
+let startupAnimation = 'aperture';
+const themeTransitionKey = 'materia.theme-transition';
+const THEME_TRANSITIONS = [['iris','光圈波纹'],['curtain','斜切光栅'],['shutter','双翼快门'],['prism','棱镜叠化'],['off','完全关闭']];
+let themeTransition = DEFAULT_THEME_TRANSITION;
+const POMODORO_ANIMATIONS = [['shrine','结界祈愿'],['chronometer','活版时漏'],['eclipse','日蚀心流'],['crystal','晶体退火'],['off','完全关闭']];
+const POMODORO_THEME_META = [
+  ['shrine', '结界祈愿', '御札结界 · 落樱灵梦'],
+  ['chronometer', '活版时漏', '瑞士表盘 · 机械滚轮'],
+  ['eclipse', '日蚀心流', '月影掩星 · 贝利珠光'],
+  ['crystal', '晶体退火', '电子束扫 · 六方晶格'],
+  ['off', '完全关闭', '极简静默 · 无全屏演出'],
+];
+const optionLabel = (pairs, value) => pairs.find(([id]) => id === value)?.[1] || pairs[0]?.[1] || '';
 let agentController, researchCanvas, vocabularyController, workspaceModules, workspaceChrome;
 let batch, comparison, materialList, performanceEditor, bulkEditor, paperActions, parameterFinder, associationController, themeController, reader;
 let layoutTimer, graphPreferenceTimer, switchingLibrary = false;
@@ -128,8 +148,11 @@ function visiblePapers() {
 }
 const emptyWorkbenchFilters = () => ({filters:emptyFilters(), year:'', readingStatus:'', collection:''});
 let workbenchFilters = emptyWorkbenchFilters();
+let timelineFilters = emptyWorkbenchFilters();
+const inTimeline = () => state.view === 'combined-timeline';
 const inWorkbench = () => ['literature-workbench','takeaway-card','paper-canvas'].includes(state.view);
-const catalogFilterState = () => inWorkbench() ? workbenchFilters : state;
+const catalogFilterState = () => inTimeline() ? timelineFilters : inWorkbench() ? workbenchFilters : state;
+const timelineMatches = (criteria = timelineFilters) => filterCatalog(papers(), criteria, state.notes, state.journalMetrics);
 const workbenchPapers = () => papers().filter(paper => paper.file?.desktop);
 const workbenchMatches = (criteria = workbenchFilters) =>
   filterCatalog(papers(), criteria, state.notes, state.journalMetrics).filter(paper => paper.file?.desktop);
@@ -140,8 +163,10 @@ function countCatalogFilters({tag, year, readingStatus, collection, filters}, in
       !['tags','excludeTags','tagMode','parameterName','parameterUnit'].includes(key) && Boolean(value)).length;
 }
 
+const graphTelescope = createGraphTelescope($('#graph-wrap'));
 const map = new StarMap($('#star-map'), {
   onNaturalLayoutState:({busy,progress,canUndo,count})=>{
+    graphTelescope.update({busy,progress});
     for(const button of document.querySelectorAll('[data-action="graph-arrange"],[data-action="graph-relayout"],[data-action="graph-arrange-all"]'))button.disabled=(busy&&button.id!=='graph-arrange')||!count;
     for(const button of document.querySelectorAll('[data-action="graph-arrange-undo"]'))button.disabled=busy||!canUndo;
     const button=$('#graph-arrange');if(button){button.setAttribute('aria-busy',String(busy));button.title=busy?tr('点击取消整理'):tr('自然整理星图（右键查看更多）');}
@@ -233,9 +258,9 @@ function render() {
   $('#sort-order').value = state.sort;
   renderFilterOptions();
   renderParameterSummary(filtered);
-  if (inWorkbench()) {
-    const {parameterName,parameterUnit} = workbenchFilters.filters;
-    const parameter = parameterName && parameterInventory(workbenchPapers()).find(item => item.key === parameterName);
+  if (inWorkbench() || inTimeline()) {
+    const {parameterName,parameterUnit} = catalogFilterState().filters;
+    const parameter = parameterName && parameterInventory(inWorkbench() ? workbenchPapers() : all).find(item => item.key === parameterName);
     $('#quick-parameter-label').textContent = parameter
       ? parameter.name + (parameterUnit === '*' ? '' : ' · ' + (parameterUnit || tr('单位未填')))
       : tr('性能参数');
@@ -269,7 +294,7 @@ function render() {
   const filterCount = countCatalogFilters(state);
   $('#active-filter-count').textContent = filterCount;
   $('#active-filter-count').hidden = !filterCount;
-  $('#advanced-result-count').textContent = msg`当前匹配 ${inWorkbench() ? workbenchMatches().length : filtered.length} 篇文献`;
+  $('#advanced-result-count').textContent = msg`当前匹配 ${inTimeline() ? timelineMatches().length : inWorkbench() ? workbenchMatches().length : filtered.length} 篇文献`;
   $('#restore-hidden').hidden = !state.hiddenIds.size && !state.hiddenTagNodes.size;
   $('#restore-hidden').innerHTML=icon('eye')+tr('<span>恢复隐藏文献</span>',false);$('#restore-hidden').title=msg`恢复隐藏的 ${state.hiddenIds.size} 篇文献`;
   $('#hide-node').disabled = !state.selected;
@@ -321,7 +346,6 @@ function render() {
   renderDetail();
   hydrateIcons();
   comparison?.refreshBar();
-  $('#selection-innovation-timeline').hidden=!workspaceModules.available('innovation-timeline');
   if(standaloneView)$('#comparison-bar').hidden=true;
   readingStatusController?.render();
   $('#removal-undo').hidden = !lastRemoval?.count;
@@ -334,8 +358,8 @@ async function applyParameterFilter(name, unit = '*') {
   if (!ensureStorage()) return;
   const fromFilters = $('#advanced-filter-dialog').open;
   closeModal();
-  if (inWorkbench()) {
-    Object.assign(workbenchFilters.filters, {parameterName:parameterNameKey(name), parameterUnit:unit});
+  if (inWorkbench() || inTimeline()) {
+    Object.assign(catalogFilterState().filters, {parameterName:parameterNameKey(name), parameterUnit:unit});
     render();
     return;
   }
@@ -407,7 +431,16 @@ function citationDetail(p) {
 
 function selectPaper(id, showMobile = false) {
   if (!papers().some(p => p.id === id)) return;
+  const changed = state.selected !== id;
   state.selected = id;state.detailOpen=true;document.body.classList.remove('detail-collapsed');if(state.graphPreferences.localMode){render();return;} map.select(id); renderDetail();
+  if (changed && !prefersReducedMotion()) {
+    const panel = $('#detail-panel');
+    panel.classList.remove('detail-entering');
+    void panel.offsetWidth;
+    panel.classList.add('detail-entering');
+    clearTimeout(panel._detailFadeTimer);
+    panel._detailFadeTimer = setTimeout(() => panel.classList.remove('detail-entering'), 220);
+  }
   if (state.view === 'list') { document.querySelectorAll('.paper-row').forEach(row => row.classList.toggle('selected', row.dataset.select === id)); }
   if (showMobile && matchMedia('(max-width: 850px)').matches) $('#detail-panel').classList.add('mobile-open');
   hydrateIcons($('#detail-panel'));
@@ -528,19 +561,127 @@ async function undoRemoval() {
   } finally { removalBusy = false; button.disabled = false; }
 }
 
+async function refreshAnimationPreferences() {
+  if(native?.getStartupAnimation)startupAnimation=await native.getStartupAnimation().catch(()=>startupAnimation);
+  else{try{startupAnimation=localStorage.getItem(startupAnimationKey)||startupAnimation;}catch{}}
+  if(native?.getThemeTransition)themeTransition=normalizeThemeTransition(await native.getThemeTransition().catch(()=>themeTransition));
+  else{try{themeTransition=normalizeThemeTransition(localStorage.getItem(themeTransitionKey)||themeTransition);}catch{}}
+}
+
 async function settingsModal() {
   const size=state.papers.reduce((sum,p)=>sum+(p.file?.size||p.size||0),0);settingsActivity=await getImportActivity();
+  await refreshAnimationPreferences();
+  const pomodoroAnimation=getPomodoroAnimation();
+  const pomoLabel=optionLabel(POMODORO_ANIMATIONS,pomodoroAnimation);
+  const transitionLabel=optionLabel(THEME_TRANSITIONS,themeTransition);
+  const startupLabel=optionLabel(STARTUP_ANIMATIONS,startupAnimation);
+  const localeName=LANGUAGES.find(l=>l.id===getLocale())?.name||getLocale();
   showModal(tr('设置'),'',html`
-    <div class="settings-card language-settings"><div><strong>界面语言</strong><p>切换后立即生效，自动记住本机选择。</p></div><select id="interface-language" aria-label="界面语言">${LANGUAGES.map(language=>`<option value="${language.id}" ${language.id===getLocale()?'selected':''}>${language.name}</option>`).join('')}</select></div>
-    <div class="settings-card"><div><strong>简洁模式</strong><p id="minimal-mode-help">隐藏 AI 研究助手，下次启动时跳过开屏动画。</p></div><input id="minimal-mode" type="checkbox" role="switch" aria-label="简洁模式" aria-describedby="minimal-mode-help" ${minimalMode?'checked':''}></div>
-    <div class="settings-card"><div><strong>功能管理</strong><p>选择工作区中需要的页面</p></div><button class="outline-button" data-action="module-settings">管理…</button></div>
-    <div class="settings-card"><div><strong>AI 服务</strong><p>AI 助手、研读与阅读翻译共用</p></div><button class="outline-button" data-action="ai-service-settings">配置…</button></div>
-    <div class="settings-card"><div><strong>主题与字体</strong><p>配色、明暗外观与字号</p></div><button id="ribbon-theme" class="outline-button" data-action="themes">外观…</button></div>
-    ${observatorySettingsHTML(state.easterTheme)}
-    ${native?html`<div class="settings-card folder-card"><div><strong>文献库</strong><p class="folder-path">${escape(state.desktopInfo?.path||'')}</p><small>${state.papers.length} 篇 · ${bytesLabel(size)}</small></div><div class="settings-inline-actions">${actionMenu('storage-options',tr('文献库选项'),html`<button type="button" data-action="open-folder">${icon('folder')}打开文献库</button><button type="button" data-action="choose-folder">${icon('swap')}切换文献库…</button><button type="button" data-action="sync-folders">${icon('refresh')}立即同步文件夹</button>`,{iconName:'folder'})}</div></div>`:tr('<div class="info-box">网页预览 · 数据保存在当前浏览器</div>')}
-    <div class="settings-card"><div><strong>文献信息</strong><p>补充信息与期刊指标</p></div>${actionMenu('metadata-options',tr('管理'),tr('<button data-action="import-metadata">导入文献信息…</button><button data-action="journal-catalog">期刊影响因子…</button>'),{iconName:'folder'})}</div>
-    <div class="settings-card"><div><strong>备份与恢复</strong><p>PDF、笔记、分组与导入记录</p></div>${actionMenu('backup-options',tr('备份'),tr('<button data-action="export">导出完整备份…</button><button data-action="export-paper-tags">导出文献与标签 MD…</button><button data-action="restore">从备份恢复…</button>'),{iconName:'download'})}</div>
-    <p class="muted" id="settings-app-version">Materia ${escape(state.desktopInfo?.appVersion||tr('网页预览'))}</p><section id="settings-import-activity" class="settings-activity" aria-label="每日导入记录">${activityHTML(settingsActivity)}</section><details class="settings-companion"><summary>灵梦</summary><iframe src="./settings-companion.html" title="灵梦 · 少女祈願中" loading="lazy"></iframe></details><div class="modal-footer"><button class="primary" data-action="close-modal">完成</button></div>`,'settings');
+    <div class="settings-shell">
+      <section class="settings-hero">
+        <div class="settings-hero-main">
+          <span class="settings-hero-eyebrow">MATERIA // PREFERENCES</span>
+          <strong class="settings-hero-title" id="settings-app-version">Materia ${escape(state.desktopInfo?.appVersion||tr('网页预览'))}</strong>
+          <small>${state.papers.length} 篇文献 · ${bytesLabel(size)}</small>
+        </div>
+        <div class="settings-hero-pills">
+          <span class="settings-pill">${escape(tr('番茄钟主题'))} · <b>${escape(tr(pomoLabel))}</b></span>
+          <span class="settings-pill">${escape(tr('界面语言'))} · <b>${escape(localeName)}</b></span>
+          <span class="settings-pill">${escape(tr('简洁模式'))} · <b>${escape(tr(minimalMode?'已开启':'未开启'))}</b></span>
+        </div>
+      </section>
+      <div class="settings-bento">
+        <section class="settings-section" aria-label="个性与外观">
+          <h3 class="settings-section-title"><span>APPEARANCE</span>${escape(tr('个性与外观'))}</h3>
+          <div class="settings-group">
+            <div class="settings-row is-featured">
+              <div>
+                <strong>${escape(tr('主题切换'))}</strong>
+                <p>${escape(tr('外观配色、番茄钟主题、全屏转场与启动动画'))}</p>
+                <div class="settings-chips">
+                  <span>${escape(tr(pomoLabel))}</span>
+                  <span>${escape(tr(transitionLabel))}</span>
+                  <span>${escape(tr(startupLabel))}</span>
+                </div>
+              </div>
+              <button type="button" class="outline-button" data-action="theme-hub">${escape(tr('管理…'))}</button>
+            </div>
+            <div class="settings-row language-settings">
+              <div><strong>界面语言</strong><p>切换后立即生效，自动记住本机选择。</p></div>
+              <select id="interface-language" aria-label="界面语言">${LANGUAGES.map(language=>`<option value="${language.id}" ${language.id===getLocale()?'selected':''}>${language.name}</option>`).join('')}</select>
+            </div>
+            <div class="settings-row">
+              <div><strong>简洁模式</strong><p id="minimal-mode-help">隐藏 AI 研究助手，下次启动时跳过开屏动画。</p></div>
+              <input id="minimal-mode" type="checkbox" role="switch" aria-label="简洁模式" aria-describedby="minimal-mode-help" ${minimalMode?'checked':''}>
+            </div>
+          </div>
+        </section>
+        <section class="settings-section" aria-label="智能与工作区">
+          <h3 class="settings-section-title"><span>WORKSPACE & AI</span>${escape(tr('智能与工作区'))}</h3>
+          <div class="settings-group">
+            <div class="settings-row"><div><strong>功能管理</strong><p>选择工作区中需要的页面</p></div><button class="outline-button" data-action="module-settings">管理…</button></div>
+            <div class="settings-row"><div><strong>AI 服务</strong><p>AI 助手、研读与阅读翻译共用</p></div><button class="outline-button" data-action="ai-service-settings">配置…</button></div>
+            <div class="settings-row"><div><strong>AI 遥测与 Token 消耗</strong><p>查看 Codex、Antigravity 与 Gemini 用量与配额</p></div><button class="outline-button" data-action="ai-usage-settings">查看…</button></div>
+          </div>
+        </section>
+        <section class="settings-section is-wide" aria-label="文献库与数据">
+          <h3 class="settings-section-title"><span>LIBRARY & DATA</span>${escape(tr('文献库与数据'))}</h3>
+          <div class="settings-data-grid">
+            ${native?html`<div class="settings-card folder-card"><div><strong>文献库</strong><p class="folder-path">${escape(state.desktopInfo?.path||'')}</p><small>${state.papers.length} 篇 · ${bytesLabel(size)}</small></div><div class="settings-inline-actions">${actionMenu('storage-options',tr('文献库选项'),html`<button type="button" data-action="open-folder">${icon('folder')}打开文献库</button><button type="button" data-action="choose-folder">${icon('swap')}切换文献库…</button><button type="button" data-action="sync-folders">${icon('refresh')}立即同步文件夹</button>`,{iconName:'folder'})}</div></div>`:html`<div class="settings-card"><div><strong>${escape(tr('本地存储'))}</strong><p>${escape(tr('网页预览 · 数据保存在当前浏览器'))}</p></div></div>`}
+            <div class="settings-card"><div><strong>文献信息</strong><p>补充信息与期刊指标</p></div>${actionMenu('metadata-options',tr('管理'),tr('<button data-action="import-metadata">导入文献信息…</button><button data-action="journal-catalog">期刊影响因子…</button>'),{iconName:'folder'})}</div>
+            <div class="settings-card"><div><strong>备份与恢复</strong><p>PDF、笔记、分组与导入记录</p></div>${actionMenu('backup-options',tr('备份'),tr('<button data-action="export">导出完整备份…</button><button data-action="export-paper-tags">导出文献与标签 MD…</button><button data-action="restore">从备份恢复…</button>'),{iconName:'download'})}</div>
+          </div>
+        </section>
+      </div>
+      <section id="settings-import-activity" class="settings-activity" aria-label="每日导入记录">${activityHTML(settingsActivity)}</section>
+      <details class="settings-companion"><summary>灵梦</summary><iframe src="./settings-companion.html" title="灵梦 · 少女祈願中" loading="lazy"></iframe></details>
+      <div class="modal-footer"><button class="primary" data-action="close-modal">完成</button></div>
+    </div>`,'settings');
+}
+
+async function themeHubModal() {
+  await refreshAnimationPreferences();
+  const pomodoroAnimation=getPomodoroAnimation();
+  const pomodoroAura=getPomodoroAuraEnabled();
+  showModal(tr('主题切换'),tr('集中管理界面外观、番茄钟主题、全屏转场与启动动画。'),html`
+    <div class="theme-hub">
+      <section class="settings-section" aria-label="外观与布局">
+        <h3 class="settings-section-title"><span>INTERFACE</span>${escape(tr('外观与布局'))}</h3>
+        <div class="settings-group">
+          <div class="settings-row"><div><strong>主题与字体</strong><p>配色、明暗外观与字号</p></div><button id="ribbon-theme" class="outline-button" data-action="themes">外观…</button></div>
+          ${observatorySettingsHTML(state.easterTheme)}
+        </div>
+      </section>
+      <section class="settings-section theme-hub-pomo" aria-label="番茄钟主题">
+        <h3 class="settings-section-title"><span>POMODORO</span>${escape(tr('番茄钟主题'))}</h3>
+        <div class="settings-group">
+          <div class="theme-hub-head">
+            <div><strong>${escape(tr('番茄钟主题'))}</strong><p id="pomodoro-animation-help">${escape(tr('同时更换左下角表盘图标、悬浮卡片与全页面演出风格。'))}</p></div>
+            <div class="settings-inline-actions"><select id="pomodoro-animation" aria-label="番茄钟全屏动画" aria-describedby="pomodoro-animation-help">${POMODORO_ANIMATIONS.map(([id,label])=>`<option value="${id}" ${id===pomodoroAnimation?'selected':''}>${escape(tr(label))}</option>`).join('')}</select><button type="button" id="pomodoro-animation-preview" class="outline-button" ${pomodoroAnimation==='off'?'disabled':''}>${escape(tr('试看'))}</button></div>
+          </div>
+          <div class="pomo-theme-cards" role="group" aria-label="选择番茄钟主题">
+            ${POMODORO_THEME_META.map(([id,label,tagline])=>`
+              <button type="button" class="pomo-theme-card" data-pomodoro-card="${id}" aria-pressed="${id===pomodoroAnimation}">
+                <span class="pomo-swatch" data-swatch="${id}" aria-hidden="true"><i></i></span>
+                <strong>${escape(tr(label))}</strong>
+                <small>${escape(tr(tagline))}</small>
+              </button>`).join('')}
+          </div>
+          <div class="settings-row theme-hub-aura-row">
+            <div><strong>专注全屏边缘氛围</strong><p id="pomodoro-aura-help">倒计时期间在窗口四周显示细微进度光带与角标，不遮挡阅读。</p></div>
+            <input id="pomodoro-aura" type="checkbox" role="switch" aria-label="专注全屏边缘氛围" aria-describedby="pomodoro-aura-help" ${pomodoroAura?'checked':''} ${pomodoroAnimation==='off'?'disabled':''}>
+          </div>
+        </div>
+      </section>
+      <section class="settings-section" aria-label="转场与启动动画">
+        <h3 class="settings-section-title"><span>MOTION & LAUNCH</span>${escape(tr('转场与启动动画'))}</h3>
+        <div class="theme-hub-pair">
+          <div class="settings-card language-settings theme-transition-settings"><div><strong>主题切换动画</strong><p id="theme-transition-help">切换主题或明暗外观时的全屏转场样式。</p></div><div class="settings-inline-actions"><select id="theme-transition" aria-label="主题切换动画" aria-describedby="theme-transition-help">${THEME_TRANSITIONS.map(([id,label])=>`<option value="${id}" ${id===themeTransition?'selected':''}>${escape(tr(label))}</option>`).join('')}</select><button type="button" id="theme-transition-preview" class="outline-button" ${themeTransition==='off'?'disabled':''}>${escape(tr('试看'))}</button></div></div>
+          <div class="settings-card language-settings startup-animation-settings"><div><strong>启动动画</strong><p id="startup-animation-help">选择开屏样式或完全关闭，下次启动时生效；简洁模式下始终跳过。</p></div><div class="settings-inline-actions"><select id="startup-animation" aria-label="启动动画" aria-describedby="startup-animation-help">${STARTUP_ANIMATIONS.map(([id,label])=>`<option value="${id}" ${id===startupAnimation?'selected':''}>${escape(tr(label))}</option>`).join('')}</select>${native?.previewStartupAnimation?`<button type="button" id="startup-animation-preview" class="outline-button" ${startupAnimation==='off'?'disabled':''}>${escape(tr('预览'))}</button>`:''}</div></div>
+        </div>
+      </section>
+      <div class="modal-footer"><button type="button" class="outline-button" data-action="settings">${escape(tr('返回设置'))}</button><button type="button" class="primary" data-action="close-modal">完成</button></div>
+    </div>`,'theme-hub');
 }
 
 async function aiServiceSettingsModal() {
@@ -583,6 +724,18 @@ async function aiServiceSettingsModal() {
   host.querySelector('form').onsubmit = event => {event.preventDefault(); save(false);};
   host.querySelector('[data-agent-action="forget"]').onclick = () => save(true);
   host.querySelector('[data-agent-action="test-connection"]').onclick = service.refresh;
+}
+
+async function aiUsageSettingsModal() {
+  showModal(tr('AI 遥测与 Token 消耗'), '', html`<section id="ai-usage-hud-host"></section>`, 'ai-usage-settings');
+  const host = $('#ai-usage-hud-host');
+  const panel = createAiUsagePanel(host, {
+    native,
+    tr,
+    escape,
+    onBack: () => settingsModal(),
+  });
+  disposeAISettings = panel.dispose;
 }
 
 function journalCatalogModal() {
@@ -704,13 +857,14 @@ const actions = {
   'detach-collection': () => paperActions.detach([state.selected]),
   'confirm-removal': confirmRemoval, 'undo-removal': undoRemoval,
   'research-canvas': () => researchCanvas.open(),
-  themes: () => themeController.open(), settings: settingsModal, 'ai-service-settings': aiServiceSettingsModal, 'storage-info': settingsModal, export: exportLibrary, 'export-paper-tags': exportPaperTags, restore: () => $('#backup-input').click(),
+  themes: () => themeController.open(), 'theme-hub': themeHubModal, settings: settingsModal, 'ai-service-settings': aiServiceSettingsModal, 'ai-usage-settings': aiUsageSettingsModal, 'storage-info': settingsModal, export: exportLibrary, 'export-paper-tags': exportPaperTags, restore: () => $('#backup-input').click(),
   help: helpModal, shortcuts: shortcutsModal,
   'zoom-in': () => map.zoom(1.2), 'zoom-out': () => map.zoom(1 / 1.2), fit: () => map.fit(),
   'restore-hidden': () => { state.hiddenIds.clear(); state.hiddenTagNodes.clear(); render(); }, 'hide-node': () => { if (state.selected) { state.hiddenIds.add(state.selected); render(); } }, 'graph-motion': () => { $('#graph-motion').textContent = map.toggleMotion() ? tr('暂停布局') : tr('继续布局'); }, 'graph-relayout': () => map.arrangeNaturalLayout(), 'graph-arrange':()=>map.naturalTask?map.cancelNaturalLayout():map.arrangeNaturalLayout(), 'graph-arrange-all':()=>map.arrangeNaturalLayout({releasePins:true}), 'graph-arrange-undo':()=>map.undoNaturalLayout(), 'graph-release-pins': () => { map.releasePins(); },
   'reset-filters': () => {
-    if (!inWorkbench()) return resetFilters();
-    workbenchFilters = emptyWorkbenchFilters();
+    if (inTimeline()) timelineFilters = emptyWorkbenchFilters();
+    else if (inWorkbench()) workbenchFilters = emptyWorkbenchFilters();
+    else return resetFilters();
     render();
   },
   'toggle-sidebar': () => {state.leftPanelOpen=!state.leftPanelOpen;render();},'toggle-detail': () => {state.detailOpen=!state.detailOpen;render();},'toggle-local': () => {state.graphPreferences.localMode=!state.graphPreferences.localMode;render();saveGraphPreferences();},'associations':()=>associationController.open(),'reset-graph-settings':()=>{state.graphPreferences={...GRAPH_DEFAULTS};render();saveGraphPreferences();},
@@ -729,11 +883,9 @@ const actions = {
   'clear-parameter': () => { state.filters.parameterName='';state.filters.parameterUnit='*';render(); }, 'plot-parameter-results': plotActiveParameter, 'select-parameter-results': async()=>{await comparison.selectIds(visiblePapers().map(p=>p.id));renderParameterSummary(visiblePapers());},
   'tag-index': () => notes.openIndex(),
   'module-settings':()=>showModal(tr('功能管理'),'',workspaceModules.settingsHTML()+html`<div class="modal-footer"><button class="primary" data-action="close-modal">完成</button></div>`,'modules'),
-  'open-innovation-timeline':()=>{if(workspaceModules.available('innovation-timeline')){state.view='innovation-timeline';render();}},
-  'select-timeline-papers':()=>{state.view='list';render();},
   'paper-notes': () => { if (state.selected) notes.open('paper', state.selected); },
   'open-folder': () => native?.openFolder(),
-  'sync-folders':async()=>{await native?.syncFolders();await reloadLibrary();render();await settingsModal();},
+  'sync-folders':async()=>{setBrandOrbitActivity('sync',true);try{await native?.syncFolders();await reloadLibrary();render();await settingsModal();}finally{setBrandOrbitActivity('sync',false);}},
   'choose-folder': async () => {
     await comparison.flushSelection();await workspaceModules.flush();await notes.flush();await researchCanvas.flush();
     switchingLibrary = true; clearTimeout(layoutTimer);
@@ -742,6 +894,7 @@ const actions = {
     try { info = await native?.chooseFolder(); } finally { switchingLibrary = false; }
     if (!info) {render();return;}
     workbenchFilters = emptyWorkbenchFilters();
+    timelineFilters = emptyWorkbenchFilters();
     citationCache.clear();citationKey=null;citations=[];
     researchCanvas.reset();
     await workspaceModules.reset();
@@ -820,8 +973,9 @@ document.addEventListener('submit', async event => {
 });
 
 $('#search').addEventListener('input', event => { state.query = event.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.listLimit = 100; render(); }, 140); });
+initEasterEggs({ searchInput: $('#search') });
 $('#search-scope').addEventListener('change', event => { state.searchScope = event.target.value; state.listLimit = 100; render(); });
-$('#year-filter').addEventListener('change', event => { catalogFilterState().year = event.target.value; if (!inWorkbench()) state.listLimit = 100; render(); });
+$('#year-filter').addEventListener('change', event => { catalogFilterState().year = event.target.value; if (!inWorkbench() && !inTimeline()) state.listLimit = 100; render(); });
 $('#sort-order').addEventListener('change', event => { state.sort = event.target.value; render(); });
 $('#pdf-input').addEventListener('change', async event => { try { await addFiles([...event.target.files]); } catch (error) { toast(error.message, true); } event.target.value = ''; });
 $('#backup-input').addEventListener('change', async event => { try { await restoreFile(event.target.files[0]); } catch (error) { toast(error.message, true); } event.target.value = ''; });
@@ -875,7 +1029,7 @@ function renderFilterOptions() {
 }
 document.querySelectorAll('[data-filter]').forEach(input => input.addEventListener(input.tagName === 'INPUT' && input.type !== 'checkbox' ? 'input' : 'change', event => {
   catalogFilterState().filters[input.dataset.filter] = input.type === 'checkbox' ? input.checked : input.value;
-  if (!inWorkbench()) state.listLimit = 100;
+  if (!inWorkbench() && !inTimeline()) state.listLimit = 100;
   if (event.type === 'input') { clearTimeout(searchTimer); searchTimer = setTimeout(render, 160); } else render();
 }));
 $('#graph-tag-hide').addEventListener('change',event=>{if(event.target.value)state.hiddenTagNodes.add(event.target.value);render();});
@@ -936,10 +1090,10 @@ async function openStudySource(source){
   if(source.fingerprint&&paper.fingerprint&&source.fingerprint!==paper.fingerprint)throw new Error(tr('这篇文献的 PDF 已更换，原页码可能不同；可在文献列表打开新版。'));
   await reader.openAt(paper.id,source.page);
 }
-vocabularyController=createVocabularyController({escape,saveText,openSource:openStudySource});
+vocabularyController=createVocabularyController({escape,saveText,openSource:openStudySource,openPage:()=>{if(!workspaceModules?.available('vocabulary'))return;state.lobbyOpen=false;state.view='vocabulary';render();}});
 reader=createPDFReader({escape,toast,saveText,openStudySource,translate:(...args)=>agentController.translate(...args),translationStatus:()=>agentController.serviceStatus(),configureTranslation:async()=>{if(await reader.close())await aiServiceSettingsModal();},getPaper:id=>state.papers.find(p=>p.id===id),getNotes:()=>state.notes,renderText:body=>notes.renderText(body),beforeOpen:closeModal,openTag:tag=>notes.open('tag',tag),readPDF:async p=>native?native.readPdf(p.id):p.file?new Uint8Array(await p.file.arrayBuffer()):Promise.reject(new Error(tr('这条文献没有 PDF 文件'))),getPosition:()=>getSetting('readerState'),getDrafts:()=>getSetting('readerDrafts'),saveDrafts:value=>{if(native&&!state.desktopInfo?.readerDraftsVersion)return Promise.reject(new Error(tr('请重新启动 Materia 以启用本地草稿；内容仍保留在编辑区，也可先正式保存笔记。')));return setSetting('readerDrafts',value);},savePosition:value=>native&&!state.desktopInfo?.readerNotesVersion?Promise.resolve():setSetting('readerState',value),saveNote:async(id,note)=>{const key='paper:'+id,list=state.notes[key]||[],next={...state.notes,[key]:[...list.filter(n=>n.id!==note.id),note]};await setSetting('notes',next);state.notes=next;if(state.view==='notes')render();else renderDetail();hydrateIcons($('#detail-panel'));},deleteNote:async(id,noteId)=>{const key='paper:'+id,next={...state.notes,[key]:(state.notes[key]||[]).filter(n=>n.id!==noteId)};await setSetting('notes',next);state.notes=next;if(state.view==='notes')render();else renderDetail();hydrateIcons($('#detail-panel'));},openExternal:async p=>{if(native)return native.openPdf(p.id);if(!p.file)throw new Error(tr('没有 PDF 文件'));const url=URL.createObjectURL(p.file),win=window.open(url,'_blank');if(win)win.opener=null;setTimeout(()=>URL.revokeObjectURL(url),60000);}});
 associationController=createAssociationController({escape,showModal,toast,getPapers:papers,getVisible:visiblePapers,getRules:()=>state.associations,save:async rules=>{const clean=cleanAssociations(rules);await setSetting('graphAssociations',clean);state.associations=clean;},changed:render});
-themeController=createThemeController({escape,showModal,toast,saveText,persist:async value=>{if(native&&!(Number(state.desktopInfo?.themeSchemaVersion)>=2))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持完整主题包。'));if(native&&!(Number(state.desktopInfo?.graphThemeVersion)>=4))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持新版星图主题。'));await setSetting('themePreferences',value);},changed:()=>{renderGraphPreferences();map.applyAppearance();}});
+themeController=createThemeController({escape,showModal,toast,saveText,getThemeTransition:()=>themeTransition,persist:async value=>{if(native&&!(Number(state.desktopInfo?.themeSchemaVersion)>=2))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持完整主题包。'));if(native&&!(Number(state.desktopInfo?.graphThemeVersion)>=4))throw new Error(tr('请重新启动 Materia 后再保存主题，当前桌面存储接口尚未支持新版星图主题。'));await setSetting('themePreferences',value);},changed:()=>{renderGraphPreferences();map.applyAppearance();}});
 parameterFinder=createParameterFinder({escape,showModal,toast,getPapers:papers,apply:applyParameterFilter});
 comparison=createComparison({escape,showModal,toast,isMaterialList:()=>state.view==='materials',materialSelectionChanged:()=>materialList?.refreshSelection(),canSaveMaterialSelection:()=>!native||Number(state.desktopInfo?.materialSelectionVersion)>=1,canSaveMaterialGroups:()=>!native||Number(state.desktopInfo?.materialGroupsVersion)>=1,saveMaterialSelection:value=>setSetting('comparisonState',value),openSourcePaper:id=>{
   closeModal();
@@ -960,7 +1114,7 @@ async function persistReadingStatus(ids,status){
   if(status==='studied'&&result.count>0)reportAchievement('dailyDeepReads',result.count,'add');
   return result;
 }
-readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>catalogFilterState().readingStatus,isVisible:()=>inWorkbench()||Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>inWorkbench()?workbenchMatches({...workbenchFilters,readingStatus:''}):filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{catalogFilterState().readingStatus=value;if(!inWorkbench()){state.listLimit=100;state.selected='';}render();},persist:persistReadingStatus,reload:async()=>{await reloadLibrary();render();}});
+readingStatusController=createReadingStatusController({escape,toast,canEdit:ensureStorage,getPapers:papers,getSelection:()=>state.compareIds,getFilter:()=>catalogFilterState().readingStatus,isVisible:()=>inTimeline()||inWorkbench()||Boolean(workspaceModules?.current()?.libraryView),getScopePapers:()=>inTimeline()?timelineMatches({...timelineFilters,readingStatus:''}):inWorkbench()?workbenchMatches({...workbenchFilters,readingStatus:''}):filterCatalog(papers(),{...state,readingStatus:''},state.notes,state.journalMetrics),setFilter:value=>{catalogFilterState().readingStatus=value;if(!inWorkbench()&&!inTimeline()){state.listLimit=100;state.selected='';}render();},persist:persistReadingStatus,reload:async()=>{await reloadLibrary();render();}});
 paperActions=createPaperActions({escape,showModal,closeModal,toast,setReadingStatus:(ids,status)=>readingStatusController.set(ids,status),locate:native?.openPaperFolder? id=>native.openPaperFolder(id):null,parameters:id=>{selectPaper(id);performanceEditor.open(id);},hide:id=>{state.hiddenIds.add(id);render();},canEdit:ensureStorage,getPapers:papers,getCollections:collections,getVisible:visiblePapers,getSelection:()=>state.compareIds,selectPaper,hasPDF:p=>Boolean(p.file||p.pdfPath),isReaderOpen:()=>reader.isOpen(),read:id=>reader.open(id),edit:ids=>{if(ids.length===1){selectPaper(ids[0]);editModal();}else bulkEditor.open(null,ids);},notes:id=>notes.open('paper',id),remove:deleteModal,selectComparison:ids=>comparison.selectIds(ids),assign:bulkEdit,reload:async()=>{await reloadLibrary();render();},star:async(ids,favorite)=>{await putPapers(papers().filter(p=>ids.includes(p.id)).map(p=>({...p,favorite})));},createEmpty:async name=>{if(collections().some(c=>c.name===name))throw new Error(tr('已有同名分组，请直接选择该分组。'));await setSetting('collections',[...collections(),{id:uid('folder'),name,color:PALETTE[0]}]);}});
 groupActions=createGroupActions({escape,showModal,closeModal,toast,getGroups:collections,openFolder:native?.openGroupFolder?id=>native.openGroupFolder(id):null,save:groups=>setSetting('collections',groups),reload:async()=>{await reloadLibrary();render();}});
 performanceEditor=createPerformanceEditor({escape,showModal,toast,getPapers:papers,close:closeModal,save:async(id,materials)=>{const p=state.papers.find(p=>p.id===id);if(!p)throw new Error(tr('找不到文献'));await putPaper(normalizePaperMaterials({...p,materials}));await reloadLibrary();render();}});
@@ -970,14 +1124,16 @@ async function init() {
   try {
     if (location.protocol === 'file:' && !native) throw new Error(tr('桌面文件存储接口没有正常加载。'));
     const settings=['themePreferences','collections','notes','journalMetrics','graphPreferences','graphAssociations','graphLayout','comparisonSelection','lastRemoval','chartPreferences','comparisonState','workspaceModules'];
-    const [,,initialPapers,desktopInfo,initialMinimal,...values]=await Promise.all([
+    const [,,initialPapers,desktopInfo,initialMinimal,initialTransition,...values]=await Promise.all([
       loadTagVocabulary(),
       native ? Promise.resolve() : getSetting('mode').then(mode=>mode==='own'?undefined:setSetting('mode','own')),
-      getPapers(),native?.info(),native?.getMinimalMode?.(),...settings.map(key=>getSetting(key)),
+      getPapers(),native?.info(),native?.getMinimalMode?.(),native?.getThemeTransition?.(),...settings.map(key=>getSetting(key)),
     ]);
     const preferences=Object.fromEntries(settings.map((key,index)=>[key,values[index]]));
     minimalMode = initialMinimal === true;
     if(!native){try{minimalMode=localStorage.getItem(minimalModeKey)==='true';}catch{}}
+    if(THEME_TRANSITION_VALUES.includes(initialTransition))themeTransition=initialTransition;
+    else if(!native){try{themeTransition=normalizeThemeTransition(localStorage.getItem(themeTransitionKey));}catch{}}
     agentController.setMinimalMode(minimalMode);
     themeController.load(preferences.themePreferences);
     state.papers = initialPapers;
@@ -1025,10 +1181,14 @@ async function init() {
     requestAnimationFrame(()=>requestAnimationFrame(()=>native.startupReady({background,mode}).catch(()=>{})));
   }
 }
-workspaceModules=createWorkspaceModules({native,openAISettings:()=>aiServiceSettingsModal().catch(error=>toast(error.message,true)),libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
+workspaceModules=createWorkspaceModules({native,openAISettings:()=>aiServiceSettingsModal().catch(error=>toast(error.message,true)),libraryKey:()=>state.desktopInfo?.path||'browser',getView:()=>state.view,setView:value=>{state.view=value;},isReady:()=>state.ready&&!state.storageError,getPapers:papers,getCollections:()=>structuredClone(state.collections),toast,saveText,readSetting:getSetting,writeSetting:setSetting,persistPreferences:value=>setSetting('workspaceModules',value),changed:()=>render(),
+ openReader:(id,page)=>Number.isInteger(page)&&page>0?reader.openAt(id,page):reader.open(id),
+ openStudySource,
+ setReadingStatus:({ids,status})=>readingStatusController.set(ids,status),
+ readPaperBytes:async id=>{const p=papers().find(item=>item.id===id);if(!p)throw Error(tr('找不到文献。'));if(native)return native.readPdf(id);if(!p.file)throw Error(tr('这条文献尚未附上 PDF 文件。'));return new Uint8Array(await p.file.arrayBuffer());},
  workbenchFilterResults:()=>({ids:workbenchMatches().map(paper=>paper.id), count:countCatalogFilters(workbenchFilters,true)}),
  openWorkbenchFilters:()=>inWorkbench()&&openAdvancedFilters(),
- getSelectedIds:()=>state.compareIds,
+ getTimelinePapers:timelineMatches,
  openPaper:id=>{state.view='list';state.nav='all';resetFilters(false);state.selected=id;state.detailOpen=true;render();selectPaper(id,true);},
  builtins:{graph:{render(){}},list:{render:()=>renderList(visiblePapers())},materials:{render:()=>materialList.render()},notes:{render:()=>{const filtered=visiblePapers(),count=notes.renderLibrary($('#notes-library'),filtered,{query:['all','notes'].includes(state.searchScope)?state.query:'',sort:state.sort});$('#visible-count').textContent=count===null?tr('本地 Markdown 笔记'):msg`${count} 条笔记 · ${filtered.length} 篇文献`;}}},
 
@@ -1085,11 +1245,93 @@ document.addEventListener('change',async event=>{
     if(current){current.checked=minimalMode;current.disabled=false;}
   }
 });
+document.addEventListener('change',async event=>{
+  const select=event.target;
+  if(select.id!=='startup-animation')return;
+  select.disabled=true;
+  const value=select.value;
+  try{
+    if(native?.setStartupAnimation)await native.setStartupAnimation(value);
+    else localStorage.setItem(startupAnimationKey,value);
+    startupAnimation=value;
+  }catch(error){toast(msg`启动动画设置未保存：${error.message}`,true);}
+  finally{
+    const current=$('#startup-animation'),preview=$('#startup-animation-preview');
+    if(current){current.value=startupAnimation;current.disabled=false;}
+    if(preview)preview.disabled=startupAnimation==='off';
+  }
+});
+document.addEventListener('click',async event=>{
+  const button=event.target.closest?.('#startup-animation-preview');
+  if(!button||button.disabled||!native?.previewStartupAnimation)return;
+  const value=$('#startup-animation')?.value||startupAnimation;
+  if(value==='off')return;
+  button.disabled=true;
+  try{await native.previewStartupAnimation(value);await new Promise(resolve=>setTimeout(resolve,['prism','chrome'].includes(value)?3300:2600));}
+  catch(error){toast(msg`启动动画预览失败：${error.message}`,true);}
+  finally{const current=$('#startup-animation-preview');if(current)current.disabled=($('#startup-animation')?.value||startupAnimation)==='off';}
+});
+document.addEventListener('change',async event=>{
+  const select=event.target;
+  if(select.id!=='theme-transition')return;
+  select.disabled=true;
+  const value=normalizeThemeTransition(select.value);
+  try{
+    if(native?.setThemeTransition)await native.setThemeTransition(value);
+    else localStorage.setItem(themeTransitionKey,value);
+    themeTransition=value;
+  }catch(error){toast(msg`主题切换动画设置未保存：${error.message}`,true);}
+  finally{
+    const current=$('#theme-transition'),preview=$('#theme-transition-preview');
+    if(current){current.value=themeTransition;current.disabled=false;}
+    if(preview)preview.disabled=themeTransition==='off';
+  }
+});
+document.addEventListener('click',async event=>{
+  const button=event.target.closest?.('#theme-transition-preview');
+  if(!button||button.disabled)return;
+  const value=normalizeThemeTransition($('#theme-transition')?.value||themeTransition);
+  if(value==='off')return;
+  const box=button.getBoundingClientRect();
+  await previewThemeTransition(value,{x:box.left+box.width/2,y:box.top+box.height/2});
+});
+function syncPomodoroThemeSelection(rawValue) {
+  const value=setPomodoroAnimation(normalizePomodoroAnimation(rawValue));
+  const select=$('#pomodoro-animation'),preview=$('#pomodoro-animation-preview'),aura=$('#pomodoro-aura');
+  if(select)select.value=value;
+  if(preview)preview.disabled=value==='off';
+  if(aura)aura.disabled=value==='off';
+  document.querySelectorAll('[data-pomodoro-card]').forEach(btn=>{
+    btn.setAttribute('aria-pressed',String(btn.dataset.pomodoroCard===value));
+  });
+  return value;
+}
+document.addEventListener('change',event=>{
+  const target=event.target;
+  if(target.id==='pomodoro-animation'){
+    syncPomodoroThemeSelection(target.value);
+  }else if(target.id==='pomodoro-aura'){
+    setPomodoroAuraEnabled(target.checked);
+  }
+});
+document.addEventListener('click',event=>{
+  const card=event.target.closest?.('[data-pomodoro-card]');
+  if(card){
+    syncPomodoroThemeSelection(card.dataset.pomodoroCard);
+    return;
+  }
+  const button=event.target.closest?.('#pomodoro-animation-preview');
+  if(!button||button.disabled)return;
+  const value=normalizePomodoroAnimation($('#pomodoro-animation')?.value||getPomodoroAnimation());
+  if(value==='off')return;
+  previewPomodoroAnimation(value);
+});
 init();
+initWorkspaceMotion();
 
 
 // Folder changes update the catalog without replacing open editors or reader drafts.
-native?.onLibraryChanged?.(async info=>{if(switchingLibrary||info.path!==state.desktopInfo?.path)return;try{await reloadLibrary();render();}catch(error){toast(error.message,true);}});
-document.addEventListener('change',event=>{if(!event.target.matches('[data-activity-year]'))return;document.querySelector('#settings-import-activity').innerHTML=activityHTML(settingsActivity,Number(event.target.value));});
+native?.onLibraryChanged?.(async info=>{if(switchingLibrary||info.path!==state.desktopInfo?.path)return;setBrandOrbitActivity('sync',true);try{await reloadLibrary();render();}catch(error){toast(error.message,true);}finally{setBrandOrbitActivity('sync',false);}});
+document.addEventListener('change',event=>{if(!event.target.matches('[data-activity-year]'))return;document.querySelector('#settings-import-activity').innerHTML=activityHTML(settingsActivity,Number(event.target.value),{animateWave:true});});
 document.addEventListener('click',event=>{const day=event.target.closest('[data-activity-date]');if(!day)return;const label=document.querySelector('[data-activity-detail]');if(label)label.textContent=day.title;});
 

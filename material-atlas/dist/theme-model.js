@@ -6,6 +6,7 @@ import {REIMU_PRESETS} from './reimu-presets.js';
 import {STEINS_GATE_PRESET} from './steins-gate-preset.js';
 import {GEMINI_PRESET} from './gemini-preset.js';
 import {QINGMING_PRESET} from './qingming-preset.js';
+import {LIQUID_CHROME_PRESET} from './liquid-chrome-preset.js';
 import {THEME_ALIASES,PALETTE_KEYS,curateThemes,glassUI,modeTokens} from './theme-variants.js';
 export const THEME_TOKENS={
   ...GRAPH_THEME_TOKENS,
@@ -22,6 +23,7 @@ export const BUILTIN_THEMES=[
   STEINS_GATE_PRESET,
   GEMINI_PRESET,
   QINGMING_PRESET,
+  LIQUID_CHROME_PRESET,
   {id:'buaa-blue',name:'北航蓝 · 空天',description:'空天蓝与银白 · 轨道圆环星图',tokens:{'--paper':'#f2f6fb','--surface':'#ffffff','--canvas':'#f8fbff','--panel':'#e8f0f9','--sidebar':'#edf3fa','--ink':'#19364f','--muted':'#637c93','--line':'#d4e1ee','--teal':'#005bac','--teal-light':'#e0edfa','--on-accent':'#ffffff','--warning':'#977333','--warning-soft':'#f7f0e0','--shadow':'#003b7017',...graphTokens({nodeFill:'hollow',relationShape:'diamond',edgeStyle:'curve',edgeOpacity:.32,nodeStroke:1.5,nodeScale:1.3,background:'dots',colorMode:'accent',edgeColor:'#5588b8'})}},
   {id:'paper',name:'学术纸白',description:'柔和纸底 · 松绿与黄铜',tokens:{}},
   {id:'academic-purple',name:'学术紫',description:'雾紫纸底 · 深紫与香槟金',tokens:{'--paper':'#f3f0f7','--surface':'#fffdfd','--canvas':'#fbf9fe','--panel':'#ede7f5','--sidebar':'#eee8f5','--ink':'#352c43','--muted':'#81758e','--line':'#ded5e9','--teal':'#705095','--teal-light':'#e8def3','--on-accent':'#ffffff','--warning':'#a48049','--warning-soft':'#f6efdf','--danger':'#a15b6c','--danger-soft':'#f9eaf0','--shadow':'#38204f18','--radius':'7px'}},

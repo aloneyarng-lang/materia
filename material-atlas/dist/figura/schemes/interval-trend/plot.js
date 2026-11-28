@@ -7,26 +7,28 @@ export function render({data, params: p}) {
     throw Error('每行须满足下限 ≤ 中心值 ≤ 上限');
   }
   const b = bounds(p);
-  const x = scale(data.map(d => d.x), b.l, b.r);
-  const y = scale(data.flatMap(d => [d.lower, d.upper]), b.b, b.t);
+  const x = scale(data.map(d => d.x), b.l, b.r, false, false, true);
+  const y = scale(data.flatMap(d => [d.lower, d.upper]), b.b, b.t, false, false, true);
   const colors = palette(p);
   const groups = [...new Set(data.map(d => d.group))];
-  if (p.figureStyle === '细框内刻度') return intervalPaper(data,p,groups);
+  if (p.figureStyle === '细框内刻度') return intervalPaper(data, p, groups);
   let s = axes(b, x, y, p);
   groups.forEach((g, i) => {
     const rows = data.filter(d => d.group === g).sort((a, b) => a.x - b.x);
     const c = colors[i % colors.length];
     if (p.display === '带状包络' && rows.length > 1) {
-      const points = rows.map(d => x(d.x)+','+y(d.upper))
-        .concat([...rows].reverse().map(d => x(d.x)+','+y(d.lower)));
-      s += '<polygon points="'+points.join(' ')+'" fill="'+c+'" fill-opacity=".18"/>';
+      const up = rows.map(d => x(d.x) + ',' + y(d.upper));
+      const low = rows.map(d => x(d.x) + ',' + y(d.lower));
+      s += `<polygon points="${up.concat([...low].reverse()).join(' ')}" fill="${c}" fill-opacity=".14"/>`;
+      s += `<polyline points="${up.join(' ')}" fill="none" stroke="${c}" stroke-opacity=".35" stroke-width="0.9" stroke-dasharray="3 2"/>`;
+      s += `<polyline points="${low.join(' ')}" fill="none" stroke="${c}" stroke-opacity=".35" stroke-width="0.9" stroke-dasharray="3 2"/>`;
     } else {
       for (const d of rows) {
         const px = x(d.x), low = y(d.lower), high = y(d.upper);
-        s += '<path d="M'+px+','+low+'V'+high+'M'+(px-4)+','+low+'h8M'+(px-4)+','+high+'h8" stroke="'+c+'" fill="none"/>';
+        s += `<path d="M${px},${low}V${high}M${px - 4},${low}h8M${px - 4},${high}h8" stroke="${c}" stroke-opacity="0.75" stroke-width="1.2" fill="none"/>`;
       }
     }
-    s += series(rows, x, y, c, {...p, lineWidth: 2});
+    s += series(rows, x, y, c, {...p, lineWidth: 2}, i);
   });
-  return svg(p, s + legend(b, groups, colors));
+  return svg(p, s + legend(b, groups, colors, {style: 'line'}));
 }

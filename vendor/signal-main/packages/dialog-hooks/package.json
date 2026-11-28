@@ -1,0 +1,39 @@
+{
+  "name": "dialog-hooks",
+  "private": true,
+  "version": "0.0.1",
+  "description": "dialog-hooks provides an elegant solution for managing React dialogs, prompts, and toasts through async/await instead of state. This library simplifies user interactions by allowing developers to handle dialog visibility and user input procedurally, making code cleaner and more intuitive.",
+  "main": "dist/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "lint:fix": "biome check . --write",
+    "format": "biome format . --write"
+  },
+  "author": "ryohey",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "hooks",
+    "dialog",
+    "prompt",
+    "toast"
+  ],
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@emotion/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  }
+}

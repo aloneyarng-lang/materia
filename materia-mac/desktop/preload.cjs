@@ -1,5 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('materiaDesktop', {
+  exhibitionList: () => ipcRenderer.invoke('exhibition:list'),
+  exhibitionAdd: mode => ipcRenderer.invoke('exhibition:add',mode),
   notesVaultList: () => ipcRenderer.invoke('notes-vault:list'),
   notesVaultSave: payload => ipcRenderer.invoke('notes-vault:save',payload),
   notesVaultImage: payload => ipcRenderer.invoke('notes-vault:image',payload),

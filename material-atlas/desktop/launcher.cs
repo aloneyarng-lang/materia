@@ -5,6 +5,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.Reflection;
 
+[assembly: AssemblyVersion("4.0.0.0")]
+[assembly: AssemblyFileVersion("4.0.0.0")]
 [assembly: AssemblyTitle("Materia")]
 [assembly: AssemblyProduct("Materia")]
 [assembly: AssemblyDescription("Materia · 材料文献星图")]

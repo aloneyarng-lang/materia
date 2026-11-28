@@ -2,9 +2,138 @@
 // - Research and companion milestones across four tracks
 // - Integrates with the AI assistant Flow menu
 // - Reads local focus stats and listens to custom 'materia:achievement-event' triggers
-// - Shows 4-second liquid-glass unlock toast with active companion's in-character line + optional voice hook
+// - Shows tiered holographic collector's unlock plaque with spark bursts, 3D hover tilt & chimes
 
 const STORAGE_KEY = 'materia.flow.achievements.v1';
+
+const LEGENDARY_IDS = new Set([
+  'hundred-papers',
+  'r2-master',
+  'citation-weaver',
+  'streak-7',
+  'deep-flow-4h',
+  'all-companions',
+  'trusted-partner',
+  'orbit-reversal-20',
+  'montage-master',
+  'worldline-observer',
+  'singularity-weaver',
+]);
+
+const SPARK_SEEDS = [
+  { x: -58, y: -38, rot: -48, delay: 0.02, size: 7, kind: 'star' },
+  { x: 54, y: -44, rot: 36, delay: 0.05, size: 6, kind: 'dot' },
+  { x: -64, y: 12, rot: -70, delay: 0.04, size: 8, kind: 'ribbon' },
+  { x: 62, y: 18, rot: 65, delay: 0.07, size: 7, kind: 'star' },
+  { x: -42, y: -56, rot: 22, delay: 0.09, size: 5, kind: 'dot' },
+  { x: 40, y: -58, rot: -32, delay: 0.03, size: 8, kind: 'ribbon' },
+  { x: -48, y: 46, rot: 54, delay: 0.08, size: 6, kind: 'star' },
+  { x: 46, y: 48, rot: -52, delay: 0.06, size: 6, kind: 'dot' },
+  { x: 0, y: -62, rot: 12, delay: 0.01, size: 8, kind: 'star' },
+  { x: 6, y: 58, rot: 85, delay: 0.1, size: 7, kind: 'ribbon' },
+  { x: -72, y: -14, rot: -82, delay: 0.06, size: 5, kind: 'dot' },
+  { x: 74, y: -12, rot: 78, delay: 0.04, size: 6, kind: 'star' },
+  { x: -24, y: -52, rot: 40, delay: 0.11, size: 6, kind: 'ribbon' },
+  { x: 26, y: -50, rot: -42, delay: 0.12, size: 5, kind: 'dot' },
+  { x: -22, y: 54, rot: -26, delay: 0.09, size: 6, kind: 'dot' },
+  { x: 24, y: 52, rot: 34, delay: 0.05, size: 7, kind: 'star' },
+];
+
+export function achievementTier(ach) {
+  if (!ach) return 'milestone';
+  if (ach.category === 'daily') return 'daily';
+  if (LEGENDARY_IDS.has(ach.id)) return 'legendary';
+  return 'milestone';
+}
+
+export function companionDisplayName(role) {
+  if (role === 'makise-kurisu') return '牧濑红莉栖';
+  if (role === 'chainsawman-reze') return '蕾塞';
+  if (role === 'genshin-ganyu') return '甘雨';
+  return '心流伴侣';
+}
+
+function playAchievementChime(tier) {
+  try {
+    const Ctor = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!Ctor) return;
+    const ctx = new Ctor();
+    const now = ctx.currentTime;
+    const specs = tier === 'legendary'
+      ? [[523.25, 0], [659.25, 0.08], [783.99, 0.16], [987.77, 0.25], [1046.5, 0.35]]
+      : tier === 'milestone'
+        ? [[587.33, 0], [739.99, 0.09], [880, 0.18], [1174.66, 0.29]]
+        : [[523.25, 0], [783.99, 0.12]];
+    const decay = tier === 'legendary' ? 0.95 : tier === 'milestone' ? 0.72 : 0.55;
+    const peak = tier === 'legendary' ? 0.075 : 0.065;
+    specs.forEach(([freq, offset]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(peak, now + offset + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + decay);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + decay + 0.06);
+    });
+    const maxOffset = specs.reduce((m, [, offset]) => Math.max(m, offset), 0);
+    setTimeout(() => ctx.close().catch(() => {}), Math.round((maxOffset + decay + 0.4) * 1000));
+  } catch {}
+}
+
+function medalRingSVG() {
+  const ticks = Array.from({ length: 8 }, (_, i) => {
+    const a = (i * 45 * Math.PI) / 180;
+    const x1 = (34 + 26.5 * Math.cos(a)).toFixed(1);
+    const y1 = (34 + 26.5 * Math.sin(a)).toFixed(1);
+    const x2 = (34 + 30.5 * Math.cos(a)).toFixed(1);
+    const y2 = (34 + 30.5 * Math.sin(a)).toFixed(1);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  }).join('');
+  return `
+    <svg class="ach-medal-svg" viewBox="0 0 68 68" aria-hidden="true">
+      <circle class="ach-medal-outer" cx="34" cy="34" r="31"/>
+      <g class="ach-medal-filigree">
+        <circle class="ach-medal-dashed" cx="34" cy="34" r="27"/>
+        <g class="ach-medal-ticks">${ticks}</g>
+      </g>
+      <circle class="ach-medal-inner" cx="34" cy="34" r="22.5"/>
+    </svg>
+  `;
+}
+
+function sparkBurstHTML(count = 16) {
+  return Array.from({ length: count }, (_, i) => {
+    const s = SPARK_SEEDS[i % SPARK_SEEDS.length];
+    return `<span class="ach-spark is-${s.kind}" style="--sx:${s.x}px;--sy:${s.y}px;--srot:${s.rot}deg;--sdelay:${s.delay}s;--ssize:${s.size}px" aria-hidden="true"></span>`;
+  }).join('');
+}
+
+function openToastLayer(el, ownerDialog) {
+  if (!el) return;
+  const targetHost = ownerDialog?.open ? ownerDialog : document.body;
+  if (targetHost && el.parentElement !== targetHost) {
+    targetHost.append(el);
+  }
+  el.hidden = false;
+  try {
+    if (typeof el.showPopover === 'function' && !el.matches(':popover-open')) {
+      el.showPopover();
+    }
+  } catch {}
+}
+
+function closeToastLayer(el) {
+  if (!el) return;
+  try {
+    if (typeof el.hidePopover === 'function' && el.matches(':popover-open')) {
+      el.hidePopover();
+    }
+  } catch {}
+  el.hidden = true;
+}
 
 export const ACHIEVEMENT_CATEGORIES = [
   { id: 'all', label: '全部' },
@@ -352,6 +481,59 @@ export const ACHIEVEMENTS = [
     },
   },
   ...ORBIT_ACHIEVEMENTS,
+
+  // 5. 隐藏彩蛋成就
+  {
+    id: 'worldline-observer',
+    category: 'flow',
+    hidden: true,
+    icon: 'Ψ',
+    title: '世界线观测者',
+    desc: '在搜索框输入命运石之门秘密暗号，观测到 1.048596% 世界线收敛。',
+    target: 1,
+    unit: '次',
+    metric: 'worldlineTriggers',
+    quotes: {
+      'makise-kurisu': '哼……你竟然真的念出了那个羞耻的暗号？不过世界线数值确实稳在 1.048596% 了。',
+      'chainsawman-reze': '那个橙色灯管闪起来的时候，还真有点神秘实验的氛围呢。',
+      'genshin-ganyu': '无论位于哪一条世界线，您的研究积累都不会白费的。',
+      default: 'El Psy Kongroo——世界线已收敛于此。',
+    },
+  },
+  {
+    id: 'singularity-weaver',
+    category: 'reading',
+    hidden: true,
+    icon: '◉',
+    title: '奇点召唤师',
+    desc: '在文献星图或聚焦轨道的深空中召唤过引力黑洞奇点。',
+    target: 1,
+    unit: '次',
+    metric: 'blackHoleSummons',
+    quotes: {
+      'makise-kurisu': '在星图里凭空造出克尔黑洞事件视界？！还好只是纯光学引力透镜，坐标一点没乱。',
+      'chainsawman-reze': '哇，群星被卷过去又弹回来的样子，像一场微型烟火呢。',
+      'genshin-ganyu': '深空虽有奇点牵引，您的文献星图依旧秩序井然。',
+      default: '事件视界已蒸发，群星完好归位。',
+    },
+  },
+  {
+    id: 'solar-flare-conductor',
+    category: 'reading',
+    hidden: true,
+    icon: '✹',
+    title: '恒星拨弦手',
+    desc: '在聚焦星球视图中拨动中心恒星耀斑，推动卫星群加速共舞。',
+    target: 1,
+    unit: '次',
+    metric: 'solarFlares',
+    quotes: {
+      'makise-kurisu': '角动量骤增导致轨道彗尾拉长了——你把中心论文当成恒星引擎在玩吧？',
+      'chainsawman-reze': '轻轻一按，周围的星球一下子都欢快地冲出去了呢。',
+      'genshin-ganyu': '星轨如弦，偶尔轻拨一下也别有雅趣。',
+      default: '日冕耀斑掠过，群星留下一道金色长尾。',
+    },
+  },
 ];
 
 function todayStr(ts = Date.now()) {
@@ -380,7 +562,6 @@ function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {}
-
 }
 
 function readPomodoroMetrics(today) {
@@ -428,6 +609,11 @@ export function createFlowAchievements(panel = document.body, options = {}) {
   let activeCategory = 'all';
   let toastTimer = 0;
   let toastHideTimer = 0;
+  let toastDurationMs = 5400;
+  let toastRemainingMs = 0;
+  let toastStartedAt = 0;
+  let toastPaused = false;
+  let previewCursor = 0;
   let dayTimer = 0;
 
   // Create modal dialog matching flow-chess / flow-go conventions
@@ -437,7 +623,10 @@ export function createFlowAchievements(panel = document.body, options = {}) {
   dialog.innerHTML = `
     <header class="flow-heading">
       <div><small>FLOW · AMADEUS</small><h2>心流 · 科研成就</h2></div>
-      <button type="button" class="icon-button" data-flow="close" aria-label="关闭成就面板" title="关闭">✕</button>
+      <div class="flow-heading-actions">
+        <button type="button" class="outline-button flow-ach-preview-btn" data-flow="preview-toast">试看解锁特效</button>
+        <button type="button" class="icon-button" data-flow="close" aria-label="关闭成就面板" title="关闭">✕</button>
+      </div>
     </header>
     <div class="flow-ach-summary">
       <div class="flow-ach-tabs" role="tablist" aria-label="成就分类">
@@ -449,25 +638,50 @@ export function createFlowAchievements(panel = document.body, options = {}) {
   `;
   (panel || document.body).append(dialog);
 
-  // Create bottom-right unlock toast capsule
+  // Create holographic collector's unlock toast (popover="manual" lifts into Top Layer cleanly)
   const toast = document.createElement('div');
   toast.id = 'flow-achievement-toast';
   toast.className = 'flow-ach-toast';
+  toast.setAttribute('popover', 'manual');
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   toast.hidden = true;
   toast.innerHTML = `
-    <div class="flow-ach-toast-badge" data-toast-icon>✦</div>
-    <div class="flow-ach-toast-text">
-      <small data-toast-label></small>
-      <strong data-toast-title></strong>
-      <p data-toast-quote></p>
+    <div class="ach-toast-sparks" aria-hidden="true">${sparkBurstHTML(16)}</div>
+    <div class="ach-toast-surface">
+      <div class="ach-toast-foil" aria-hidden="true">
+        <span class="ach-foil-sweep"></span>
+      </div>
+      <div class="ach-toast-medal-wrap" aria-hidden="true">
+        <span class="ach-pulse-ring is-one"></span>
+        <span class="ach-pulse-ring is-two"></span>
+        ${medalRingSVG()}
+        <div class="flow-ach-toast-badge" data-toast-icon>✦</div>
+      </div>
+      <div class="flow-ach-toast-text">
+        <div class="ach-toast-meta">
+          <small data-toast-label></small>
+          <span class="ach-toast-serial" data-toast-serial></span>
+          <span class="ach-toast-speaker" data-toast-speaker></span>
+        </div>
+        <div class="ach-toast-title-line">
+          <strong data-toast-title></strong>
+          <span class="ach-toast-extra" data-toast-extra hidden></span>
+        </div>
+        <p data-toast-quote></p>
+        <span class="ach-toast-foot">点击查看成就墙 · 悬停可暂停</span>
+      </div>
+      <button type="button" class="ach-toast-close" data-toast-dismiss aria-label="关闭通知">✕</button>
+      <span class="ach-toast-timer" aria-hidden="true"><i data-toast-progress></i></span>
     </div>
   `;
   document.body.append(toast);
 
   const gridEl = dialog.querySelector('[data-ach-grid]');
   const counterEl = dialog.querySelector('[data-ach-counter]');
+  const reducedMotion = typeof matchMedia === 'function'
+    ? matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false };
 
   function currentMetrics(pomo) {
     const c = state.counters;
@@ -489,27 +703,104 @@ export function createFlowAchievements(panel = document.body, options = {}) {
       maxCompanionTurns: c.maxCompanionTurns || 0,
       voicePlayCount: c.voicePlayCount || 0,
       companionsTriedCount: c.companionsTriedCount || 0,
+      worldlineTriggers: c.worldlineTriggers || 0,
+      blackHoleSummons: c.blackHoleSummons || 0,
+      solarFlares: c.solarFlares || 0,
     };
   }
 
-  function showToast(achievements) {
-    const [ach] = achievements;
-    const role = getActiveRole();
-    const quote = ach.quote || ach.quotes[role] || ach.quotes.default;
-    toast.querySelector('[data-toast-label]').textContent = achievements.every(item => item.category === 'daily')
-      ? '每日成就达成' : '心流成就达成';
-    toast.querySelector('[data-toast-icon]').textContent = ach.icon;
-    toast.querySelector('[data-toast-title]').textContent = achievements.map(item => item.title).join('、');
-    toast.querySelector('[data-toast-quote]').textContent = quote;
-    toast.hidden = false;
-    requestAnimationFrame(() => toast.classList.add('is-visible'));
+  function hideToast(immediate = false) {
     clearTimeout(toastTimer);
     clearTimeout(toastHideTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.remove('is-visible');
-      toastHideTimer = setTimeout(() => { toast.hidden = true; }, 260);
-    }, 4500);
-    onCompanionSpeak?.({ achievement: ach, role, line: quote });
+    toastTimer = 0;
+    toastPaused = false;
+    toastRemainingMs = 0;
+    toast.classList.remove('is-visible', 'is-bursting', 'is-paused');
+    toast.style.removeProperty('--rx');
+    toast.style.removeProperty('--ry');
+    if (immediate || reducedMotion.matches) {
+      closeToastLayer(toast);
+    } else {
+      toastHideTimer = setTimeout(() => {
+        if (!toast.classList.contains('is-visible')) closeToastLayer(toast);
+      }, 280);
+    }
+  }
+
+  function scheduleToastDismiss(delayMs) {
+    clearTimeout(toastTimer);
+    toastRemainingMs = Math.max(400, delayMs);
+    toastStartedAt = Date.now();
+    toastTimer = setTimeout(() => hideToast(false), toastRemainingMs);
+  }
+
+  function showToast(achievements, { isReplay = false } = {}) {
+    if (!achievements?.length) return;
+    const [ach] = achievements;
+    const tier = achievementTier(ach);
+    const role = getActiveRole();
+    const quote = ach.quote || ach.quotes?.[role] || ach.quotes?.default || ach.desc;
+    const isDaily = achievements.every(item => item.category === 'daily');
+
+    toastDurationMs = tier === 'legendary' ? 6200 : tier === 'milestone' ? 5400 : 4800;
+    toast.dataset.tier = tier;
+    toast.dataset.category = ach.category || 'milestone';
+    toast.style.setProperty('--toast-dur', `${toastDurationMs}ms`);
+
+    const labelText = tier === 'legendary'
+      ? '典藏里程碑达成'
+      : isDaily
+        ? '每日节律达成'
+        : '心流成就达成';
+    const achIndex = ACHIEVEMENTS.findIndex(item => item.id === ach.id);
+    const serialText = isReplay
+      ? 'REPLAY'
+      : isDaily
+        ? todayStr().slice(5)
+        : `NO.${String(Math.max(1, achIndex + 1)).padStart(2, '0')}`;
+
+    toast.querySelector('[data-toast-label]').textContent = labelText;
+    toast.querySelector('[data-toast-serial]').textContent = serialText;
+    toast.querySelector('[data-toast-speaker]').textContent = `· ${companionDisplayName(role)}`;
+    toast.querySelector('[data-toast-icon]').textContent = ach.icon || '✦';
+    toast.querySelector('[data-toast-title]').textContent = ach.title;
+    const extraEl = toast.querySelector('[data-toast-extra]');
+    if (achievements.length > 1) {
+      extraEl.textContent = `+${achievements.length - 1}`;
+      extraEl.hidden = false;
+    } else {
+      extraEl.hidden = true;
+    }
+    toast.querySelector('[data-toast-quote]').textContent = `“${quote}”`;
+
+    clearTimeout(toastTimer);
+    clearTimeout(toastHideTimer);
+    toastPaused = false;
+    toast.classList.remove('is-visible', 'is-bursting', 'is-paused');
+    openToastLayer(toast, dialog);
+    void toast.offsetWidth;
+    toast.classList.add('is-visible', 'is-bursting');
+
+    playAchievementChime(tier);
+    scheduleToastDismiss(toastDurationMs);
+    if (!isReplay) {
+      onCompanionSpeak?.({ achievement: ach, role, line: quote });
+    }
+  }
+
+  function previewToast(targetId = null) {
+    const showcaseIds = ['r2-master', 'first-deep-read', 'daily-deep-read'];
+    let targetAch = null;
+    if (targetId) {
+      targetAch = [...DAILY_ACHIEVEMENTS, ...ACHIEVEMENTS].find(a => a.id === targetId) || null;
+    }
+    if (!targetAch) {
+      const id = showcaseIds[previewCursor % showcaseIds.length];
+      previewCursor += 1;
+      targetAch = [...DAILY_ACHIEVEMENTS, ...ACHIEVEMENTS].find(a => a.id === id) || ACHIEVEMENTS[0];
+    }
+    showToast([targetAch], { isReplay: true });
+    return targetAch;
   }
 
   function evaluate({ silent = false, metricsChanged = false } = {}) {
@@ -588,31 +879,44 @@ export function createFlowAchievements(panel = document.body, options = {}) {
     gridEl.innerHTML = list.map(ach => {
       const unlockInfo = state.unlocked[ach.id];
       const daily = ach.category === 'daily';
+      const tier = achievementTier(ach);
       const completedDates = state.dailyCompletions[ach.id] || {};
       const unlocked = daily ? Boolean(completedDates[today]) : Boolean(unlockInfo);
       const val = Math.min(ach.target, Number((daily ? dailyMetrics : metrics)[ach.metric]) || 0);
       const pct = Math.round((val / ach.target) * 100);
+      const isSecretLocked = Boolean(ach.hidden && !unlocked);
       const quote = ach.quote || ach.quotes[unlockInfo?.role || role] || ach.quotes.default;
       const status = daily
         ? (unlocked ? '今日已完成' : '今日未完成')
-        : (unlocked ? (String(unlockInfo.at).match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || '已解锁') : '未解锁');
+        : isSecretLocked
+          ? '未发现'
+          : (unlocked ? (String(unlockInfo.at).match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || '已解锁') : '未解锁');
+
+      const displayIcon = isSecretLocked ? '?' : ach.icon;
+      const displayTitle = isSecretLocked ? '??? · 隐藏彩蛋' : ach.title;
+      const displayDesc = isSecretLocked ? '尚未发现的星海秘境彩蛋，探索搜索框或星图深空试试看。' : ach.desc;
 
       return `
-        <article class="flow-ach-card" data-unlocked="${unlocked}">
-          <div class="flow-ach-emblem" aria-hidden="true">${ach.icon}</div>
+        <article class="flow-ach-card" data-unlocked="${unlocked}" data-tier="${tier}"${isSecretLocked ? ' data-secret="true"' : ''}>
+          <div class="flow-ach-emblem" aria-hidden="true">${displayIcon}</div>
           <div class="flow-ach-body">
             <div class="flow-ach-title-row">
-              <strong>${ach.title}</strong>
-              <span class="flow-ach-date">${status}</span>
+              <strong>${displayTitle}</strong>
+              <span class="flow-ach-card-right">
+                ${unlocked ? `<button type="button" class="flow-ach-replay" data-ach-replay="${ach.id}" title="重温解锁特效">重温</button>` : ''}
+                <span class="flow-ach-date">${status}</span>
+              </span>
             </div>
-            <p class="flow-ach-desc">${ach.desc}</p>
+            <p class="flow-ach-desc">${displayDesc}</p>
             ${daily ? `<p class="flow-ach-desc">累计完成 ${Object.keys(completedDates).length} 次</p>` : ''}
             ${unlocked
               ? `<p class="flow-ach-quote">“${quote}”</p>`
-              : `<div class="flow-ach-progress">
-                   <div class="flow-ach-progress-meta"><span>${daily ? '今日进度' : '进度'}</span><span>${val} / ${ach.target} ${ach.unit}</span></div>
-                   <div class="flow-ach-bar"><i style="width:${pct}%"></i></div>
-                 </div>`}
+              : isSecretLocked
+                ? `<div class="flow-ach-secret-hint">秘境线索 · 触发后自动显现</div>`
+                : `<div class="flow-ach-progress">
+                     <div class="flow-ach-progress-meta"><span>${daily ? '今日进度' : '进度'}</span><span>${val} / ${ach.target} ${ach.unit}</span></div>
+                     <div class="flow-ach-bar"><i style="width:${pct}%"></i></div>
+                   </div>`}
           </div>
         </article>
       `;
@@ -622,6 +926,15 @@ export function createFlowAchievements(panel = document.body, options = {}) {
   dialog.addEventListener('click', e => {
     const closeBtn = e.target.closest('[data-flow="close"]');
     if (closeBtn) { dialog.close(); return; }
+    if (e.target.closest('[data-flow="preview-toast"]')) {
+      previewToast();
+      return;
+    }
+    const replayBtn = e.target.closest('[data-ach-replay]');
+    if (replayBtn) {
+      previewToast(replayBtn.dataset.achReplay);
+      return;
+    }
     const tab = e.target.closest('.flow-ach-tab');
     if (tab) {
       activeCategory = tab.dataset.cat;
@@ -632,9 +945,43 @@ export function createFlowAchievements(panel = document.body, options = {}) {
     }
   });
 
-  toast.addEventListener('click', () => {
-    toast.classList.remove('is-visible');
-    toast.hidden = true;
+  toast.addEventListener('mouseenter', () => {
+    if (toast.hidden || toastPaused) return;
+    toastPaused = true;
+    const elapsed = Date.now() - toastStartedAt;
+    toastRemainingMs = Math.max(400, toastRemainingMs - elapsed);
+    clearTimeout(toastTimer);
+    toast.classList.add('is-paused');
+  });
+
+  toast.addEventListener('mouseleave', () => {
+    toast.style.removeProperty('--rx');
+    toast.style.removeProperty('--ry');
+    if (toast.hidden || !toastPaused) return;
+    toastPaused = false;
+    toast.classList.remove('is-paused');
+    scheduleToastDismiss(toastRemainingMs);
+  });
+
+  toast.addEventListener('pointermove', e => {
+    if (reducedMotion.matches || toast.hidden) return;
+    const rect = toast.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const nx = Math.max(-1, Math.min(1, ((e.clientX - rect.left) / rect.width - 0.5) * 2));
+    const ny = Math.max(-1, Math.min(1, ((e.clientY - rect.top) / rect.height - 0.5) * 2));
+    toast.style.setProperty('--rx', `${(-ny * 5.2).toFixed(2)}deg`);
+    toast.style.setProperty('--ry', `${(nx * 5.5).toFixed(2)}deg`);
+    toast.style.setProperty('--mx', `${(((nx + 1) / 2) * 100).toFixed(1)}%`);
+    toast.style.setProperty('--my', `${(((ny + 1) / 2) * 100).toFixed(1)}%`);
+  });
+
+  toast.addEventListener('click', e => {
+    if (e.target.closest('[data-toast-dismiss]')) {
+      e.stopPropagation();
+      hideToast(false);
+      return;
+    }
+    hideToast(true);
     show();
   });
 
@@ -660,7 +1007,14 @@ export function createFlowAchievements(panel = document.body, options = {}) {
   }
 
   dialog.addEventListener('close', () => {
-    if (!dialog.open) clearTimeout(dayTimer);
+    if (!dialog.open) {
+      clearTimeout(dayTimer);
+      if (toast.parentElement === dialog) {
+        const wasOpen = !toast.hidden;
+        document.body.append(toast);
+        if (wasOpen) openToastLayer(toast, dialog);
+      }
+    }
   });
 
   function show() {
@@ -668,6 +1022,7 @@ export function createFlowAchievements(panel = document.body, options = {}) {
     if (dialog.open) return;
     render();
     dialog.showModal();
+    if (!toast.hidden) openToastLayer(toast, dialog);
     clearTimeout(dayTimer);
     scheduleDayRefresh();
   }
@@ -682,11 +1037,11 @@ export function createFlowAchievements(panel = document.body, options = {}) {
     recordMetric('companionsTriedCount', state.roles.length);
   }
 
-  return { show, recordRole, dialog };
+  return { show, recordRole, previewToast, dialog };
 }
 
 export function reportAchievement(metric, value, mode = 'max') {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('materia:achievement-event', {detail: {metric, value, mode}}));
+    window.dispatchEvent(new CustomEvent('materia:achievement-event', { detail: { metric, value, mode } }));
   }
 }

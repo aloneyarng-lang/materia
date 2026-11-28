@@ -37,6 +37,19 @@ dialog.flow-achievements::backdrop {
   border-bottom: 1px solid var(--glass-edge, var(--line));
 }
 
+.flow-achievements .flow-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-ach-preview-btn {
+  min-height: 30px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: .75rem;
+}
+
 .flow-achievements .flow-heading small {
   display: block;
   font-size: .625rem;
@@ -136,10 +149,81 @@ dialog.flow-achievements::backdrop {
   filter: saturate(.35);
 }
 
+.flow-ach-card[data-secret="true"] {
+  border-style: dashed;
+  border-color: color-mix(in srgb, #9f82df 44%, var(--glass-edge, var(--line)));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, #9f82df 7%, var(--glass-field, var(--surface))),
+    color-mix(in srgb, #d69b3a 4%, transparent)
+  );
+  opacity: .84;
+  filter: none;
+}
+
+.flow-ach-card[data-secret="true"] .flow-ach-emblem {
+  border-style: dashed;
+  border-color: color-mix(in srgb, #9f82df 48%, transparent);
+  color: color-mix(in srgb, #8e6fd6 80%, var(--ink));
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.flow-ach-secret-hint {
+  margin-top: 4px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  border: 1px dashed color-mix(in srgb, #9f82df 34%, var(--line));
+  background: color-mix(in srgb, #9f82df 6%, transparent);
+  font-family: var(--mono);
+  font-size: .6875rem;
+  color: var(--muted);
+}
+
+html[data-theme-mode="dark"] .flow-ach-card[data-secret="true"] .flow-ach-emblem {
+  color: #cbb8ff;
+}
+
 .flow-ach-card[data-unlocked="true"] {
   background: linear-gradient(145deg, color-mix(in srgb, var(--teal) 10%, var(--glass-card, var(--surface))), var(--glass-card-bottom, transparent));
   border-color: color-mix(in srgb, var(--teal) 42%, var(--glass-edge, var(--line)));
   box-shadow: 0 6px 20px color-mix(in srgb, var(--teal) 12%, var(--shadow)), inset 0 1px 0 var(--glass-highlight, #ffffff80);
+}
+
+.flow-ach-card[data-unlocked="true"][data-tier="legendary"] {
+  background: linear-gradient(145deg, color-mix(in srgb, #e3a745 14%, var(--glass-card, var(--surface))), var(--glass-card-bottom, transparent));
+  border-color: color-mix(in srgb, #d69b3a 52%, var(--glass-edge, var(--line)));
+  box-shadow: 0 8px 24px color-mix(in srgb, #d69b3a 16%, var(--shadow)), inset 0 1px 0 var(--glass-highlight, #ffffff80);
+}
+
+.flow-ach-card[data-unlocked="true"][data-tier="legendary"] .flow-ach-emblem {
+  border-color: color-mix(in srgb, #d69b3a 65%, transparent);
+  background: color-mix(in srgb, #e3a745 18%, var(--surface));
+  color: #c88620;
+}
+
+html[data-theme-mode="dark"] .flow-ach-card[data-unlocked="true"][data-tier="legendary"] .flow-ach-emblem {
+  color: #f4c66a;
+}
+
+.flow-ach-card-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flow-ach-replay {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--teal) 35%, var(--line));
+  background: color-mix(in srgb, var(--teal) 8%, transparent);
+  color: var(--teal);
+  font-size: .625rem;
+  cursor: pointer;
+}
+
+.flow-ach-replay:hover {
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
 }
 
 .flow-ach-card[data-unlocked="true"]:hover {
@@ -239,76 +323,437 @@ dialog.flow-achievements::backdrop {
   transition: width .3s ease;
 }
 
-/* Unlock toast capsule in bottom-right corner */
-.flow-ach-toast {
+/* Tiered Holographic Collector's Unlock Plaque (top-center, Top-Layer popover) */
+.flow-ach-toast,
+.flow-ach-toast[popover] {
+  --ach-accent: var(--teal);
+  --ach-glow: color-mix(in srgb, var(--teal) 42%, transparent);
+  --ach-foil: rgba(255, 255, 255, .62);
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
   position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 9800;
-  width: min(340px, calc(100vw - 32px));
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--teal) 48%, var(--glass-edge, var(--line)));
-  background: var(--glass-level-3, var(--glass-floating, var(--surface)));
-  box-shadow: 0 14px 40px var(--shadow), inset 0 1px 0 var(--glass-highlight, #ffffff80);
-  -webkit-backdrop-filter: blur(18px) saturate(1.55);
-  backdrop-filter: blur(18px) saturate(1.55);
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
+  top: 22px;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  inset: auto;
+  top: 22px;
+  left: 50%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  z-index: 10020;
+  width: min(440px, calc(100vw - 28px));
+  color: var(--ink);
+  font-family: var(--sans);
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity .24s ease, transform .24s ease;
+  transform: perspective(860px) translate3d(-50%, -26px, 0) scale(.86) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: opacity .34s ease, transform .46s cubic-bezier(.18, 1.28, .32, 1);
   cursor: pointer;
+}
+
+.flow-ach-toast[data-tier="legendary"] {
+  --ach-accent: #c88620;
+  --ach-glow: rgba(218, 160, 56, .48);
+  --ach-foil: rgba(255, 236, 178, .72);
+}
+
+.flow-ach-toast[data-tier="daily"] {
+  --ach-accent: #d47142;
+  --ach-glow: rgba(224, 128, 76, .42);
+  --ach-foil: rgba(255, 224, 200, .64);
+}
+
+html[data-theme-mode="dark"] .flow-ach-toast[data-tier="legendary"] {
+  --ach-accent: #f4c66a;
+  --ach-glow: rgba(244, 198, 106, .44);
+}
+
+html[data-theme-mode="dark"] .flow-ach-toast[data-tier="daily"] {
+  --ach-accent: #f29a68;
+  --ach-glow: rgba(242, 154, 104, .4);
 }
 
 .flow-ach-toast.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: perspective(860px) translate3d(-50%, 0, 0) scale(1) rotateX(var(--rx)) rotateY(var(--ry));
 }
 
 .flow-ach-toast[hidden] {
   display: none;
 }
 
-.flow-ach-toast-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
+.ach-toast-surface {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 13px;
+  align-items: center;
+  padding: 14px 14px 16px 15px;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--ach-accent) 55%, var(--glass-edge, var(--line)));
+  background: linear-gradient(145deg, color-mix(in srgb, var(--ach-accent) 12%, var(--glass-level-3, var(--surface))), var(--glass-level-3, var(--surface)) 74%);
+  box-shadow: 0 22px 54px var(--shadow), 0 0 34px color-mix(in srgb, var(--ach-accent) 20%, transparent), inset 0 1px 0 var(--glass-highlight, #ffffff8c);
+  -webkit-backdrop-filter: blur(22px) saturate(1.55);
+  backdrop-filter: blur(22px) saturate(1.55);
+  overflow: hidden;
+}
+
+.flow-ach-toast[data-tier="legendary"] .ach-toast-surface {
+  background: linear-gradient(135deg, color-mix(in srgb, #e6aa44 18%, var(--glass-level-3, var(--surface))), color-mix(in srgb, var(--teal) 7%, var(--glass-level-3, var(--surface))) 52%, var(--glass-level-3, var(--surface)));
+  box-shadow: 0 24px 60px var(--shadow), 0 0 42px rgba(224, 168, 60, .28), inset 0 1px 0 rgba(255, 245, 210, .85);
+}
+
+/* Dynamic hover spotlight & metallic foil sweep */
+.ach-toast-foil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx) var(--my), color-mix(in srgb, var(--ach-foil) 32%, transparent), transparent 68%);
+  opacity: .55;
+  transition: opacity .2s ease;
+}
+
+.flow-ach-toast:hover .ach-toast-foil {
+  opacity: .95;
+}
+
+.ach-foil-sweep {
+  position: absolute;
+  inset: -40% auto -40% -65%;
+  width: 52%;
+  background: linear-gradient(108deg, transparent 20%, color-mix(in srgb, var(--ach-foil) 68%, transparent) 50%, transparent 80%);
+  transform: translateX(0) skewX(-16deg);
+  opacity: 0;
+}
+
+.flow-ach-toast.is-bursting .ach-foil-sweep {
+  animation: ach-foil-pass .95s .14s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+@keyframes ach-foil-pass {
+  0% { opacity: 0; transform: translateX(0) skewX(-16deg); }
+  20% { opacity: .88; }
+  100% { opacity: 0; transform: translateX(360%) skewX(-16deg); }
+}
+
+/* Engraved rotating medal + shockwave rings */
+.ach-toast-medal-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
-  font-size: 1.1rem;
-  background: color-mix(in srgb, var(--teal) 18%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--teal) 45%, transparent);
+  z-index: 2;
+}
+
+.ach-medal-svg {
+  position: absolute;
+  inset: 0;
+  width: 64px;
+  height: 64px;
+  fill: none;
+}
+
+.ach-medal-outer {
+  stroke: color-mix(in srgb, var(--ach-accent) 44%, transparent);
+  stroke-width: 1.1;
+}
+
+.ach-medal-filigree {
+  transform-box: view-box;
+  transform-origin: 34px 34px;
+  animation: ach-spin 22s linear infinite;
+}
+
+.ach-medal-dashed {
+  stroke: color-mix(in srgb, var(--ach-accent) 68%, transparent);
+  stroke-dasharray: 2.5 4.5;
+  stroke-width: 1.1;
+}
+
+.ach-medal-ticks line {
+  stroke: var(--ach-accent);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  opacity: .78;
+}
+
+.ach-medal-inner {
+  stroke: color-mix(in srgb, var(--ach-accent) 28%, transparent);
+  stroke-width: 1;
+}
+
+.flow-ach-toast-badge {
+  position: relative;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  color: var(--ach-accent);
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--ach-foil) 55%, var(--surface)), color-mix(in srgb, var(--ach-accent) 22%, var(--surface)));
+  border: 1.2px solid color-mix(in srgb, var(--ach-accent) 65%, transparent);
+  box-shadow: 0 6px 18px var(--ach-glow), inset 0 1px 0 #ffffffa6;
+}
+
+.flow-ach-toast.is-bursting .flow-ach-toast-badge {
+  animation: ach-badge-pop .62s .06s cubic-bezier(.16, 1.38, .3, 1) both;
+}
+
+@keyframes ach-badge-pop {
+  0% { opacity: 0; transform: scale(.32) rotate(-32deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes ach-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ach-pulse-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1.6px solid var(--ach-accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flow-ach-toast.is-bursting .ach-pulse-ring.is-one {
+  animation: ach-ring-wave 1.05s .04s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.flow-ach-toast.is-bursting .ach-pulse-ring.is-two {
+  animation: ach-ring-wave 1.15s .18s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+@keyframes ach-ring-wave {
+  0% { opacity: .9; transform: scale(.6); }
+  100% { opacity: 0; transform: scale(2.35); }
+}
+
+/* Radial confetti & starlight burst anchored on the medal */
+.ach-toast-sparks {
+  position: absolute;
+  left: 47px;
+  top: 46px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ach-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--ssize, 6px);
+  height: var(--ssize, 6px);
+  opacity: 0;
+  background: var(--ach-accent);
+}
+
+.ach-spark.is-dot {
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--ach-glow);
+}
+
+.ach-spark.is-star {
+  clip-path: polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%);
+  background: color-mix(in srgb, var(--ach-foil) 75%, var(--ach-accent));
+}
+
+.ach-spark.is-ribbon {
+  width: calc(var(--ssize, 7px) * 1.4);
+  height: 2.5px;
+  border-radius: 2px;
+}
+
+.flow-ach-toast.is-bursting .ach-spark {
+  animation: ach-spark-burst .95s var(--sdelay, 0s) cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+@keyframes ach-spark-burst {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.3) rotate(0deg); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--sx, 40px), var(--sy, -30px), 0) scale(.9) rotate(var(--srot, 45deg)); }
+}
+
+/* Editorial typography & staggered reveal */
+.flow-ach-toast-text {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.ach-toast-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .flow-ach-toast-text small {
-  display: block;
   font-size: .625rem;
-  letter-spacing: .08em;
-  color: var(--teal);
+  letter-spacing: .1em;
+  color: var(--ach-accent);
+  font-weight: 700;
+}
+
+.ach-toast-serial {
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ach-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--ach-accent) 12%, transparent);
+  font-family: var(--numeric, var(--mono, monospace));
+  font-size: .5625rem;
+  letter-spacing: .06em;
+  color: var(--ach-accent);
   font-weight: 600;
 }
 
+.ach-toast-speaker {
+  font-size: .625rem;
+  color: var(--muted);
+}
+
+.ach-toast-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
 .flow-ach-toast-text strong {
-  display: block;
-  font-size: .8125rem;
+  font-size: .95rem;
+  font-weight: 600;
   color: var(--ink);
-  margin: 1px 0 2px;
+  letter-spacing: .01em;
+}
+
+.ach-toast-extra {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ach-accent) 16%, transparent);
+  color: var(--ach-accent);
+  font-size: .625rem;
+  font-weight: 600;
 }
 
 .flow-ach-toast-text p {
   margin: 0;
-  font-size: .6875rem;
-  line-height: 1.45;
+  font-size: .71875rem;
+  line-height: 1.48;
+  color: var(--ink);
+  opacity: .86;
+}
+
+.ach-toast-foot {
+  margin-top: 2px;
+  font-size: .5625rem;
+  letter-spacing: .04em;
   color: var(--muted);
+}
+
+.flow-ach-toast.is-bursting .flow-ach-toast-text > * {
+  animation: ach-copy-up .45s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.flow-ach-toast.is-bursting .flow-ach-toast-text > :nth-child(1) { animation-delay: .08s; }
+.flow-ach-toast.is-bursting .flow-ach-toast-text > :nth-child(2) { animation-delay: .13s; }
+.flow-ach-toast.is-bursting .flow-ach-toast-text > :nth-child(3) { animation-delay: .18s; }
+.flow-ach-toast.is-bursting .flow-ach-toast-text > :nth-child(4) { animation-delay: .22s; }
+
+@keyframes ach-copy-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ach-toast-close {
+  position: relative;
+  z-index: 3;
+  align-self: start;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: .75rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ach-toast-close:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.ach-toast-timer {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 2.2px;
+  background: color-mix(in srgb, var(--ach-accent) 16%, transparent);
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.ach-toast-timer > i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--ach-accent), color-mix(in srgb, var(--ach-foil) 75%, var(--ach-accent)));
+  transform-origin: left center;
+}
+
+.flow-ach-toast.is-bursting .ach-toast-timer > i {
+  animation: ach-timer-drain var(--toast-dur, 5400ms) linear forwards;
+}
+
+.flow-ach-toast.is-paused .ach-toast-timer > i {
+  animation-play-state: paused;
+}
+
+@keyframes ach-timer-drain {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ach-toast-surface,
+  dialog.flow-achievements {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--surface);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .flow-ach-card,
   .flow-ach-bar > i,
-  .flow-ach-toast {
+  .flow-ach-toast,
+  .ach-toast-foil {
     transition: none;
+  }
+  .ach-foil-sweep,
+  .ach-medal-filigree,
+  .flow-ach-toast-badge,
+  .ach-pulse-ring,
+  .ach-spark,
+  .flow-ach-toast-text > *,
+  .ach-toast-timer > i {
+    animation: none;
   }
 }

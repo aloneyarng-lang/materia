@@ -40,6 +40,11 @@ test('all Figura schemes and publication styles render the original colors and e
         draft.themeId=theme?.id;
         const svg=await plot.render(applyFigureTheme(preparePlot(scheme,draft)));
         assert.match(svg, /^<svg[^>]*viewBox="0 0 \d+ \d+"/, item.id);
+        // These shared attributes must survive the renderer's SVG parser and sanitizer.
+        assert.doesNotMatch(svg, /\sstyle="/, item.id);
+        for (const match of svg.matchAll(/\sfont-family="[^"]*"([^>]*)>/g)) {
+          assert.match(match[1], /^(?:\s+[\w:-]+="[^"]*")*\s*\/?$/, item.id);
+        }
         assert.doesNotMatch(svg, /(?:NaN|Infinity|undefined)(?=[", ])/);
         if(theme){
           assert.ok(svg.includes(theme.ink),item.id+' '+theme.id);

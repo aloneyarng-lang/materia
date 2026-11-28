@@ -2,14 +2,21 @@ import {getLocale, msg, t} from './i18n.js';
 import {reportAchievement} from './flow-achievements.js';
 import {normalizedTagSet} from './shared-tag-links.js';
 import {researchNeighbors} from './research-graph.js';
+import {computeOrbitSingularityPerturbation, createBlackHoleSvg, hawkingReboundFactor, solarFlareSpeedMultiplier} from './black-hole-physics.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const fullTurn = 2 * Math.PI;
 const reversalInterval = 5000;
 const centerRadius = 34;
 const defaultView = [{x: 1, y: 0, z: 0}, {x: 0, y: 1, z: 0}, {x: 0, y: 0, z: 1}];
+const equatorPlane = {u: {x: 1, y: 0, z: 0}, v: {x: 0, y: 0.32, z: Math.sqrt(1 - 0.32 * 0.32)}};
 const quarterCircle = 4 * (Math.SQRT2 - 1) / 3;
 const planetColors = ['#70aebe', '#d7a071', '#a7abdf', '#659e86', '#b67b70'];
+const orbitStyleKey = 'materia.orbit-style';
+
+export function normalizeOrbitStyle(value) {
+  return value === 'armillary' ? 'armillary' : 'cosmos';
+}
 
 function svgElement(tag, attributes, content) {
   const element = document.createElementNS(NS, tag);
@@ -18,10 +25,11 @@ function svgElement(tag, attributes, content) {
   return element;
 }
 
-function orbitDefinitions(centerY) {
+function orbitDefinitions(centerY, wakeStyles = []) {
   const defs = svgElement('defs', {});
   for (const [id, cx, cy, r, stops] of [
     ['halo', '50%', '50%', '50%', [[.28,'#c2d8ff',.35],[.5,'#a6b9f4',.14],[1,'#a6b9f4',0]]],
+    ['corona', '50%', '50%', '50%', [[0,'#d7e7ff',.26],[.45,'#94b9f7',.1],[1,'#94b9f7',0]]],
     ['light', '73%', '40%', '80%', [[0,'#fff4d3',.48],[.33,'#fff4d3',.12],[.54,'#121831',0],[.77,'#121831',.64],[1,'#111427',.93]]],
   ]) {
     const gradient = svgElement('radialGradient', {id: 'graph-orbit-' + id, cx, cy, r});
@@ -29,6 +37,20 @@ function orbitDefinitions(centerY) {
       gradient.append(svgElement('stop', {offset, 'stop-color': color, 'stop-opacity': opacity}));
     }
     defs.append(gradient);
+  }
+  for (let i = 0; i < wakeStyles.length; i++) {
+    const color = wakeStyles[i] || '#9cc7ff';
+    const grad = svgElement('linearGradient', {
+      id: `graph-orbit-wake-${i}`,
+      gradientUnits: 'userSpaceOnUse',
+      x1: '0', y1: '0', x2: '1', y2: '0',
+    });
+    grad.append(
+      svgElement('stop', {offset: '0', 'stop-color': color, 'stop-opacity': '0'}),
+      svgElement('stop', {offset: '0.55', 'stop-color': color, 'stop-opacity': '0.32'}),
+      svgElement('stop', {offset: '1', 'stop-color': '#e8f4ff', 'stop-opacity': '0.88'})
+    );
+    defs.append(grad);
   }
   const clip = svgElement('clipPath', {id: 'graph-orbit-disc'});
   clip.append(svgElement('circle', {r: 1}));
@@ -49,13 +71,51 @@ function seededRandom(seed) {
 
 function orbitStarfield(height) {
   const sky = svgElement('g', {class: 'graph-orbit-starfield', 'aria-hidden': 'true'});
+  const far = svgElement('g', {class: 'graph-orbit-stars-far'});
+  const near = svgElement('g', {class: 'graph-orbit-stars-near'});
   const random = seededRandom(6284);
-  for (let i = 0; i < 75; i++) {
-    sky.append(svgElement('circle', {
-      cx: 12 + random() * 976, cy: height * (.03 + random() * .94),
-      r: i % 17 === 0 ? 1.5 : .4 + random() * .58, opacity: .22 + random() * .48,
-    }));
+
+  for (let i = 0; i < 60; i++) {
+    const twinkle = i % 5 === 0;
+    const star = svgElement('circle', {
+      cx: (12 + random() * 976).toFixed(1),
+      cy: (height * (.03 + random() * .94)).toFixed(1),
+      r: (.4 + random() * .55).toFixed(2),
+      opacity: (.18 + random() * .35).toFixed(2),
+      ...(twinkle ? {class: 'is-twinkle'} : {}),
+    });
+    if (twinkle) star.style.setProperty('--twinkle-delay', `${((i % 7) * 0.55).toFixed(2)}s`);
+    far.append(star);
   }
+
+  for (let i = 0; i < 28; i++) {
+    const cx = 24 + random() * 952;
+    const cy = height * (.05 + random() * .9);
+    const bright = i % 7 === 0;
+    const star = svgElement('circle', {
+      cx: cx.toFixed(1),
+      cy: cy.toFixed(1),
+      r: bright ? '1.65' : (.75 + random() * .55).toFixed(2),
+      opacity: bright ? '0.82' : (.35 + random() * .4).toFixed(2),
+      class: 'is-twinkle',
+    });
+    star.style.setProperty('--twinkle-delay', `${((i % 9) * 0.42).toFixed(2)}s`);
+    near.append(star);
+    if (bright) {
+      near.append(svgElement('path', {
+        class: 'graph-orbit-star-glint',
+        d: `M ${cx - 5} ${cy} L ${cx + 5} ${cy} M ${cx} ${cy - 5} L ${cx} ${cy + 5}`,
+      }));
+    }
+  }
+
+  const meteor = svgElement('line', {
+    class: 'graph-orbit-meteor',
+    x1: '860', y1: String(Math.round(height * 0.08)),
+    x2: '775', y2: String(Math.round(height * 0.19)),
+  });
+
+  sky.append(far, near, meteor);
   return sky;
 }
 
@@ -103,6 +163,77 @@ export function rotateOrbitView(view, yaw, pitch) {
   });
 }
 
+export function orbitEntryView() {
+  return rotateOrbitView(defaultView, 0.34, -0.28);
+}
+
+export function orbitWarpStreaks(centerY, count = 24) {
+  const random = seededRandom(4917);
+  const streaks = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * fullTurn + (random() - 0.5) * 0.14;
+    const inner = 54 + random() * 44;
+    const outer = 260 + random() * 270;
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    streaks.push({
+      x1: Number((500 + cos * inner).toFixed(2)),
+      y1: Number((centerY + sin * inner).toFixed(2)),
+      x2: Number((500 + cos * outer).toFixed(2)),
+      y2: Number((centerY + sin * outer).toFixed(2)),
+      delay: Number(((i % 6) * 0.032).toFixed(3)),
+      alpha: Number((0.28 + random() * 0.48).toFixed(2)),
+    });
+  }
+  return streaks;
+}
+
+export function orbitViewAngles(view = defaultView) {
+  const depth = view?.[2] || defaultView[2];
+  const az = Math.round(Math.atan2(depth.x, depth.z) * 180 / Math.PI);
+  const el = Math.round(Math.asin(Math.max(-1, Math.min(1, -depth.y))) * 180 / Math.PI);
+  return {azimuth: Object.is(az, -0) ? 0 : az, elevation: Object.is(el, -0) ? 0 : el};
+}
+
+function normalizeVec(v) {
+  const len = Math.hypot(v.x, v.y, v.z) || 1;
+  return {x: v.x / len, y: v.y / len, z: v.z / len};
+}
+
+function crossVec(a, b) {
+  return {x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x};
+}
+
+export function interpolateOrbitView(fromView, toView, t) {
+  const clamped = Math.max(0, Math.min(1, t));
+  const lerpVec = (a, b) => ({
+    x: a.x + (b.x - a.x) * clamped,
+    y: a.y + (b.y - a.y) * clamped,
+    z: a.z + (b.z - a.z) * clamped,
+  });
+  const right = normalizeVec(lerpVec(fromView[0], toView[0]));
+  const rawDown = lerpVec(fromView[1], toView[1]);
+  const dot = right.x * rawDown.x + right.y * rawDown.y + right.z * rawDown.z;
+  const down = normalizeVec({
+    x: rawDown.x - right.x * dot,
+    y: rawDown.y - right.y * dot,
+    z: rawDown.z - right.z * dot,
+  });
+  const depth = normalizeVec(crossVec(right, down));
+  return [right, down, depth];
+}
+
+export function orbitWakePath(projected, radius, phase, direction = 1, span = 0.72, segments = 12) {
+  const dir = direction < 0 ? -1 : 1;
+  const points = [];
+  for (let i = segments; i >= 0; i--) {
+    const p = phase - dir * span * (i / segments);
+    const pt = projectOrbit(projected, radius, p);
+    points.push({x: Number(pt.x.toFixed(2)), y: Number(pt.y.toFixed(2))});
+  }
+  const d = points.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
+  return {d, tail: points[0], head: points.at(-1)};
+}
+
 function viewOrbit({u, v}, [right, down, depth]) {
   const project = ({x, y, z}) => ({
     x: right.x * x + down.x * y + depth.x * z,
@@ -123,6 +254,17 @@ function orbitLine({u, v}, radius) {
   return path + ' Z';
 }
 
+function equatorTicksPath(projected, innerR, outerR, count = 24) {
+  let d = '';
+  for (let i = 0; i < count; i++) {
+    const theta = (i / count) * fullTurn;
+    const p1 = projectOrbit(projected, innerR, theta);
+    const p2 = projectOrbit(projected, outerR, theta);
+    d += `M ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} L ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+  }
+  return d.trim();
+}
+
 export function reverseRandomSatellite(satellites, random = Math.random) {
   if (!satellites.length || random() >= .01) return null;
   const satellite = satellites[Math.floor(random() * satellites.length)];
@@ -139,7 +281,7 @@ function planetArtwork(radius, {seed, color, form, angle}) {
     ring.append(svgElement('path', {d: 'M -1.7 0 A 1.7 .48 0 0 1 1.7 0', opacity: .55}));
     body.append(ring);
   }
-  body.append(svgElement('circle', {r: 1, fill: color}));
+  body.append(svgElement('circle', {class: 'graph-orbit-sphere', r: 1, fill: color}));
   const texture = svgElement('g', {'clip-path': 'url(#graph-orbit-disc)'});
   const surface = svgElement('g', {});
   if (form === 'mottled') {
@@ -171,7 +313,7 @@ function planetArtwork(radius, {seed, color, form, angle}) {
   }
   const light = svgElement('circle', {r: 1, fill: 'url(#graph-orbit-light)'});
   texture.append(surface);
-  body.append(texture, light, svgElement('circle', {r: 1, fill:'none', stroke: '#e0f4ff',
+  body.append(texture, light, svgElement('circle', {class: 'graph-orbit-rim', r: 1, fill:'none', stroke: '#e0f4ff',
     'stroke-opacity': .42, 'stroke-width': .04}));
   if (ring) {
     const front = ring.cloneNode();
@@ -179,6 +321,21 @@ function planetArtwork(radius, {seed, color, form, angle}) {
     body.append(front);
   }
   return {body, light, surface};
+}
+
+function reticleMarkup(r) {
+  const g = svgElement('g', {class: 'graph-orbit-reticle', 'aria-hidden': 'true'});
+  const c = (r * 0.42).toFixed(2);
+  const rv = r.toFixed(2);
+  for (const d of [
+    `M ${-rv} ${-c} A ${rv} ${rv} 0 0 1 ${-c} ${-rv}`,
+    `M ${c} ${-rv} A ${rv} ${rv} 0 0 1 ${rv} ${-c}`,
+    `M ${rv} ${c} A ${rv} ${rv} 0 0 1 ${c} ${rv}`,
+    `M ${-c} ${rv} A ${rv} ${rv} 0 0 1 ${-rv} ${c}`,
+  ]) {
+    g.append(svgElement('path', {d}));
+  }
+  return g;
 }
 
 export function rankOrbitPapers(center, papers, {orbitRings, clusterBasis, similarityThreshold}) {
@@ -196,28 +353,187 @@ export function rankOrbitPapers(center, papers, {orbitRings, clusterBasis, simil
 export class GraphOrbit {
   constructor(svg, {onSelect, onCenter, onMenu, onHover, onClose}) {
     this.svg = svg;
-    this.toolbar = svg.parentElement?.querySelector('.graph-orbit-toolbar');
+    const wrap = svg.parentElement;
+    this.toolbar = wrap?.querySelector('.graph-orbit-toolbar');
+    this.eyebrow = this.toolbar?.querySelector('[data-orbit-eyebrow]');
+    this.styleButton = this.toolbar?.querySelector('[data-orbit-style]');
     this.motionButton = this.toolbar?.querySelector('[data-orbit-motion]');
+    this.hud = wrap?.querySelector('.graph-orbit-hud');
     this.visible = true;
     this.paused = false;
     this.view = defaultView;
+    this.parallax = {x: 0, y: 0};
+    this.orbitStyle = 'cosmos';
+    try { this.orbitStyle = normalizeOrbitStyle(globalThis.localStorage?.getItem(orbitStyleKey)); } catch {}
     this.motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
     this.motionPreference.addEventListener('change', () => this.syncMotion());
     document.addEventListener('visibilitychange', () => this.syncMotion());
     this.orbitTime = 0;
     this.nextReversalCheck = reversalInterval;
+    this.entryFrame = undefined;
+    this.entryTimer = 0;
+    this.entryFlight = null;
+    this.singularity = null;
+    this.flare = null;
+    this.activeFlareMult = 1;
+    this.emptyClicks = [];
+    this.centerHoldTimer = 0;
+    this.suppressCenterClick = false;
+    this.reducedSingularityTimer = 0;
     this.animate = this.animate.bind(this);
-    this.toolbar?.querySelector('[data-orbit-close]').addEventListener('click', onClose);
+    this.toolbar?.querySelector('[data-orbit-close]')?.addEventListener('click', onClose);
     this.motionButton?.addEventListener('click', () => {
       this.paused = !this.paused;
       this.syncMotion();
     });
+    this.styleButton?.addEventListener('click', () => {
+      this.orbitStyle = this.orbitStyle === 'armillary' ? 'cosmos' : 'armillary';
+      try { globalThis.localStorage?.setItem(orbitStyleKey, this.orbitStyle); } catch {}
+      this.syncStyle();
+    });
+    this.hud?.addEventListener('click', event => {
+      if (event.target.closest('[data-orbit-reset]')) this.resetView();
+    });
     Object.assign(this, {onSelect, onCenter, onMenu, onHover});
     this.bindRotation();
+    this.bindOrbitInteractions();
+  }
+
+  stopEntryTransition() {
+    cancelAnimationFrame(this.entryFrame);
+    this.entryFrame = undefined;
+    clearTimeout(this.entryTimer);
+    this.entryTimer = 0;
+    this.entryFlight = null;
+    this.layer?.querySelector('.graph-orbit-warp-streaks')?.remove();
+    this.layer?.querySelector('.graph-orbit-lock-iris')?.remove();
+    this.toolbar?.classList.remove('is-entering');
+    this.hud?.classList.remove('is-entering');
+  }
+
+  clearOrbitEasterEggs() {
+    clearTimeout(this.centerHoldTimer);
+    clearTimeout(this.reducedSingularityTimer);
+    this.centerHoldTimer = 0;
+    this.reducedSingularityTimer = 0;
+    this.suppressCenterClick = false;
+    this.emptyClicks = [];
+    this.singularity?.group?.remove();
+    this.singularity = null;
+    this.flare = null;
+    this.activeFlareMult = 1;
+    this.centerPlanet?.node.classList.remove('is-flaring');
+    for (const wave of this.layer?.querySelectorAll('.graph-orbit-flare-wave') || []) wave.remove();
+  }
+
+  svgPoint(event) {
+    const matrix = this.svg.getScreenCTM?.();
+    return matrix
+      ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse())
+      : {x: 500, y: this.centerY || 310};
+  }
+
+  bindOrbitInteractions() {
+    this.svg.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || !this.layer || !this.visible) return;
+      if (event.target.closest('[data-orbit-paper-id], button')) return;
+      this.orbitDownPoint = this.svgPoint(event);
+    });
+    this.svg.addEventListener('pointerup', event => {
+      if (event.button !== 0 || !this.layer || !this.visible || this.rotationDrag?.moved) {
+        this.orbitDownPoint = null;
+        return;
+      }
+      if (event.target.closest('[data-orbit-paper-id], button')) {
+        this.orbitDownPoint = null;
+        return;
+      }
+      const pt = this.svgPoint(event);
+      if (this.orbitDownPoint && Math.hypot(pt.x - this.orbitDownPoint.x, pt.y - this.orbitDownPoint.y) > 8) {
+        this.orbitDownPoint = null;
+        return;
+      }
+      this.orbitDownPoint = null;
+      const now = performance.now();
+      this.emptyClicks = this.emptyClicks.filter(c => now - c.time <= 520 && Math.hypot(c.x - pt.x, c.y - pt.y) < 42);
+      this.emptyClicks.push({time: now, x: pt.x, y: pt.y});
+      if (this.emptyClicks.length >= 3) {
+        this.emptyClicks = [];
+        this.summonSingularity(pt);
+      }
+    });
+  }
+
+  summonSingularity(pt) {
+    if (!this.layer) return;
+    clearTimeout(this.reducedSingularityTimer);
+    this.singularity?.group?.remove();
+    const group = createBlackHoleSvg(document, {scale: 0.72, idPrefix: 'orbit-bh'});
+    group.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+    const satGroup = this.layer.querySelector('.graph-orbit-satellites');
+    this.layer.insertBefore(group, satGroup || null);
+
+    this.singularity = {
+      x: pt.x,
+      y: pt.y,
+      horizon: 16,
+      radius: 260,
+      strength: this.motionPreference.matches ? 0.5 : 0,
+      peakStrength: 1,
+      reboundFactor: 1,
+      phase: 'pull',
+      evaporating: false,
+      startTime: performance.now(),
+      holdDuration: 2350,
+      reboundDuration: 600,
+      evapStart: 0,
+      group,
+    };
+    reportAchievement('blackHoleSummons', 1, 'add');
+
+    if (this.motionPreference.matches) {
+      this.placeSatellites();
+      this.reducedSingularityTimer = setTimeout(() => {
+        this.singularity?.group?.remove();
+        this.singularity = null;
+        this.placeSatellites();
+      }, 1100);
+      return;
+    }
+    this.syncMotion();
+  }
+
+  triggerSolarFlare() {
+    if (!this.layer || !this.centerPlanet) return;
+    this.flare = {startTime: performance.now(), duration: 2600, peak: 4.8};
+    this.centerPlanet.node.classList.add('is-flaring');
+    reportAchievement('solarFlares', 1, 'add');
+
+    if (!this.motionPreference.matches) {
+      const satGroup = this.layer.querySelector('.graph-orbit-satellites');
+      for (const extraClass of ['', 'is-secondary']) {
+        const wave = svgElement('circle', {
+          class: `graph-orbit-flare-wave ${extraClass}`.trim(),
+          cx: '500',
+          cy: String(this.centerY),
+          r: String(centerRadius),
+          'aria-hidden': 'true',
+        });
+        this.layer.insertBefore(wave, satGroup || null);
+        setTimeout(() => wave.remove(), 980);
+      }
+      this.syncMotion();
+    } else {
+      setTimeout(() => this.centerPlanet?.node.classList.remove('is-flaring'), 650);
+    }
   }
 
   clear() {
+    this.stopEntryTransition();
+    this.clearOrbitEasterEggs();
     this.releaseRotation();
+    this.stopInertia();
+    this.stopReset();
     this.stopMotion();
     this.layer?.remove();
     this.layer = null;
@@ -226,13 +542,24 @@ export class GraphOrbit {
     this.centerPlanet = null;
     this.transition = null;
     this.satellites = [];
+    this.wakeGradients = [];
+    this.equatorRing = null;
+    this.equatorTicks = null;
+    this.beam = null;
+    this.starsFar = null;
+    this.starsNear = null;
     this.orbitTime = 0;
     this.nextReversalCheck = reversalInterval;
     this.paused = false;
     this.view = defaultView;
+    this.parallax = {x: 0, y: 0};
     this.hoveredSatellite = null;
+    this.hoveredMeta = null;
     delete this.svg.dataset.orbitFocus;
+    delete this.svg.dataset.orbitStyle;
+    delete this.svg.dataset.orbitPaused;
     if (this.toolbar) this.toolbar.hidden = true;
+    if (this.hud) { this.hud.hidden = true; this.hud.innerHTML = ''; }
   }
 
   stopMotion() {
@@ -241,22 +568,46 @@ export class GraphOrbit {
     this.lastFrame = undefined;
   }
 
+  stopInertia() {
+    if (this.inertiaFrame !== undefined) cancelAnimationFrame(this.inertiaFrame);
+    this.inertiaFrame = undefined;
+  }
+
+  stopReset() {
+    if (this.resetFrame !== undefined) cancelAnimationFrame(this.resetFrame);
+    this.resetFrame = undefined;
+  }
+
   setVisible(visible) {
     this.visible = visible;
     if (!visible) {
       this.releaseRotation();
+      this.stopInertia();
+      this.stopReset();
       this.hoveredSatellite = null;
+      this.hoveredMeta = null;
     }
     this.syncMotion();
+  }
+
+  syncStyle() {
+    if (this.svg.dataset.orbitFocus) this.svg.dataset.orbitStyle = this.orbitStyle;
+    if (this.layer) this.layer.dataset.orbitStyle = this.orbitStyle;
+    if (this.styleButton) {
+      this.styleButton.textContent = this.orbitStyle === 'armillary' ? t('星野') : t('浑天仪');
+    }
   }
 
   bindRotation() {
     const {svg} = this;
     svg.addEventListener('pointerdown', event => {
       if (event.button !== 2 || !this.layer || !this.visible || this.rotationDrag) return;
+      this.stopInertia();
+      this.stopReset();
       const {width, height} = svg.getBoundingClientRect();
       this.rotationDrag = {
         pointer: event.pointerId, x: event.clientX, y: event.clientY,
+        lastTime: performance.now(), velYaw: 0, velPitch: 0,
         planet: event.target.closest('[data-orbit-paper-id]'),
         sensitivity: Math.PI / Math.max(260, Math.min(width, height)),
       };
@@ -272,10 +623,14 @@ export class GraphOrbit {
         return;
       }
       const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      const now = performance.now();
+      const dt = Math.max(8, now - drag.lastTime);
       if (!drag.moved) {
         if (Math.hypot(dx, dy) < 4) return;
         drag.moved = true;
         this.hoveredSatellite = null;
+        this.hoveredMeta = null;
+        this.syncHoverVisuals();
         this.onHover(null);
         if (this.satellites.length) svg.classList.add('graph-orbit-rotating');
         if (this.transition) {
@@ -283,14 +638,27 @@ export class GraphOrbit {
         }
         this.syncMotion();
       }
+      const dYaw = dx * drag.sensitivity;
+      const dPitch = -dy * drag.sensitivity;
+      const norm = 16 / dt;
+      drag.velYaw = drag.velYaw * 0.45 + (dYaw * norm) * 0.55;
+      drag.velPitch = drag.velPitch * 0.45 + (dPitch * norm) * 0.55;
       drag.x = event.clientX;
       drag.y = event.clientY;
-      this.view = rotateOrbitView(this.view, dx * drag.sensitivity, -dy * drag.sensitivity);
+      drag.lastTime = now;
+      this.parallax.x = Math.max(-42, Math.min(42, this.parallax.x - dx * 0.28));
+      this.parallax.y = Math.max(-32, Math.min(32, this.parallax.y - dy * 0.28));
+      this.view = rotateOrbitView(this.view, dYaw, dPitch);
       this.projectTracks();
+      this.updateHud();
     });
     const finish = event => {
       if (this.rotationDrag?.pointer !== event.pointerId) return;
       const drag = this.releaseRotation();
+      if (event.type === 'pointerup' && drag.moved && !this.motionPreference.matches) {
+        const speed = Math.hypot(drag.velYaw || 0, drag.velPitch || 0);
+        if (speed > 0.0005) this.startInertia(drag.velYaw, drag.velPitch);
+      }
       this.syncMotion();
       if (event.type === 'pointerup' && !drag.moved && this.layer?.contains(drag.planet)) {
         this.onMenu(drag.planet.dataset.orbitPaperId, event, drag.planet);
@@ -307,6 +675,62 @@ export class GraphOrbit {
     });
   }
 
+  startInertia(velYaw, velPitch) {
+    this.stopInertia();
+    let vy = velYaw, vp = velPitch, last = performance.now();
+    const tick = now => {
+      if (!this.layer || !this.visible || this.rotationDrag) { this.inertiaFrame = undefined; return; }
+      const dt = Math.min(48, Math.max(4, now - last));
+      last = now;
+      const factor = dt / 16;
+      this.view = rotateOrbitView(this.view, vy * factor, vp * factor);
+      const decay = Math.pow(0.91, factor);
+      vy *= decay;
+      vp *= decay;
+      this.projectTracks();
+      this.updateHud();
+      if (Math.hypot(vy, vp) > 0.00025) {
+        this.inertiaFrame = requestAnimationFrame(tick);
+      } else {
+        this.inertiaFrame = undefined;
+      }
+    };
+    this.inertiaFrame = requestAnimationFrame(tick);
+  }
+
+  resetView() {
+    if (!this.layer) return;
+    this.stopInertia();
+    this.stopReset();
+    const startView = this.view;
+    const startParallax = {...this.parallax};
+    if (this.motionPreference.matches) {
+      this.view = defaultView;
+      this.parallax = {x: 0, y: 0};
+      this.projectTracks();
+      this.updateHud();
+      return;
+    }
+    const startTime = performance.now();
+    const duration = 420;
+    const tick = now => {
+      if (!this.layer || !this.visible) { this.resetFrame = undefined; return; }
+      const p = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      this.view = p >= 1 ? defaultView : interpolateOrbitView(startView, defaultView, eased);
+      this.parallax.x = startParallax.x * (1 - eased);
+      this.parallax.y = startParallax.y * (1 - eased);
+      this.projectTracks();
+      this.updateHud();
+      if (p < 1) {
+        this.resetFrame = requestAnimationFrame(tick);
+      } else {
+        this.resetFrame = undefined;
+      }
+    };
+    this.resetFrame = requestAnimationFrame(tick);
+  }
+
   releaseRotation() {
     const drag = this.rotationDrag;
     if (!drag) return null;
@@ -318,12 +742,15 @@ export class GraphOrbit {
 
   syncMotion() {
     const canAnimate = Boolean(this.satellites?.length) && !this.motionPreference.matches;
+    const hasActiveFx = Boolean(this.singularity || this.flare) && !this.motionPreference.matches;
     if (this.motionButton) {
       this.motionButton.hidden = !canAnimate;
       const label = this.paused ? t('继续环绕') : t('暂停环绕');
       if (this.motionButton.textContent !== label) this.motionButton.textContent = label;
     }
-    if (!canAnimate || this.paused || this.hoveredSatellite || this.rotationDrag?.moved || this.transition || !this.visible || document.hidden) {
+    if (this.svg.dataset.orbitFocus) this.svg.dataset.orbitPaused = String(this.paused);
+    const pauseBlocked = !hasActiveFx && (this.paused || !canAnimate || this.hoveredSatellite);
+    if (pauseBlocked || this.rotationDrag?.moved || this.transition || this.entryFlight || !this.visible || document.hidden) {
       this.stopMotion();
     } else if (this.frame === undefined) {
       this.frame = requestAnimationFrame(this.animate);
@@ -334,11 +761,53 @@ export class GraphOrbit {
     const elapsed = this.lastFrame === undefined ? 0 : Math.min(now - this.lastFrame, 48);
     this.orbitTime += elapsed;
     this.lastFrame = now;
-    for (const satellite of this.satellites) {
-      satellite.phase = (satellite.phase + elapsed * satellite.angularSpeed) % fullTurn;
-      satellite.spin = (satellite.spin + elapsed * .022) % 360;
+
+    if (this.singularity) {
+      const s = this.singularity;
+      const age = now - s.startTime;
+      if (!s.evaporating) {
+        const ramp = Math.min(1, age / 300);
+        s.strength = 1 - Math.pow(1 - ramp, 3);
+        if (age >= s.holdDuration) {
+          s.evaporating = true;
+          s.phase = 'evaporating';
+          s.peakStrength = s.strength;
+          s.evapStart = now;
+          s.group?.classList.add('is-evaporating');
+        }
+      } else {
+        const p = Math.min(1, (now - s.evapStart) / s.reboundDuration);
+        s.reboundFactor = hawkingReboundFactor(p);
+        if (p >= 1) {
+          s.group?.remove();
+          this.singularity = null;
+          if (this.starsNear) {
+            this.starsNear.setAttribute('transform', `translate(${(this.parallax.x * 0.34).toFixed(2)} ${(this.parallax.y * 0.34).toFixed(2)})`);
+          }
+        }
+      }
     }
-    if (this.orbitTime >= this.nextReversalCheck) {
+
+    let flareMult = 1;
+    if (this.flare) {
+      const flareElapsed = now - this.flare.startTime;
+      if (flareElapsed >= this.flare.duration) {
+        this.flare = null;
+        this.centerPlanet?.node.classList.remove('is-flaring');
+      } else {
+        flareMult = solarFlareSpeedMultiplier(flareElapsed, this.flare.duration, this.flare.peak);
+      }
+    }
+    this.activeFlareMult = flareMult;
+
+    if (!this.paused || flareMult > 1.001) {
+      for (const satellite of this.satellites) {
+        const pertBoost = satellite.singularityBoost || 0;
+        satellite.phase = (satellite.phase + elapsed * satellite.angularSpeed * flareMult * (1 + pertBoost)) % fullTurn;
+        satellite.spin = (satellite.spin + elapsed * .022 * flareMult) % 360;
+      }
+    }
+    if (!this.paused && this.orbitTime >= this.nextReversalCheck) {
       this.nextReversalCheck += reversalInterval;
       const reversed = document.querySelector('dialog:modal') ? null : reverseRandomSatellite(this.satellites);
       if (reversed) {
@@ -347,6 +816,10 @@ export class GraphOrbit {
       }
     }
     this.placeSatellites();
+    if (!this.singularity && !this.flare && (this.paused || !this.satellites.length || this.hoveredSatellite)) {
+      this.stopMotion();
+      return;
+    }
     this.frame = requestAnimationFrame(this.animate);
   }
 
@@ -355,24 +828,152 @@ export class GraphOrbit {
       satellite.projected = viewOrbit(satellite.plane, this.view);
       satellite.line.setAttribute('d', orbitLine(satellite.projected, satellite.orbitRadius));
     }
+    if (this.equatorRing && this.equatorTicks) {
+      const eq = viewOrbit(equatorPlane, this.view);
+      this.equatorRing.setAttribute('d', orbitLine(eq, centerRadius * 2.15));
+      this.equatorTicks.setAttribute('d', equatorTicksPath(eq, centerRadius * 2.02, centerRadius * 2.26, 24));
+    }
+    if (this.starsFar) {
+      this.starsFar.setAttribute('transform', `translate(${(this.parallax.x * 0.14).toFixed(2)} ${(this.parallax.y * 0.14).toFixed(2)})`);
+    }
+    if (this.starsNear) {
+      this.starsNear.setAttribute('transform', `translate(${(this.parallax.x * 0.34).toFixed(2)} ${(this.parallax.y * 0.34).toFixed(2)})`);
+    }
     this.placeSatellites();
   }
 
   placeSatellites() {
-    for (const satellite of this.satellites) {
-      const {node, track, light, surface, orbitRadius, projected, phase, spin} = satellite;
+    const flight = this.entryFlight;
+    const eased = flight?.eased ?? 1;
+    if (flight && this.centerPlanet) {
+      const cx = flight.centerStart.x + (500 - flight.centerStart.x) * eased;
+      const cy = flight.centerStart.y + (this.centerY - flight.centerStart.y) * eased;
+      const cs = flight.centerStart.scale + (1 - flight.centerStart.scale) * eased;
+      this.centerPlanet.node.setAttribute('transform', `translate(${cx.toFixed(2)} ${cy.toFixed(2)}) scale(${cs.toFixed(3)})`);
+      this.centerPlanet.node.style.opacity = String(Math.min(1, 0.35 + 0.65 * eased));
+    } else if (this.centerPlanet && this.layer?.classList.contains('is-new')) {
+      this.centerPlanet.node.setAttribute('transform', `translate(500 ${this.centerY})`);
+      this.centerPlanet.node.style.opacity = '';
+    }
+    if (this.starsNear && this.singularity) {
+      const s = this.singularity;
+      const factor = s.phase === 'evaporating' ? s.reboundFactor : s.strength;
+      const pullX = ((s.x - 500) * 0.045) * factor;
+      const pullY = ((s.y - this.centerY) * 0.045) * factor;
+      this.starsNear.setAttribute('transform', `translate(${(this.parallax.x * 0.34 + pullX).toFixed(2)} ${(this.parallax.y * 0.34 + pullY).toFixed(2)})`);
+    }
+    for (let i = 0; i < this.satellites.length; i++) {
+      const satellite = this.satellites[i];
+      const {node, track, line, wake, light, surface, orbitRadius, projected, phase, spin, angularSpeed} = satellite;
       const {x: dx, y: dy, z} = projectOrbit(projected, orbitRadius, phase);
       const depth = z / orbitRadius;
-      satellite.x = 500 + dx;
-      satellite.y = this.centerY + dy;
-      satellite.scale = 1 + .15 * depth;
-      node.setAttribute('transform', `translate(${satellite.x} ${satellite.y}) scale(${satellite.scale})`);
-      node.style.opacity = .89 + .11 * depth;
+      const orbitX = 500 + dx;
+      const orbitY = this.centerY + dy;
+      const orbitScale = 1 + .15 * depth;
+      const start = flight?.satStarts?.get(satellite.paperId);
+      const px = flight
+        ? (start ? start.x + (orbitX - start.x) * eased : 500 + dx * (0.25 + 0.75 * eased))
+        : orbitX;
+      const py = flight
+        ? (start ? start.y + (orbitY - start.y) * eased : this.centerY + dy * (0.25 + 0.75 * eased))
+        : orbitY;
+      const ps = flight
+        ? (start ? start.scale + (orbitScale - start.scale) * eased : orbitScale * (0.35 + 0.65 * eased))
+        : orbitScale;
+      const pert = !flight && this.singularity
+        ? computeOrbitSingularityPerturbation({x: px, y: py}, this.singularity)
+        : null;
+      satellite.singularityBoost = pert?.speedBoost || 0;
+      const finalX = px + (pert?.dx || 0);
+      const finalY = py + (pert?.dy || 0);
+      satellite.x = finalX;
+      satellite.y = finalY;
+      satellite.scale = ps;
+      node.setAttribute('transform', `translate(${finalX} ${finalY}) scale(${ps})`);
+      node.style.opacity = flight ? (.25 + .64 * eased) + .11 * depth * eased : .89 + .11 * depth;
       light.setAttribute('transform', `rotate(${Math.atan2(-dy, -dx) * 180 / Math.PI})`);
       surface.setAttribute('transform', `rotate(${spin})`);
-      track.classList.toggle('is-behind', z < 0);
-      node.classList.toggle('is-reversing', satellite.reversalUntil > this.orbitTime);
+      const behind = z < 0;
+      track.classList.toggle('is-behind', behind);
+      const reversing = satellite.reversalUntil > this.orbitTime;
+      node.classList.toggle('is-reversing', reversing);
+
+      if (wake) {
+        const wakeSpan = 0.72 + Math.min(0.75, Math.max(0, ((this.activeFlareMult || 1) - 1) * 0.22));
+        const wakeGeom = orbitWakePath(projected, orbitRadius, phase, angularSpeed >= 0 ? 1 : -1, wakeSpan);
+        wake.setAttribute('d', wakeGeom.d);
+        wake.classList.toggle('is-behind', behind);
+        wake.classList.toggle('is-reversing', reversing);
+        wake.classList.toggle('is-flare-boost', (this.activeFlareMult || 1) > 1.25);
+        const grad = this.wakeGradients[i];
+        if (grad) {
+          grad.setAttribute('x1', String(wakeGeom.tail.x));
+          grad.setAttribute('y1', String(wakeGeom.tail.y));
+          grad.setAttribute('x2', String(wakeGeom.head.x));
+          grad.setAttribute('y2', String(wakeGeom.head.y));
+        }
+      }
+      if (this.hoveredMeta?.paper?.id === satellite.paperId && this.beam) {
+        this.beam.setAttribute('x2', String(satellite.x));
+        this.beam.setAttribute('y2', String(satellite.y));
+      }
+      line.classList.toggle('is-focused', this.hoveredMeta?.paper?.id === satellite.paperId);
+      wake?.classList.toggle('is-focused', this.hoveredMeta?.paper?.id === satellite.paperId);
     }
+  }
+
+  syncHoverVisuals() {
+    if (!this.layer) return;
+    if (this.hoveredMeta && !this.hoveredMeta.isCenter) {
+      this.layer.dataset.hoveredRing = String(this.hoveredMeta.ringIndex);
+      if (this.beam) {
+        this.beam.setAttribute('x1', '500');
+        this.beam.setAttribute('y1', String(this.centerY));
+        this.beam.classList.add('is-visible');
+      }
+    } else {
+      delete this.layer.dataset.hoveredRing;
+      if (this.beam) this.beam.classList.remove('is-visible');
+    }
+    this.placeSatellites();
+  }
+
+  updateHud() {
+    if (!this.hud) return;
+    if (!this.layer) { this.hud.hidden = true; return; }
+    this.hud.hidden = false;
+    const {azimuth, elevation} = orbitViewAngles(this.view);
+    const rotated = azimuth !== 0 || elevation !== 0;
+
+    let leftText = `AZ ${String(azimuth).padStart(2, '0')}° · EL ${elevation >= 0 ? '+' : ''}${elevation}° · ${t('右键拖拽旋转 3D · 点击卫星跃迁')}`;
+    if (this.hoveredMeta && !this.hoveredMeta.isCenter) {
+      const {paper, count, ringIndex} = this.hoveredMeta;
+      const meta = [
+        `ORBIT ${String(ringIndex).padStart(2, '0')}`,
+        msg`${count} 个共同标签`,
+        paper.year || '',
+        paper.title,
+        t('点击跃迁为中心'),
+      ].filter(Boolean);
+      leftText = meta.join(' · ');
+    }
+
+    let info = this.hud.querySelector('.graph-orbit-hud-info');
+    let resetBtn = this.hud.querySelector('[data-orbit-reset]');
+    if (!info || !resetBtn) {
+      this.hud.replaceChildren();
+      info = document.createElement('span');
+      info.className = 'graph-orbit-hud-info';
+      resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'outline-button';
+      resetBtn.dataset.orbitReset = '';
+      resetBtn.textContent = t('重置视角');
+      this.hud.append(info, resetBtn);
+    }
+    info.textContent = leftText;
+    resetBtn.disabled = !rotated;
+    resetBtn.textContent = t('重置视角');
   }
 
   snapshotPlanets() {
@@ -438,7 +1039,60 @@ export class GraphOrbit {
     }
   }
 
-  render(center, papers, preferences, height, selected) {
+  startEntryFlight(center, rings, origin) {
+    const startView = orbitEntryView();
+    const satStarts = new Map();
+    for (const {paper} of rings) {
+      const src = origin?.nodes?.get(paper.id);
+      if (src) {
+        const sat = this.satellites.find(s => s.paperId === paper.id);
+        const targetR = sat?.radius || 11;
+        satStarts.set(paper.id, {
+          x: src.x,
+          y: src.y,
+          scale: Math.max(0.28, Math.min(1.6, src.radius / targetR)),
+        });
+      }
+    }
+    const cSrc = origin?.center;
+    const centerStart = cSrc ? {
+      x: cSrc.x,
+      y: cSrc.y,
+      scale: Math.max(0.18, Math.min(1.2, cSrc.radius / centerRadius)),
+    } : {x: 500, y: this.centerY, scale: 0.42};
+
+    this.view = startView;
+    this.entryFlight = {eased: 0, centerStart, satStarts};
+    const startTime = performance.now();
+    const duration = 620;
+    const step = now => {
+      if (!this.layer || !this.entryFlight) { this.entryFrame = undefined; return; }
+      const p = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      this.entryFlight.eased = eased;
+      this.view = p >= 1 ? defaultView : interpolateOrbitView(startView, defaultView, eased);
+      this.projectTracks();
+      this.updateHud();
+      if (p < 1) {
+        this.entryFrame = requestAnimationFrame(step);
+      } else {
+        this.entryFrame = undefined;
+        this.entryFlight = null;
+        this.view = defaultView;
+        this.projectTracks();
+        this.syncMotion();
+      }
+    };
+    this.entryFrame = requestAnimationFrame(step);
+    this.entryTimer = setTimeout(() => {
+      this.layer?.querySelector('.graph-orbit-warp-streaks')?.remove();
+      this.layer?.querySelector('.graph-orbit-lock-iris')?.remove();
+      this.toolbar?.classList.remove('is-entering');
+      this.hud?.classList.remove('is-entering');
+    }, 760);
+  }
+
+  render(center, papers, preferences, height, selected, origin = null) {
     const rings = rankOrbitPapers(center, papers, preferences);
     const key = JSON.stringify([height, getLocale(), center.id, center.title,
       rings.map(({paper, count}) => [paper.id, paper.title, count])]);
@@ -446,6 +1100,8 @@ export class GraphOrbit {
     if (this.key === key && this.layer?.parentNode === this.svg) {
       this.select(selected);
       this.syncMotion();
+      this.syncStyle();
+      this.updateHud();
       return;
     }
 
@@ -454,20 +1110,47 @@ export class GraphOrbit {
     const sameCenter = this.centerId === center.id;
     const recentering = !sameCenter && previous.has(center.id);
     const animate = (recentering || this.transition) && !this.motionPreference.matches;
+    const enteringFromMap = !previous.size && !this.motionPreference.matches;
     this.centerId = center.id;
     this.transition = null;
+    this.stopEntryTransition();
+    this.clearOrbitEasterEggs();
     this.stopMotion();
+    this.stopInertia();
+    this.stopReset();
     if (this.layer) this.onHover(null);
     this.hoveredSatellite = null;
+    this.hoveredMeta = null;
     this.layer?.remove();
     this.key = key;
 
     const layer = this.layer = svgElement('g', {class: 'graph-orbit-scene'});
     const centerY = this.centerY = height / 2;
     layer.classList.toggle('is-new', !previous.size);
-    layer.append(orbitDefinitions(centerY), orbitStarfield(height));
+    const wakeStyles = rings.map(({paper}) => orbitPlanetStyle(paper.id).color);
+    const defs = orbitDefinitions(centerY, wakeStyles);
+    this.wakeGradients = [...defs.querySelectorAll('[id^="graph-orbit-wake-"]')];
+    const starfield = orbitStarfield(height);
+    this.starsFar = starfield.querySelector('.graph-orbit-stars-far');
+    this.starsNear = starfield.querySelector('.graph-orbit-stars-near');
+    layer.append(defs, starfield);
+
     const orbits = svgElement('g', {class: 'graph-orbit-rings',
       transform: `translate(500 ${centerY})`, 'aria-hidden': 'true'});
+    const wakes = svgElement('g', {class: 'graph-orbit-wakes',
+      transform: `translate(500 ${centerY})`, 'aria-hidden': 'true'});
+    const equator = svgElement('g', {class: 'graph-orbit-equator',
+      transform: `translate(500 ${centerY})`, 'aria-hidden': 'true'});
+    this.equatorRing = svgElement('path', {class: 'graph-orbit-equator-ring'});
+    this.equatorTicks = svgElement('path', {class: 'graph-orbit-equator-ticks'});
+    equator.append(this.equatorRing, this.equatorTicks);
+
+    this.beam = svgElement('line', {
+      class: 'graph-orbit-beam',
+      x1: '500', y1: String(centerY), x2: '500', y2: String(centerY),
+      'aria-hidden': 'true',
+    });
+
     const satellites = svgElement('g', {class: 'graph-orbit-satellites'});
     this.satellites = [];
     const orbitSize = Math.min(410, height * .44);
@@ -475,15 +1158,26 @@ export class GraphOrbit {
       const orbitRadius = rings.length === 1 ? Math.max(146, orbitSize * .72)
         : 146 + (orbitSize - 146) * index / (rings.length - 1);
       const plane = orbitPlane(center.id, paper.id);
-      const line = svgElement('path', {class: 'graph-orbit-line'});
+      const line = svgElement('path', {class: 'graph-orbit-line', pathLength: '1'});
+      line.style.setProperty('--orbit-i', String(index));
+      const alpha = Math.max(0.24, 0.56 - index * 0.045);
+      line.style.setProperty('--ring-alpha', alpha.toFixed(2));
       orbits.append(line);
-      const planet = this.planet(paper, 10 + (index % 3) * 1.7, count);
+
+      const wake = svgElement('path', {
+        class: 'graph-orbit-wake',
+        stroke: `url(#graph-orbit-wake-${index})`,
+      });
+      wakes.append(wake);
+
+      const planet = this.planet(paper, 10 + (index % 3) * 1.7, count, index + 1);
       planet.node.dataset.orbitRing = index + 1;
       const track = svgElement('g', {class: 'graph-orbit-track'});
       track.append(planet.node);
       satellites.append(track);
       const old = previous.get(paper.id);
-      this.satellites.push({...planet, track, line, orbitRadius, plane,
+      this.satellites.push({...planet, paperId: paper.id, ringIndex: index + 1, count,
+        track, line, wake, orbitRadius, plane,
         phase: sameCenter ? old?.phase ?? plane.phase : plane.phase,
         spin: old?.spin ?? 0,
         angularSpeed: (sameCenter ? old?.angularSpeed : undefined)
@@ -498,19 +1192,67 @@ export class GraphOrbit {
     planet.node.setAttribute('transform', `translate(500 ${centerY})`);
     if (priorCenter?.lightFacing) planet.light.setAttribute('transform', priorCenter.lightFacing);
     planet.surface.setAttribute('transform', `rotate(${planet.spin})`);
-    layer.append(orbits, planet.node, satellites);
+
+    const shockwave = svgElement('circle', {
+      class: 'graph-orbit-shockwave',
+      cx: '500', cy: String(centerY), r: String(centerRadius),
+      'aria-hidden': 'true',
+    });
+
+    layer.append(orbits, wakes, equator, this.beam, planet.node, shockwave, satellites);
+    if (enteringFromMap) {
+      const streaksGroup = svgElement('g', {class: 'graph-orbit-warp-streaks', 'aria-hidden': 'true'});
+      for (const s of orbitWarpStreaks(centerY, 24)) {
+        const ray = svgElement('line', {
+          class: 'graph-orbit-warp-streak',
+          x1: String(s.x1), y1: String(s.y1), x2: String(s.x2), y2: String(s.y2),
+          pathLength: '1', opacity: String(s.alpha),
+        });
+        ray.style.setProperty('--streak-delay', `${s.delay}s`);
+        streaksGroup.append(ray);
+      }
+      const iris = svgElement('g', {
+        class: 'graph-orbit-lock-iris',
+        transform: `translate(500 ${centerY})`,
+        'aria-hidden': 'true',
+      });
+      iris.append(
+        svgElement('circle', {class: 'graph-orbit-iris-ring', r: '78'}),
+        svgElement('path', {
+          class: 'graph-orbit-iris-ticks',
+          d: 'M 0 -92 V -74 M 0 74 V 92 M -92 0 H -74 M 74 0 H 92',
+        })
+      );
+      const shockwave2 = svgElement('circle', {
+        class: 'graph-orbit-shockwave is-secondary',
+        cx: '500', cy: String(centerY), r: String(centerRadius),
+        'aria-hidden': 'true',
+      });
+      layer.insertBefore(streaksGroup, orbits);
+      layer.append(shockwave2, iris);
+      this.startEntryFlight(center, rings, origin);
+      this.toolbar?.classList.add('is-entering');
+      this.hud?.classList.add('is-entering');
+    }
     this.projectTracks();
     this.svg.append(layer);
     if (animate && planet.node.animate) this.animateScene(previous);
     this.svg.dataset.orbitFocus = 'true';
+    this.syncStyle();
     this.select(selected);
     if (this.toolbar) {
       this.toolbar.hidden = false;
+      if (this.eyebrow) {
+        this.eyebrow.textContent = rings.length
+          ? `${t('ORBITAL VIEW')} // ${String(rings.length).padStart(2, '0')} RINGS`
+          : t('ORBITAL VIEW');
+      }
       this.toolbar.querySelector('strong').textContent = center.title;
       this.toolbar.querySelector('small').textContent = rings.length
         ? msg`${rings.length} 篇相关文献 · ${rings.length} 圈`
         : t('当前范围内没有达到最低相似度的文献');
     }
+    this.updateHud();
     if (previousFocus) {
       const target = [...layer.querySelectorAll('[data-orbit-paper-id]')].find(node => node.dataset.orbitPaperId === previousFocus);
       (target || planet.node).focus({preventScroll: true});
@@ -518,7 +1260,7 @@ export class GraphOrbit {
     this.syncMotion();
   }
 
-  planet(paper, radius, count) {
+  planet(paper, radius, count, ringIndex = 0) {
     const isCenter = count === undefined;
     const name = isCenter ? paper.title : msg`${paper.title} · ${count} 个共同标签`;
     const group = svgElement('g', {
@@ -527,31 +1269,89 @@ export class GraphOrbit {
     });
     const style = orbitPlanetStyle(paper.id);
     const {body, light, surface} = planetArtwork(radius, style);
-    if (isCenter) group.append(svgElement('circle', {r: radius * 2.65, fill: 'url(#graph-orbit-halo)',
-      class: 'graph-orbit-halo', 'aria-hidden': 'true'}));
+    if (isCenter) {
+      group.append(
+        svgElement('circle', {r: radius * 3.1, fill: 'url(#graph-orbit-corona)',
+          class: 'graph-orbit-corona-pulse', 'aria-hidden': 'true'}),
+        svgElement('circle', {r: radius * 2.65, fill: 'url(#graph-orbit-halo)',
+          class: 'graph-orbit-halo', 'aria-hidden': 'true'})
+      );
+    }
     group.append(svgElement('title', {}, name), body,
       svgElement('circle', {r: Math.max(radius + 5, !isCenter && style.form === 'ringed' ? radius * 1.7 : 0),
         class: 'graph-orbit-target'}));
     const activate = () => isCenter ? this.onSelect(paper.id) : this.onCenter(paper.id);
-    if (!isCenter) group.append(svgElement('circle', {r: radius + 8, class: 'graph-orbit-reversal',
-      'aria-hidden': 'true'}));
-    group.addEventListener('click', activate);
-    group.addEventListener('pointerenter', event => {
-      if (!isCenter && event.pointerType !== 'touch') {
+    if (!isCenter) {
+      group.append(
+        reticleMarkup(radius + 7),
+        svgElement('circle', {r: radius + 8, class: 'graph-orbit-reversal', 'aria-hidden': 'true'})
+      );
+    }
+    group.addEventListener('click', () => {
+      if (isCenter && this.suppressCenterClick) {
+        this.suppressCenterClick = false;
+        return;
+      }
+      activate();
+    });
+    if (isCenter) {
+      group.addEventListener('pointerdown', event => {
+        if (event.button !== 0) return;
+        clearTimeout(this.centerHoldTimer);
+        this.suppressCenterClick = false;
+        this.centerHoldTimer = setTimeout(() => {
+          this.suppressCenterClick = true;
+          this.triggerSolarFlare();
+        }, 350);
+      });
+      const cancelCenterHold = () => clearTimeout(this.centerHoldTimer);
+      group.addEventListener('pointerup', cancelCenterHold);
+      group.addEventListener('pointerleave', cancelCenterHold);
+      group.addEventListener('pointercancel', cancelCenterHold);
+      group.addEventListener('dblclick', event => {
+        event.stopPropagation();
+        clearTimeout(this.centerHoldTimer);
+        this.suppressCenterClick = false;
+        this.triggerSolarFlare();
+      });
+    }
+    const enter = event => {
+      if (!isCenter && event?.pointerType !== 'touch') {
         this.hoveredSatellite = group;
+        this.hoveredMeta = {isCenter, paper, count, ringIndex};
+        this.syncHoverVisuals();
         this.syncMotion();
+        this.updateHud();
       }
       this.onHover(this.papers.get(paper.id), event);
-    });
+    };
     const leave = () => {
       if (this.hoveredSatellite === group) {
         this.hoveredSatellite = null;
+        this.hoveredMeta = null;
+        this.syncHoverVisuals();
         this.syncMotion();
+        this.updateHud();
       }
       this.onHover(null);
     };
+    group.addEventListener('pointerenter', enter);
     group.addEventListener('pointerleave', leave);
     group.addEventListener('pointercancel', leave);
+    group.addEventListener('focus', () => {
+      if (!isCenter) {
+        this.hoveredMeta = {isCenter, paper, count, ringIndex};
+        this.syncHoverVisuals();
+        this.updateHud();
+      }
+    });
+    group.addEventListener('blur', () => {
+      if (!isCenter && this.hoveredMeta?.paper?.id === paper.id && !this.hoveredSatellite) {
+        this.hoveredMeta = null;
+        this.syncHoverVisuals();
+        this.updateHud();
+      }
+    });
     group.addEventListener('keydown', event => {
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
         event.preventDefault();

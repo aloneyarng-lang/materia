@@ -1,34 +1,274 @@
 @import url('./builtin-fonts.css');
-:root{color-scheme:light;font-family:"Materia Inter","Materia Source Han Sans",sans-serif;color:#ffffff;background:transparent}
+:root{color-scheme:light;font-family:"Materia Inter","Materia Source Han Sans",sans-serif;color:#ffffff;background:transparent;
+  --ink:#ffffff;--sat:#ffffff;--badge:#d97757;--word:#ffffff;--dot:#ffffff;--p:0;
+  --out:cubic-bezier(.2,.65,.35,1);--expo:cubic-bezier(.16,1,.3,1);--back:cubic-bezier(.34,1.56,.64,1);--inout:cubic-bezier(.65,0,.35,1)}
 *{box-sizing:border-box}
 body{margin:0;overflow:hidden}
 /* Match the main interface's large glass panels (glassUI.cardRadius). */
 body{border-radius:20px;clip-path:inset(0 round 20px)}
 main{position:relative;height:100vh;min-height:400px;border-radius:20px;overflow:hidden;background:#d97757;transition:opacity .18s ease,filter .18s ease;-webkit-app-region:drag;user-select:none}
-.brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-75%);display:flex;flex-direction:column;align-items:center;gap:18px}
-.app-icon{display:block;width:112px;height:112px}
-.playing .app-icon{animation:logo-turn .82s cubic-bezier(.2,.65,.35,1) both}
-.wordmark{font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:28px;font-weight:400;letter-spacing:-.8px;line-height:1;color:#ffffff}
-.wordmark span{color:#ffffff}
-.companion{position:absolute;left:24px;bottom:26px;width:116px;display:flex;flex-direction:column;align-items:center;gap:6px}
-.stage{position:relative;width:116px;height:126px;display:grid;place-items:center}
-.aura{position:absolute;inset:18px 0 0;border-radius:50%;background:radial-gradient(ellipse,#ffffff18,transparent 70%)}
-.pet{position:absolute;width:192px;height:208px;background-image:url('./startup-reimu.png');background-size:1152px 208px;background-position:0 0;background-repeat:no-repeat;transform:scale(.6);filter:drop-shadow(0 8px 8px #7d2c3510)}
-.status{display:flex;flex-direction:column;align-items:center}
-h1{font-family:"Materia Source Han Sans","Yu Gothic",sans-serif;font-size:12px;line-height:1.5;font-weight:400;letter-spacing:1px;margin:0;position:relative}
-.dots{position:absolute;left:100%;letter-spacing:2px;margin-left:3px;animation:dots 1.8s ease-in-out infinite}
+[data-style]:not([data-style=classic]) main{transition:opacity .28s var(--inout),transform .28s var(--inout),clip-path .28s var(--inout)}
+.mono{font-family:"Materia SF Mono","Materia Source Code Pro",Consolas,monospace;font-variant-numeric:tabular-nums}
+output{font:inherit}
+
+/* Every animation is declared paused and starts together once the window is visible. */
+.playing *{animation-play-state:running!important}
+
+/* Per-style blocks */
+.decor,.loading,.ruler,.status-line,.thread,.glow,.ring,.sheen{display:none}
+[data-style=classic] .loading,[data-style=drafting] .decor-drafting,[data-style=drafting] .ruler,
+[data-style=obsidian] .decor-obsidian,[data-style=obsidian] .status-line,[data-style=obsidian] .glow,[data-style=obsidian] .ring,
+[data-style=telemetry] .decor-telemetry,[data-style=aperture] .decor-aperture,[data-style=aperture] .thread,[data-style=aperture] .sheen,
+[data-style=diffraction] .decor-diffraction,[data-style=telescope] .decor-telescope,[data-style=monolith] .decor-monolith,[data-style=horology] .decor-horology,[data-style=prism] .decor-prism,[data-style=chrome] .decor-chrome{display:block}
+.decor{position:absolute;inset:0;pointer-events:none}
+
+/* Shared brand */
+.brand{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-75%);display:flex;flex-direction:column;align-items:center;gap:18px}
+.mark-wrap{position:relative;display:grid;place-items:center}
+.mark{display:block;width:112px;height:112px;overflow:visible}
+.badge{fill:var(--badge)}
+[data-style]:not([data-style=classic]) .badge,[data-style]:not([data-style=classic]) .badge-edge{display:none}
+.glyph{stroke:var(--ink)}
+.sat{fill:var(--sat)}
+.core,.ray{stroke-dasharray:1 2;stroke-dashoffset:0}
+.core,.sat{transform-box:fill-box;transform-origin:center}
+/* Ray order and scatter offsets (user units) without inline styles, so the CSP stays strict. */
+.ray:nth-of-type(1){--i:0;--dx:-44px;--dy:-68px}
+.ray:nth-of-type(2){--i:1;--dx:36px;--dy:-62px}
+.ray:nth-of-type(3){--i:2;--dx:72px;--dy:-16px}
+.ray:nth-of-type(4){--i:3;--dx:56px;--dy:52px}
+.ray:nth-of-type(5){--i:4;--dx:-12px;--dy:74px}
+.ray:nth-of-type(6){--i:5;--dx:-66px;--dy:46px}
+.ray:nth-of-type(7){--i:6;--dx:-78px;--dy:-14px}
+.ray:nth-of-type(8){--i:7;--dx:-54px;--dy:-56px}
+.wordmark{position:relative;font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:28px;font-weight:400;letter-spacing:-.8px;line-height:1;color:var(--word)}
+.wordmark span{color:var(--dot)}
+
+/* Classic: the original rotation and marquee */
+[data-style=classic] .mark{animation:logo-turn .82s var(--out) both paused}
 .loading{position:absolute;left:50%;bottom:74px;transform:translateX(-50%);width:260px;height:4px;border-radius:4px;overflow:hidden;background:#ffffff40}
-.loading span{display:block;width:90px;height:100%;border-radius:inherit;background:#ffffff}
-.playing .loading span{animation:loading .82s linear infinite alternate}
-.caption{font-family:"Materia Inter","Materia Source Han Sans",sans-serif;margin-top:5px;font-size:7px;font-weight:400;letter-spacing:1.4px;color:#ffffff}
-.depart main{opacity:0;filter:blur(4px)}
-@keyframes dots{0%,100%{opacity:.3}50%{opacity:1}}
+.loading span{display:block;width:90px;height:100%;border-radius:inherit;background:#ffffff;animation:loading .82s linear infinite alternate paused}
+.depart[data-style=classic] main{opacity:0;filter:blur(4px)}
+
+/* A · Drafting desk ruler (Heron AI × Preymaker) */
+[data-style=drafting]{--ink:#1f2024;--sat:#d97757;--word:#1f2024;--dot:#d97757}
+[data-style=drafting] main{background-color:#f5f2eb;background-image:linear-gradient(to right,rgba(31,32,36,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(31,32,36,.055) 1px,transparent 1px);background-size:28px 28px;background-position:center}
+[data-style=drafting] .brand{transform:translate(-50%,-62%)}
+[data-style=drafting] .mark{width:104px;height:104px}
+[data-style=drafting] .glyph{stroke-width:20}
+.cross{position:absolute;background:rgba(217,119,87,.2)}
+.cross-h{left:32px;right:32px;top:50%;height:1px;animation:grow-x .36s var(--out) both paused}
+.cross-v{top:32px;bottom:32px;left:50%;width:1px;animation:grow-y .36s var(--out) both paused}
+.corners{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:#d97757;stroke-width:1.5;stroke-opacity:.75;animation:fade-in .36s ease both paused}
+.meta{position:absolute;top:22px;left:40px;right:40px;display:flex;justify-content:space-between;font-size:10px;letter-spacing:2px;color:#5a5955;animation:fade-in .3s ease .16s both paused}
+[data-style=drafting] .core{animation:draw .38s var(--out) .16s both paused}
+[data-style=drafting] .ray{animation:draw .32s var(--expo) calc(.26s + var(--i) * .048s) both paused}
+[data-style=drafting] .sat{animation:pop .3s var(--back) .76s both paused}
+[data-style=drafting] .wordmark{animation:rise .48s var(--out) .52s both paused}
+.ruler{position:absolute;left:40px;right:40px;bottom:32px}
+.ruler-meta{display:flex;justify-content:space-between;font-size:10px;letter-spacing:2px;color:#5a5955;margin-bottom:10px}
+.ruler-meta output{color:#1f2024;font-weight:600}
+.ruler-track{height:2px;background:rgba(31,32,36,.12);overflow:hidden}
+.ruler-track span,.thread span{display:block;height:100%;background:#d97757;transform-origin:left;transform:scaleX(var(--p))}
+.depart[data-style=drafting] main{opacity:0;transform:translateY(-8px) scale(1.03)}
+
+/* B · Obsidian lattice (Autopilot × NODDAL) */
+[data-style=obsidian]{--ink:#f4f5f7;--sat:#d97757;--word:#f4f5f7;--dot:#d97757}
+[data-style=obsidian] main{background-color:#14161a;background-image:linear-gradient(to right,rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px;background-position:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.edge{position:absolute;left:32px;right:32px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent)}
+[data-style=obsidian] .brand{gap:64px;transform:translate(-50%,-56%)}
+[data-style=obsidian] .mark{width:96px;height:96px}
+[data-style=obsidian] .glyph{stroke-width:20}
+.glow{position:absolute;z-index:-1;left:50%;top:50%;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;background:radial-gradient(circle,rgba(217,119,87,.26),transparent 62%);animation:fade-in .48s ease both paused}
+.ring{position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px;fill:none;overflow:visible}
+.ring .track{stroke:rgba(255,255,255,.08);stroke-width:1.5}
+.ring .arc{stroke:rgba(255,255,255,.7);stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1 2;stroke-dashoffset:1;transform:rotate(-90deg);transform-origin:100px 100px}
+.ring .orbit-dot{fill:#d97757;transform-origin:100px 100px;transform:rotate(calc(var(--p) * 360deg))}
+[data-style=obsidian] .core{animation:bloom .42s var(--back) .2s both paused}
+[data-style=obsidian] .ray{animation:draw .38s var(--out) calc(.28s + var(--i) * .042s) both paused}
+[data-style=obsidian] .sat{animation:dock .4s var(--out) .68s both paused}
+[data-style=obsidian] .wordmark{animation:focus .58s var(--out) .6s both paused}
+.status-line{position:absolute;left:0;right:0;bottom:30px;text-align:center;font-size:10px;letter-spacing:2.4px;color:rgba(255,255,255,.6)}
+.depart[data-style=obsidian] main{opacity:0;transform:scale(1.12)}
+
+/* C · Instrument telemetry (SSTR × Noho) */
+[data-style=telemetry] main{background:#141312;clip-path:inset(0 0 0 0 round 20px)}
+.panel{position:absolute;animation:fade-in .28s ease both paused}
+.panel-brand{left:0;top:0;bottom:100px;width:342px;background:#d97757}
+.panel-matrix{right:0;top:0;bottom:100px;width:218px;background:#1a1918;padding:26px 24px}
+.panel-bar{left:0;right:0;bottom:0;height:100px;padding:0 28px;display:flex;align-items:center;justify-content:space-between}
+.split-v{position:absolute;top:0;bottom:100px;left:342px;width:1px;background:rgba(255,255,255,.15);transform-origin:top;animation:grow-y .3s var(--expo) both paused}
+.split-h{position:absolute;left:0;right:0;bottom:100px;height:1px;background:rgba(255,255,255,.15);transform-origin:left;animation:grow-x .3s var(--expo) both paused}
+.matrix-head{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,.6)}
+.led{display:block;width:10px;height:10px;border-radius:2px;background:#d97757;animation:blink .48s step-end infinite paused}
+.matrix{display:grid;grid-template-columns:repeat(4,14px);gap:10px;margin-top:22px}
+.matrix i{display:block;width:14px;height:14px;border-radius:3px;background:rgba(255,255,255,.14);transition:background-color .12s}
+.matrix i.on{background:rgba(255,255,255,.75)}
+.matrix i.head{background:#d97757}
+.matrix-sub{margin-top:22px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);font-size:9px;letter-spacing:1.2px;line-height:1.7;color:rgba(255,255,255,.5)}
+.matrix-sub b{display:block;font-weight:400;color:rgba(255,255,255,.85)}
+.panel-bar b{display:block;font-size:12px;font-weight:500;letter-spacing:1.5px;color:#d97757}
+.panel-bar small{display:block;margin-top:5px;font-size:9px;letter-spacing:2.4px;color:rgba(255,255,255,.45)}
+.panel-bar output{font-size:44px;font-weight:600;letter-spacing:-1px;line-height:1;color:#ffffff}
+[data-style=telemetry] .brand{left:171px;top:170px;transform:translate(-50%,-50%)}
+[data-style=telemetry] .mark{width:92px;height:92px;animation:turn-in .6s var(--out) .16s both paused}
+[data-style=telemetry] .ray{animation:draw .38s var(--expo) calc(.2s + var(--i) * .035s) both paused}
+[data-style=telemetry] .wordmark{animation:fade-up .4s var(--out) .38s both paused}
+.depart[data-style=telemetry] main{clip-path:inset(0 0 100% 0 round 20px)}
+
+/* D · Terracotta aperture (Structure × G. Colombel) */
+[data-style=aperture] main{background:radial-gradient(circle at 50% 35%,#e38667 0%,#d97757 52%,#bf5b3b 100%)}
+.aperture{position:absolute;left:50%;top:50%;width:468px;height:352px;margin:-176px 0 0 -234px;border-radius:26px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 18px 40px rgba(120,40,20,.12);transition:transform .28s var(--inout);animation:slit .38s var(--expo) both paused}
+[data-style=aperture] .brand{transform:translate(-50%,-64%)}
+[data-style=aperture] .mark{width:104px;height:104px}
+[data-style=aperture] .core{animation:draw .46s var(--out) .42s both paused}
+[data-style=aperture] .ray{animation:converge .6s var(--out) calc(.26s + var(--i) * .028s) both paused}
+[data-style=aperture] .sat{animation:pop .3s var(--back) .78s both paused}
+[data-style=aperture] .wordmark{overflow:hidden;padding:0 4px;animation:fade-up .44s var(--out) .52s both paused}
+.sheen{position:absolute;top:0;bottom:0;left:0;width:28px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);opacity:0;pointer-events:none;animation:sheen .52s ease-in-out .96s both paused}
+.thread{position:absolute;left:50%;bottom:52px;width:220px;margin-left:-110px}
+.thread>div{height:2px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden}
+.thread span{background:rgba(255,255,255,.9)}
+.thread small{display:block;margin-top:10px;text-align:center;font-size:9px;letter-spacing:3px;color:rgba(255,255,255,.72);animation:fade-in .4s ease .56s both paused}
+.depart[data-style=aperture] .aperture{transform:scale(1.28)}
+.depart[data-style=aperture] main{opacity:0;transform:scale(1.05)}
+
+/* E · Electron Diffraction (TEM / SAED) */
+[data-style=diffraction]{--ink:#eef6ff;--sat:#72e3ff;--word:#eef6ff;--dot:#72e3ff}
+[data-style=diffraction] main{background:radial-gradient(circle at 50% 45%,#101926 0%,#090b10 68%,#050609 100%);box-shadow:inset 0 0 0 1px rgba(114,227,255,.16)}
+[data-style=diffraction] .brand{transform:translate(-50%,-62%)}
+[data-style=diffraction] .mark{width:98px;height:98px}
+[data-style=diffraction] .glyph{stroke-width:19}
+.diff-svg,.tele-svg,.mono-frame{position:absolute;inset:0;width:100%;height:100%;fill:none}
+.diff-ring{stroke:rgba(114,227,255,.22);stroke-width:1.2;stroke-dasharray:1 2;stroke-dashoffset:1}
+.diff-ring.r1{animation:draw .5s var(--out) .1s both paused}
+.diff-ring.r2{animation:draw .6s var(--out) .18s both paused}
+.diff-ring.r3{animation:draw .68s var(--out) .26s both paused}
+.diff-hex{stroke:rgba(114,227,255,.32);stroke-width:1;stroke-dasharray:1 2;stroke-dashoffset:1;animation:draw .72s var(--out) .24s both paused}
+.diff-spot{fill:#72e3ff;transform-box:fill-box;transform-origin:center;animation:spot-bloom .45s var(--back) .36s both paused}
+.diff-spot.outer{fill:#ffffff;opacity:.78;animation-delay:.52s}
+.diff-spot:nth-of-type(2){animation-delay:.4s}.diff-spot:nth-of-type(3){animation-delay:.44s}.diff-spot:nth-of-type(4){animation-delay:.48s}
+[data-style=diffraction] .core{animation:bloom .4s var(--back) .16s both paused}
+[data-style=diffraction] .ray{animation:draw .34s var(--expo) calc(.24s + var(--i) * .04s) both paused}
+[data-style=diffraction] .sat{animation:pop .3s var(--back) .64s both paused}
+[data-style=diffraction] .wordmark{animation:focus .52s var(--out) .56s both paused}
+.diff-status,.tele-status,.horo-status{position:absolute;left:0;right:0;bottom:28px;text-align:center;font-size:10px;letter-spacing:2.2px;color:rgba(218,238,255,.68)}
+.depart[data-style=diffraction] main{opacity:0;transform:scale(1.09);filter:brightness(1.25)}
+
+/* F · Observatory Telescope Eyepiece */
+[data-style=telescope]{--ink:#f0f6ff;--sat:#f3c87a;--word:#f0f6ff;--dot:#f3c87a}
+[data-style=telescope] main{background:radial-gradient(circle at 50% 45%,#15233e 0%,#0b1325 56%,#060a14 100%);box-shadow:inset 0 0 0 1px rgba(124,183,255,.18)}
+[data-style=telescope] .brand{transform:translate(-50%,-62%)}
+[data-style=telescope] .mark{width:96px;height:96px;animation:focus-lens .72s var(--out) .15s both paused}
+[data-style=telescope] .glyph{stroke-width:19}
+.sky-star{fill:#dbeafe;animation:twinkle 2.2s ease-in-out infinite paused}
+.sky-star:nth-of-type(2){animation-delay:.4s}.sky-star:nth-of-type(3){animation-delay:.8s}.sky-star:nth-of-type(4){animation-delay:1.2s}
+.tele-ring-a{stroke:rgba(124,183,255,.32);stroke-width:1.3;stroke-dasharray:6 12;transform-origin:280px 200px;animation:spin-cw 16s linear infinite paused}
+.tele-ring-b{stroke:rgba(243,200,122,.46);stroke-width:1.2;stroke-dasharray:22 10 4 10;transform-origin:280px 200px;animation:spin-ccw 12s linear infinite paused}
+.tele-hair{stroke:rgba(124,183,255,.35);stroke-width:1;animation:fade-in .42s ease .18s both paused}
+[data-style=telescope] .core{animation:bloom .4s var(--back) .2s both paused}
+[data-style=telescope] .ray{animation:draw .38s var(--out) calc(.25s + var(--i) * .04s) both paused}
+[data-style=telescope] .sat{animation:pop .32s var(--back) .64s both paused}
+[data-style=telescope] .wordmark{animation:fade-up .48s var(--out) .52s both paused}
+.depart[data-style=telescope] main{opacity:0;transform:scale(1.1);filter:blur(3px)}
+
+/* G · Mineral Monolith (Floema x ERA Gallery) */
+[data-style=monolith]{--ink:#1b1d1a;--sat:#2f5d50;--word:#1b1d1a;--dot:#2f5d50}
+[data-style=monolith] main{background:#ecebe6;box-shadow:inset 0 0 0 1px rgba(27,29,26,.12)}
+[data-style=monolith] .brand{transform:translate(-50%,-58%)}
+[data-style=monolith] .mark{width:100px;height:100px}
+[data-style=monolith] .glyph{stroke-width:19}
+.mono-frame rect{stroke:rgba(27,29,26,.22);stroke-width:1;stroke-dasharray:1 2;stroke-dashoffset:1;animation:draw .65s var(--out) .08s both paused}
+.mono-top{position:absolute;top:38px;left:42px;right:42px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:2.4px;color:#5d605a;animation:fade-in .4s ease .2s both paused}
+.mono-bar{position:absolute;left:42px;right:42px;bottom:46px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:2.2px;color:#5d605a}
+.mono-bar output{color:#1b1d1a;font-weight:600}
+.mono-track{position:absolute;left:42px;right:42px;bottom:36px;height:2px;background:rgba(27,29,26,.12);overflow:hidden}
+.mono-track span{display:block;height:100%;background:#2f5d50;transform-origin:left;transform:scaleX(var(--p))}
+[data-style=monolith] .core{animation:draw .42s var(--out) .18s both paused}
+[data-style=monolith] .ray{animation:draw .36s var(--expo) calc(.26s + var(--i) * .045s) both paused}
+[data-style=monolith] .sat{animation:pop .32s var(--back) .7s both paused}
+[data-style=monolith] .wordmark{animation:rise .52s var(--out) .48s both paused}
+.depart[data-style=monolith] main{opacity:0;clip-path:inset(0 0 100% 0 round 20px)}
+
+/* H · Horology Calibre (GQ x AP Extraordinary Lab) */
+[data-style=horology]{--ink:#eef2f7;--sat:#d9a45b;--word:#eef2f7;--dot:#d9a45b}
+[data-style=horology] main{background:radial-gradient(circle at 50% 35%,#1a1f28 0%,#0b0d12 72%,#06070a 100%);box-shadow:inset 0 0 0 1px rgba(215,223,232,.16)}
+[data-style=horology] .brand{transform:translate(-50%,-62%)}
+[data-style=horology] .mark{width:92px;height:92px}
+[data-style=horology] .glyph{stroke-width:19}
+.horo-bezel{position:absolute;left:50%;top:186px;width:276px;height:276px;margin:-138px 0 0 -138px;border-radius:48px;border:1px solid rgba(215,223,232,.18);background:linear-gradient(160deg,rgba(255,255,255,.05),transparent 55%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 20px 50px rgba(0,0,0,.45);animation:slit .42s var(--expo) both paused}
+.horo-svg{position:absolute;left:50%;top:186px;width:292px;height:292px;margin:-146px 0 0 -146px;fill:none}
+.gear-outer{stroke:rgba(215,223,232,.22);stroke-width:1.5;stroke-dasharray:4 8;transform-origin:160px 160px;animation:spin-cw 18s linear infinite paused}
+.gear-mid{stroke:rgba(217,164,91,.42);stroke-width:1.25;stroke-dasharray:16 6 2 6;transform-origin:160px 160px;animation:spin-ccw 12s linear infinite paused}
+.gear-inner{stroke:rgba(215,223,232,.14);stroke-width:1}
+.watch-hand{stroke:#d9a45b;stroke-width:1.6;stroke-linecap:round;transform-origin:160px 160px;transform:rotate(calc(var(--p) * 360deg))}
+[data-style=horology] .core{animation:bloom .4s var(--back) .18s both paused}
+[data-style=horology] .ray{animation:draw .35s var(--out) calc(.26s + var(--i) * .04s) both paused}
+[data-style=horology] .sat{animation:pop .32s var(--back) .64s both paused}
+[data-style=horology] .wordmark{animation:fade-up .46s var(--out) .5s both paused}
+.depart[data-style=horology] main{opacity:0;transform:scale(.95)}
+
+/* Frameless transparent stage for luxury maximalist editions */
+[data-style=prism] body,[data-style=chrome] body{border-radius:0;clip-path:none;background:transparent}
+[data-style=prism] main,[data-style=chrome] main{border-radius:0;background:transparent;box-shadow:none}
+[data-style=prism] .brand,[data-style=chrome] .brand{display:none}
+.luxury-gl,.luxury-fx{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+
+/* I · Dichroic Cathedral / Birefringent Prism */
+.decor-prism .luxury-gl{z-index:1}
+.decor-prism .luxury-fx{z-index:2}
+.prism-wordmark{position:absolute;z-index:3;left:50%;bottom:54px;transform:translateX(-50%);font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:48px;font-weight:400;letter-spacing:-.02em;line-height:1;color:#f5ede0;text-shadow:0 4px 22px rgba(6,10,22,.85),0 0 28px rgba(154,236,255,.32);overflow:hidden;padding:0 10px;animation:prism-word-in .76s var(--expo) .52s both paused}
+.prism-wordmark span{color:#ffe0a8}
+.prism-sheen{position:absolute;top:0;bottom:0;left:0;width:44px;background:linear-gradient(90deg,transparent,rgba(255,248,232,.85),transparent);opacity:0;pointer-events:none;animation:prism-sheen .72s ease-in-out 1.15s both paused}
+.prism-status{position:absolute;z-index:3;left:0;right:0;bottom:22px;text-align:center;font-size:10px;letter-spacing:3.2px;color:rgba(232,246,255,.86);text-shadow:0 1px 4px rgba(4,8,18,.98),0 0 14px rgba(4,8,18,.95);animation:fade-in .5s ease .68s both paused}
+.depart[data-style=prism] .prism-wordmark{opacity:0;transform:translateX(-50%) scale(1.08);letter-spacing:.12em;transition:opacity .48s var(--inout),transform .52s var(--inout),letter-spacing .52s var(--inout)}
+.depart[data-style=prism] .prism-status{opacity:0;transition:opacity .38s var(--inout)}
+
+/* J · Liquid Chrome Neo-Baroque */
+.decor-chrome .luxury-gl{z-index:1}
+.decor-chrome .luxury-fx{z-index:3}
+.chrome-wordmark{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%) scaleY(1.18);display:flex;align-items:center;justify-content:center;gap:14px;font-family:"Materia New York",Georgia,"Times New Roman",serif;font-size:94px;font-weight:400;line-height:1;color:#edf0f6;letter-spacing:.04em;text-shadow:0 6px 32px rgba(4,6,14,.85),-2px 0 18px rgba(108,166,255,.28),2px 0 18px rgba(255,204,132,.26);pointer-events:none}
+.chrome-wordmark span{display:inline-block;animation:chrome-letter-in .74s var(--expo) both paused}
+.chrome-wordmark span:nth-child(1){animation-delay:.22s}
+.chrome-wordmark span:nth-child(2){animation-delay:.27s}
+.chrome-wordmark span:nth-child(3){animation-delay:.32s}
+.chrome-wordmark span:nth-child(4){animation-delay:.37s}
+.chrome-wordmark span:nth-child(5){animation-delay:.42s}
+.chrome-wordmark span:nth-child(6){animation-delay:.47s}
+.chrome-wordmark span:nth-child(7){animation-delay:.52s}
+.chrome-status{position:absolute;z-index:4;left:0;right:0;bottom:22px;text-align:center;font-size:10px;letter-spacing:3.2px;color:rgba(232,242,255,.86);text-shadow:0 1px 4px rgba(4,6,14,.98),0 0 14px rgba(4,6,14,.95);animation:fade-in .5s ease .65s both paused}
+.depart[data-style=chrome] .chrome-wordmark{opacity:0;transform:translate(-50%,-50%) scale(1.12,1.28);letter-spacing:.22em;transition:opacity .52s var(--inout),transform .56s var(--inout),letter-spacing .56s var(--inout)}
+.depart[data-style=chrome] .chrome-status{opacity:0;transition:opacity .38s var(--inout)}
+
+@keyframes prism-word-in{from{opacity:0;transform:translateX(-50%) translateY(8px);letter-spacing:.14em;filter:blur(6px)}to{opacity:1;transform:translateX(-50%) translateY(0);letter-spacing:-.02em;filter:blur(0)}}
+@keyframes prism-sheen{from{transform:translateX(-60px) skewX(-14deg);opacity:0}45%{opacity:.9}to{transform:translateX(260px) skewX(-14deg);opacity:0}}
+@keyframes chrome-letter-in{from{opacity:0;transform:translateY(16px) scaleY(.85);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
+
+@keyframes spot-bloom{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes focus-lens{from{transform:scale(1.14);filter:blur(5px);opacity:0}to{transform:scale(1);filter:blur(0);opacity:1}}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:.95}}
+@keyframes spin-cw{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes spin-ccw{from{transform:rotate(360deg)}to{transform:rotate(0)}}
+
 @keyframes logo-turn{from{transform:rotate(-65deg)}to{transform:rotate(0)}}
 @keyframes loading{from{transform:translateX(0)}to{transform:translateX(170px)}}
-@keyframes logo-fade{from{opacity:.35}to{opacity:1}}
+@keyframes draw{from{stroke-dashoffset:1;opacity:0}8%{opacity:1}to{stroke-dashoffset:0;opacity:1}}
+@keyframes converge{from{transform:translate(var(--dx),var(--dy));stroke-dashoffset:-.92;opacity:0}20%{opacity:1}to{transform:none;stroke-dashoffset:0;opacity:1}}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes bloom{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes dock{from{transform:translate(45px,-47px);opacity:0}}
+@keyframes rise{from{clip-path:inset(100% 0 0 0);transform:translateY(8px)}to{clip-path:inset(0);transform:none}}
+@keyframes focus{from{opacity:0;letter-spacing:6px;filter:blur(5px)}}
+@keyframes fade-up{from{opacity:0;transform:translateY(6px)}}
+@keyframes fade-in{from{opacity:0}}
+@keyframes grow-x{from{transform:scaleX(0)}}
+@keyframes grow-y{from{transform:scaleY(0)}}
+@keyframes turn-in{from{transform:rotate(-38deg)}}
+@keyframes blink{50%{opacity:.35}}
+@keyframes slit{from{clip-path:inset(46% 0 46% 0 round 26px);opacity:0}to{clip-path:inset(0 round 26px);opacity:1}}
+@keyframes sheen{from{transform:translateX(-40px) skewX(-12deg);opacity:0}50%{opacity:.85}to{transform:translateX(150px) skewX(-12deg);opacity:0}}
+
 @media(prefers-reduced-motion:reduce){
-  main{transition:none}
+  main,main *{animation:none!important;transition:none!important}
   .loading span{transform:translateX(85px)}
-  .playing .loading span{animation:none}
-  .playing .app-icon{animation:logo-fade .65s ease-out both}
 }

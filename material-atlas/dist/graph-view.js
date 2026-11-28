@@ -12,6 +12,8 @@ import {primaryTag} from './tags.js';
 import {GraphOrbit} from './graph-orbit.js';
 import {GraphSpace} from './graph-space.js';
 import {GalaxyLayer} from './graph-galaxy.js';
+import {computeBlackHoleDisplacement, createBlackHoleSvg, hawkingReboundFactor} from './black-hole-physics.js';
+import {reportAchievement} from './flow-achievements.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_FLOW_PATHS = 72;
@@ -29,6 +31,8 @@ export class StarMap {
     this.svg = svg; this.scale = 1; this.x = 0; this.y = 0;this.viewHeight=620;this.labelPositions=new Map();
     this.visible = true;
     this.motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+    this.blackHole = null; this.bhFrame = null; this.bhChargeTimer = 0; this.bhChargeVisualTimer = 0; this.bhReducedTimer = 0; this.bhChargeRing = null; this.emptyClicks = []; this.bhDisplaced = new Map();
+    this.edgeNodes = [];
     this.cache = {}; this.nodes = []; this.selected = ''; this.paused = false; this.preferences={...GRAPH_DEFAULTS};this.collections=[];this.cosmos=new CosmicBackdrop(svg);
     this.symbolBackdrop=new SymbolBackdrop(svg);this.galaxies=new GalaxyLayer(svg);this.bindInput();
     this.orbit = new GraphOrbit(svg, {
@@ -46,7 +50,7 @@ export class StarMap {
     this.visible=visible;
     this.orbit.setVisible(visible);
     if(visible){this.paintGalaxies();if(this.heat>0)this.start(this.heat);}
-    else{this.releaseSpaceDrag(true);this.cancelNaturalLayout();this.suspendMotion();}
+    else{this.clearBlackHole(true);this.releaseSpaceDrag(true);this.cancelNaturalLayout();this.suspendMotion();}
   }
   suspendMotion() {
     cancelAnimationFrame(this.frame);
@@ -76,6 +80,7 @@ export class StarMap {
     }
     this.cancelNaturalLayout();
     this.releaseSpaceDrag();
+    this.clearBlackHole(true);
     if (spatial) {
       if (dimensionChanged) this.flatCamera = {x: this.x, y: this.y, scale: this.scale};
       this.space = new GraphSpace(this.network?.nodes || [], this.space ?? this.parkedSpace, this.preferences.shapeGalaxies);
@@ -98,7 +103,7 @@ export class StarMap {
     this.paint();
     this.transform();
   }
-  setLayout(value) { this.closeOrbit(false);this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
+  setLayout(value) { this.clearBlackHole(true);this.closeOrbit(false);this.dataKey=null;this.dataMode=null;this.modeCaches={};this.cancelNaturalLayout();this.naturalUndo=null;this.naturalOverview=false;cancelAnimationFrame(this.frame); this.network = null; const normalized=cleanLayout(value),legacy=Object.keys(normalized).some(key=>key.startsWith('tag:'));this.cache=Object.fromEntries(Object.entries(normalized).filter(([key,point])=>key.startsWith('relation:')||key.startsWith('paper:')&&(!legacy||point.pinned))); }
   setData(papers, selected, allGroups = [], orbitPapers = papers) {
     this.orbitPapers = orbitPapers;
     const citationsChanged=this.indexedCitations!==this.citations;
@@ -118,7 +123,7 @@ export class StarMap {
     const wasMoving=Boolean(this.frame);this.cancelNaturalLayout();
     if(this.dataMode&&this.dataMode!==this.preferences.mode){this.modeCaches??={};this.modeCaches[this.dataMode]={...this.cache,...networkSnapshot(this.network)};this.cache=this.modeCaches[this.preferences.mode]||{};this.network=null;this.naturalUndo=null;}this.dataMode=this.preferences.mode;
     cancelAnimationFrame(this.frame);
-    this.frame=null;const first=!this.network;this.drag=null;this.svg.classList.remove('dragging');this.labelPositions.clear();
+    this.frame=null;const first=!this.network;this.clearBlackHole(true);this.drag=null;this.svg.classList.remove('dragging');this.labelPositions.clear();
     this.svg.dataset.graphMoving='false';this.hitScale=null;
     if (this.network) Object.assign(this.cache, networkSnapshot(this.network));
     this.papers = papers.slice(); this.selected = selected; this.groups = allGroups;
@@ -222,32 +227,87 @@ export class StarMap {
     this.onStats?.({ papers: this.papers.length, tags: this.network.nodes.filter(node => node.type === 'relation').length, edges: this.network.edges.length, omittedTags: this.network.omittedTags, communities:new Set(this.network.nodes.filter(n=>n.clusterSize>1).map(n=>n.community)).size, layoutEdges:this.network.layoutEdges.length });
     this.refreshOrbit();
   }
+  captureOrbitOrigin(id) {
+    const nodes = new Map();
+    for (const item of this.nodes) {
+      if (item.node.type !== 'paper') continue;
+      const pos = this.space ? this.displayNode(item.node) : {x: item.node.x, y: item.node.y};
+      const x = pos.x * this.scale + this.x;
+      const y = pos.y * this.scale + this.y;
+      const radius = Math.max(4, (item.node.visualRadius || item.node.radius || 8) * this.scale);
+      nodes.set(item.paper.id, {x, y, radius});
+    }
+    return {
+      center: nodes.get(id) || {x: 500, y: this.viewHeight / 2, radius: 10},
+      nodes,
+    };
+  }
   focusOrbit(id) {
     if (!this.orbitPapers?.some(paper => paper.id === id)) return;
     clearTimeout(this.clickTimer);
+    this.clearBlackHole(true);
     this.cancelNaturalLayout();
     this.releaseSpaceDrag(true);
     this.onHover(null);
+    const fromOverview = !this.orbitCenter;
+    const origin = fromOverview ? this.captureOrbitOrigin(id) : null;
+    this.overviewAnim?.cancel();
+    this.overviewAnim = null;
+    if (fromOverview && !this.motionPreference.matches && this.viewport?.animate) {
+      const zoom = 2.35;
+      const cx = origin.center.x, cy = origin.center.y;
+      const tx1 = cx - (cx - this.x) * zoom;
+      const ty1 = cy - (cy - this.y) * zoom;
+      const s1 = this.scale * zoom;
+      this.svg.dataset.orbitEntering = 'true';
+      const anim = this.overviewAnim = this.viewport.animate([
+        {transform: `translate(${this.x}px, ${this.y}px) scale(${this.scale})`, opacity: 1},
+        {transform: `translate(${tx1}px, ${ty1}px) scale(${s1})`, opacity: 0},
+      ], {duration: 360, easing: 'cubic-bezier(.32, 0, .67, 0)'});
+      anim.finished.catch(() => {}).finally(() => {
+        if (this.overviewAnim === anim) {
+          this.overviewAnim = null;
+          delete this.svg.dataset.orbitEntering;
+        }
+      });
+    }
     this.orbitCenter = id;
     this.suspendMotion();
     this.onSelect(id, false);
-    this.refreshOrbit();
+    this.refreshOrbit(origin);
     this.orbit.layer?.querySelector('.graph-orbit-center')?.focus({preventScroll: true});
   }
-  refreshOrbit() {
+  refreshOrbit(origin = null) {
     if (!this.orbitCenter) return;
     const center = this.orbitPapers.find(paper => paper.id === this.orbitCenter);
     if (!center) { this.closeOrbit(false); return; }
-    this.orbit.render(center, this.orbitPapers, this.preferences, this.viewHeight, this.selected);
+    this.orbit.render(center, this.orbitPapers, this.preferences, this.viewHeight, this.selected, origin);
   }
   closeOrbit(restoreFocus = true) {
     if (!this.orbitCenter) return false;
     const center = this.orbitCenter;
+    this.overviewAnim?.cancel();
+    this.overviewAnim = null;
+    delete this.svg.dataset.orbitEntering;
+    const origin = this.captureOrbitOrigin(center).center;
     this.orbitCenter = '';
     this.orbit.clear();
     this.paintGalaxies();
     this.onHover(null);
     if(this.heat>0)this.start(this.heat);
+    if (!this.motionPreference.matches && this.viewport?.animate) {
+      const zoom = 1.42;
+      const tx0 = origin.x - (origin.x - this.x) * zoom;
+      const ty0 = origin.y - (origin.y - this.y) * zoom;
+      const s0 = this.scale * zoom;
+      const anim = this.overviewAnim = this.viewport.animate([
+        {transform: `translate(${tx0}px, ${ty0}px) scale(${s0})`, opacity: 0.14},
+        {transform: `translate(${this.x}px, ${this.y}px) scale(${this.scale})`, opacity: 1},
+      ], {duration: 340, easing: 'cubic-bezier(.16, 1, .3, 1)'});
+      anim.finished.catch(() => {}).finally(() => {
+        if (this.overviewAnim === anim) this.overviewAnim = null;
+      });
+    }
     if (restoreFocus) {
       const item = this.nodes.find(({paper}) => paper?.id === center) || this.nodes.find(({paper}) => paper?.id === this.selected);
       item?.group.focus({preventScroll: true});
@@ -363,7 +423,128 @@ export class StarMap {
     }
   }
 
-  displayNode(node) { return this.projection?.get(node.id) ?? node; }
+  displayNode(node) {
+    const base = this.projection?.get(node.id) ?? node;
+    const bh = this.blackHole;
+    if (!bh || bh.strength <= 0.0001) return base;
+    const offset = computeBlackHoleDisplacement(base, bh);
+    if (Math.abs(offset.dx) < 0.01 && Math.abs(offset.dy) < 0.01) return base;
+    let scratch = this.bhDisplaced.get(node.id);
+    if (!scratch || Object.getPrototypeOf(scratch) !== base) {
+      scratch = Object.create(base);
+      this.bhDisplaced.set(node.id, scratch);
+    }
+    scratch.x = base.x + offset.dx;
+    scratch.y = base.y + offset.dy;
+    return scratch;
+  }
+
+  clearBlackHoleCharge() {
+    clearTimeout(this.bhChargeTimer);
+    clearTimeout(this.bhChargeVisualTimer);
+    this.bhChargeTimer = 0;
+    this.bhChargeVisualTimer = 0;
+    this.bhChargeRing?.remove();
+    this.bhChargeRing = null;
+  }
+
+  clearBlackHole(immediate = true) {
+    cancelAnimationFrame(this.bhFrame);
+    this.bhFrame = null;
+    clearTimeout(this.bhReducedTimer);
+    this.bhReducedTimer = 0;
+    this.clearBlackHoleCharge();
+    this.blackHole?.group?.remove();
+    this.blackHole = null;
+    this.bhDisplaced.clear();
+    if (!immediate && this.network) {
+      this.paintNodes(false);
+      this.paintEdges(false);
+    }
+  }
+
+  summonBlackHole(scenePos, mode = 'timed', pointerId = null) {
+    if (!this.viewport || !this.network || this.orbitCenter) return null;
+    this.clearBlackHole(true);
+    const invScale = 1 / Math.max(0.28, this.scale);
+    const group = createBlackHoleSvg(document, { scale: invScale, idPrefix: 'map-bh' });
+    group.setAttribute('transform', `translate(${scenePos.x.toFixed(2)} ${scenePos.y.toFixed(2)})`);
+    this.viewport.insertBefore(group, this.nodeLayer || null);
+
+    const bh = this.blackHole = {
+      x: scenePos.x,
+      y: scenePos.y,
+      horizon: 22 * invScale,
+      radius: 290 * invScale,
+      strength: this.motionPreference.matches ? 0.55 : 0,
+      peakStrength: 1,
+      reboundFactor: 1,
+      mode,
+      pointerId,
+      phase: 'pull',
+      startTime: performance.now(),
+      evapStart: 0,
+      group,
+    };
+
+    reportAchievement('blackHoleSummons', 1, 'add');
+
+    if (this.motionPreference.matches) {
+      this.paintNodes(false);
+      this.paintEdges(false);
+      this.bhReducedTimer = setTimeout(() => this.clearBlackHole(false), 1100);
+      return bh;
+    }
+
+    const tick = now => {
+      const current = this.blackHole;
+      if (!current || current !== bh || !this.visible || this.orbitCenter) {
+        this.bhFrame = null;
+        return;
+      }
+      const age = now - current.startTime;
+      if (current.phase === 'pull') {
+        const ramp = Math.min(1, age / 360);
+        current.strength = 1 - Math.pow(1 - ramp, 3);
+        if (current.mode === 'timed' && age >= 2500) {
+          current.phase = 'evaporating';
+          current.peakStrength = current.strength;
+          current.evapStart = now;
+          current.group.classList.add('is-evaporating');
+        }
+      } else {
+        const p = Math.min(1, (now - current.evapStart) / 650);
+        current.reboundFactor = hawkingReboundFactor(p);
+        if (p >= 1) {
+          this.bhFrame = null;
+          this.clearBlackHole(false);
+          return;
+        }
+      }
+      this.paintNodes(false);
+      this.paintEdges(false);
+      this.bhFrame = requestAnimationFrame(tick);
+    };
+    this.bhFrame = requestAnimationFrame(tick);
+    return bh;
+  }
+
+  updateBlackHolePosition(scenePos) {
+    const bh = this.blackHole;
+    if (!bh || !scenePos) return;
+    bh.x = scenePos.x;
+    bh.y = scenePos.y;
+    bh.group?.setAttribute('transform', `translate(${bh.x.toFixed(2)} ${bh.y.toFixed(2)})`);
+  }
+
+  releaseHeldBlackHole() {
+    const bh = this.blackHole;
+    if (!bh || bh.phase === 'evaporating') return;
+    bh.phase = 'evaporating';
+    bh.peakStrength = bh.strength;
+    bh.evapStart = performance.now();
+    bh.group?.classList.add('is-evaporating');
+  }
 
   paintNodes(rotating = false) {
     for (const item of this.nodes) {
@@ -674,13 +855,42 @@ export class StarMap {
         const {x, y} = this.displayNode(node);
         this.drag.projected = {x, y};
       }
+      if (!node && this.viewport && this.network) {
+        const chargePos = this.drag.scene;
+        const chargeScale = 1 / Math.max(0.28, this.scale);
+        this.clearBlackHoleCharge();
+        this.bhChargeVisualTimer = setTimeout(() => {
+          if (!this.drag || this.drag.pointer !== event.pointerId || this.drag.moved || this.drag.node) return;
+          const ring = el('circle', {
+            class: 'bh-charge-ring',
+            cx: chargePos.x.toFixed(2),
+            cy: chargePos.y.toFixed(2),
+            r: (32 * chargeScale).toFixed(2),
+            'pointer-events': 'none',
+            'aria-hidden': 'true',
+          });
+          this.viewport.insertBefore(ring, this.nodeLayer || null);
+          this.bhChargeRing = ring;
+        }, 170);
+        this.bhChargeTimer = setTimeout(() => {
+          if (!this.drag || this.drag.pointer !== event.pointerId || this.drag.moved || this.drag.node) return;
+          this.drag.blackHoleHeld = true;
+          this.clearBlackHoleCharge();
+          this.svg.classList.remove('dragging');
+          this.summonBlackHole(this.drag.scene, 'held', event.pointerId);
+        }, 550);
+      }
       if(node){node.dragging=true;node.vx=0;node.vy=0;this.start(.3);}
       capture.setPointerCapture(event.pointerId); this.svg.classList.add('dragging'); this.onHover(null);
     });
     this.svg.addEventListener('pointermove', event => {
       const drag = this.drag; if (!drag || drag.pointer !== event.pointerId) return;
+      if (drag.blackHoleHeld) {
+        this.updateBlackHolePosition(this.scenePoint(event));
+        return;
+      }
       const point = this.point(event), dx = point.x - drag.origin.x, dy = point.y - drag.origin.y;
-      if(!drag.moved&&Math.hypot(dx,dy)>3)drag.moved=true;
+      if(!drag.moved&&Math.hypot(dx,dy)>4){this.clearBlackHoleCharge();drag.moved=true;}
       if (!drag.moved) return;
       if (drag.node) {
         const target = drag.projected && this.space
@@ -693,14 +903,28 @@ export class StarMap {
     });
     const finish = (event, cancel = false) => {
       const drag = this.drag; if (!drag || event.pointerId !== drag.pointer) return;
+      this.clearBlackHoleCharge();
       this.drag = null; this.svg.classList.remove('dragging');
       if (drag.capture.hasPointerCapture(event.pointerId)) drag.capture.releasePointerCapture(event.pointerId);
+      if (drag.blackHoleHeld) {
+        this.releaseHeldBlackHole();
+        return;
+      }
       if (drag.node) {
         drag.node.dragging=false;drag.node.fx=null;drag.node.fy=null;
         if(cancel){drag.node.x=drag.x;drag.node.y=drag.y;drag.node.pinned=drag.pinned;drag.node.vx=0;drag.node.vy=0;this.paint();this.start(.2);}
         else if (drag.moved) { drag.node.pinned = Boolean(drag.pinned||event.shiftKey); this.paint();this.saveLayout();this.start(.3); }
         else if (!cancel) this.clickTimer = setTimeout(() => drag.node.type === 'relation' ? this.onRelation?.(drag.node.id) : this.onSelect(drag.node.paper.id), 260);
       } else if (drag.moved) this.paintGalaxies();
+      else if (!cancel && event.type === 'pointerup') {
+        const now = performance.now();
+        this.emptyClicks = this.emptyClicks.filter(c => now - c.time <= 520 && Math.hypot(c.x - drag.origin.x, c.y - drag.origin.y) < 36);
+        this.emptyClicks.push({ time: now, x: drag.origin.x, y: drag.origin.y });
+        if (this.emptyClicks.length >= 3) {
+          this.emptyClicks = [];
+          this.summonBlackHole(this.scenePoint(event), 'timed');
+        }
+      }
     };
     this.svg.addEventListener('pointerup', event => finish(event));
     this.svg.addEventListener('pointercancel', event => finish(event, true));

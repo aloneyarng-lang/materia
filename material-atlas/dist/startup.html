@@ -1,19 +1,152 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-style="aperture">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; font-src 'self'">
   <title>Materia</title>
   <link rel="stylesheet" href="./startup.css">
+  <script src="./startup.js"></script>
+  <script src="./startup-luxury.js"></script>
 </head>
 <body>
   <main aria-label="Materia 正在启动" aria-busy="true">
-    <div class="brand">
-      <img class="app-icon" src="./startup-logo.svg" alt="" width="112" height="112">
-      <div class="wordmark">materia<span>.</span></div>
+    <!-- A · 制图台标尺 -->
+    <div class="decor decor-drafting" aria-hidden="true">
+      <span class="cross cross-h"></span><span class="cross cross-v"></span>
+      <svg class="corners" viewBox="0 0 560 440"><path d="M24 46V24H46M514 24H536V46M24 394V416H46M514 416H536V394"/></svg>
+      <div class="meta mono"><span>SPEC // 01</span><span>BENCHMARK LAB</span></div>
     </div>
+    <!-- B · 黑曜晶格 -->
+    <div class="decor decor-obsidian" aria-hidden="true"><span class="edge"></span></div>
+    <!-- C · 仪器遥测 -->
+    <div class="decor decor-telemetry mono" aria-hidden="true">
+      <div class="panel panel-brand"></div>
+      <div class="panel panel-matrix">
+        <div class="matrix-head"><span>SYS.INIT</span><i class="led"></i></div>
+        <div class="matrix"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="matrix-sub">LATTICE GRAPH<b data-stage-sub>CORE SERVICES</b></div>
+      </div>
+      <div class="panel panel-bar"><div><b data-stage>// BOOTSTRAP</b><small>MATERIA WORKSPACE</small></div><output data-digits="2">00</output></div>
+      <span class="split-v"></span><span class="split-h"></span>
+    </div>
+    <!-- D · 陶土光圈 -->
+    <div class="decor decor-aperture" aria-hidden="true"><span class="aperture"></span></div>
+    <!-- E · 电子衍射 (SAED) -->
+    <div class="decor decor-diffraction" aria-hidden="true">
+      <svg class="diff-svg" viewBox="0 0 560 440">
+        <circle class="diff-ring r1" cx="280" cy="200" r="64" pathLength="1"/>
+        <circle class="diff-ring r2" cx="280" cy="200" r="118" pathLength="1"/>
+        <circle class="diff-ring r3" cx="280" cy="200" r="170" pathLength="1"/>
+        <polygon class="diff-hex" points="280,82 382,141 382,259 280,318 178,259 178,141" pathLength="1"/>
+        <circle class="diff-spot" cx="280" cy="82" r="4.5"/>
+        <circle class="diff-spot" cx="382" cy="141" r="4.5"/>
+        <circle class="diff-spot" cx="382" cy="259" r="4.5"/>
+        <circle class="diff-spot" cx="280" cy="318" r="4.5"/>
+        <circle class="diff-spot" cx="178" cy="259" r="4.5"/>
+        <circle class="diff-spot" cx="178" cy="141" r="4.5"/>
+        <circle class="diff-spot outer" cx="280" cy="30" r="3.2"/>
+        <circle class="diff-spot outer" cx="427" cy="115" r="3.2"/>
+        <circle class="diff-spot outer" cx="427" cy="285" r="3.2"/>
+        <circle class="diff-spot outer" cx="280" cy="370" r="3.2"/>
+        <circle class="diff-spot outer" cx="133" cy="285" r="3.2"/>
+        <circle class="diff-spot outer" cx="133" cy="115" r="3.2"/>
+      </svg>
+      <div class="diff-status mono">[ SAED // RECIPROCAL LATTICE · <output data-digits="3">000</output>% ]</div>
+    </div>
+    <!-- F · 天文目镜 (Observatory) -->
+    <div class="decor decor-telescope" aria-hidden="true">
+      <svg class="tele-svg" viewBox="0 0 560 440">
+        <circle class="sky-star" cx="92" cy="76" r="1.6"/>
+        <circle class="sky-star" cx="154" cy="52" r="2.1"/>
+        <circle class="sky-star" cx="420" cy="68" r="1.8"/>
+        <circle class="sky-star" cx="478" cy="116" r="2.2"/>
+        <circle class="sky-star" cx="456" cy="338" r="1.7"/>
+        <circle class="sky-star" cx="104" cy="348" r="2.0"/>
+        <circle class="sky-star" cx="164" cy="382" r="1.4"/>
+        <circle class="sky-star" cx="392" cy="372" r="1.9"/>
+        <circle class="tele-ring-a" cx="280" cy="200" r="168"/>
+        <circle class="tele-ring-b" cx="280" cy="200" r="126"/>
+        <line class="tele-hair" x1="280" y1="20" x2="280" y2="86"/>
+        <line class="tele-hair" x1="280" y1="314" x2="280" y2="380"/>
+        <line class="tele-hair" x1="100" y1="200" x2="166" y2="200"/>
+        <line class="tele-hair" x1="394" y1="200" x2="460" y2="200"/>
+      </svg>
+      <div class="tele-status mono">RA 04h 18m · DEC +28° · FOCUSING <output data-digits="3">000</output>%</div>
+    </div>
+    <!-- G · 矿物碑刻 (Monolith) -->
+    <div class="decor decor-monolith" aria-hidden="true">
+      <svg class="mono-frame" viewBox="0 0 560 440"><rect x="24" y="24" width="512" height="392" rx="12" pathLength="1"/></svg>
+      <div class="mono-top mono"><span>EDITION // MATERIALS ATLAS</span><span>VOL. III</span></div>
+      <div class="mono-bar mono"><span>CURATED LITERATURE ARCHIVE</span><output data-digits="3">000</output>%</div>
+      <div class="mono-track"><span></span></div>
+    </div>
+    <!-- H · 精密机芯 (Horology) -->
+    <div class="decor decor-horology" aria-hidden="true">
+      <div class="horo-bezel"></div>
+      <svg class="horo-svg" viewBox="0 0 320 320">
+        <circle class="gear-outer" cx="160" cy="160" r="134"/>
+        <circle class="gear-mid" cx="160" cy="160" r="106"/>
+        <circle class="gear-inner" cx="160" cy="160" r="78"/>
+        <line class="watch-hand" x1="160" y1="160" x2="160" y2="38"/>
+      </svg>
+      <div class="horo-status mono">CALIBRE M-01 // SYNC <output data-digits="3">000</output>%</div>
+    </div>
+    <!-- I · 虹彩晶窟 (Dichroic Prism) -->
+    <div class="decor decor-prism" aria-hidden="true">
+      <canvas class="luxury-gl" data-luxury-gl="prism"></canvas>
+      <canvas class="luxury-fx" data-luxury-fx="prism"></canvas>
+      <div class="prism-wordmark">materia<span>.</span><i class="prism-sheen" aria-hidden="true"></i></div>
+      <div class="prism-status mono">BIREFRINGENCE · <output data-digits="3">000</output>%</div>
+    </div>
+    <!-- J · 液态铂金 (Liquid Chrome) -->
+    <div class="decor decor-chrome" aria-hidden="true">
+      <canvas class="luxury-gl" data-luxury-gl="chrome"></canvas>
+      <div class="chrome-wordmark" aria-label="MATERIA">
+        <span>M</span><span>A</span><span>T</span><span>E</span><span>R</span><span>I</span><span>A</span>
+      </div>
+      <canvas class="luxury-fx" data-luxury-fx="chrome"></canvas>
+      <div class="chrome-status mono">NEO-BAROQUE CHROME · <output data-digits="3">000</output>%</div>
+    </div>
+
+    <div class="brand">
+      <div class="mark-wrap">
+        <span class="glow" aria-hidden="true"></span>
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true"><circle class="track" cx="100" cy="100" r="96"/><circle class="arc" cx="100" cy="100" r="96" pathLength="1"/><circle class="orbit-dot" cx="100" cy="4" r="4"/></svg>
+        <svg class="mark" viewBox="0 0 512 512" aria-hidden="true">
+          <defs>
+            <linearGradient id="top-sheen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+              <stop offset="0.28" stop-color="#ffffff" stop-opacity="0.08"/>
+              <stop offset="0.72" stop-color="#000000" stop-opacity="0.02"/>
+              <stop offset="1" stop-color="#000000" stop-opacity="0.12"/>
+            </linearGradient>
+          </defs>
+          <rect class="badge" x="16" y="16" width="480" height="480" rx="112"/>
+          <rect class="badge-edge" x="17" y="17" width="478" height="478" rx="111" fill="none" stroke="url(#top-sheen)" stroke-width="2"/>
+          <g transform="translate(256 256) scale(1.06) translate(-256 -256)">
+            <g class="glyph" fill="none" stroke-width="23" stroke-linecap="round">
+              <circle class="core" cx="250" cy="258" r="38" pathLength="1"/>
+              <line class="ray" pathLength="1" x1="226.8" y1="227.9" x2="224.7" y2="111.3"/>
+              <line class="ray" pathLength="1" x1="252.3" y1="220.1" x2="312.5" y2="149.6"/>
+              <line class="ray" pathLength="1" x1="285.4" y1="244.3" x2="389.4" y2="271.3"/>
+              <line class="ray" pathLength="1" x1="285.8" y1="270.7" x2="333.5" y2="344.5"/>
+              <line class="ray" pathLength="1" x1="266.1" y1="292.4" x2="245.9" y2="399.5"/>
+              <line class="ray" pathLength="1" x1="236.3" y1="293.4" x2="157.2" y2="339.0"/>
+              <line class="ray" pathLength="1" x1="214.6" y1="271.7" x2="106.4" y2="243.4"/>
+              <line class="ray" pathLength="1" x1="213.7" y1="246.7" x2="159.1" y2="172.0"/>
+            </g>
+            <circle class="sat" cx="375" cy="187" r="17.5"/>
+          </g>
+        </svg>
+      </div>
+      <div class="wordmark">materia<span>.</span><i class="sheen" aria-hidden="true"></i></div>
+    </div>
+
     <div class="loading" aria-hidden="true"><span></span></div>
+    <div class="ruler mono" aria-hidden="true"><div class="ruler-meta"><span>MATERIALS ATLAS</span><span><output data-digits="3">000</output>%</span></div><div class="ruler-track"><span></span></div></div>
+    <div class="status-line mono" aria-hidden="true">[ LOADING WORKSPACE · <output data-digits="3">000</output>% ]</div>
+    <div class="thread mono" aria-hidden="true"><div><span></span></div><small>INITIALIZING ATLAS</small></div>
   </main>
 </body>
 </html>

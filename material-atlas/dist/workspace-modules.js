@@ -37,15 +37,24 @@ export function createWorkspaceModules(config){
       config.setView(available(parent)?parent:views()[0].id);
     }
     researchNav.setAttribute('aria-label',t('研读'));
-    researchNav.replaceChildren(...registry.list().filter(child=>child.parentView==='research').map(child=>{
+    const children=registry.list().filter(child=>child.parentView==='research');
+    const backBtn=document.createElement('button');
+    backBtn.type='button';
+    backBtn.className='research-nav-back';
+    backBtn.dataset.view='research';
+    backBtn.innerHTML='<span aria-hidden="true">←</span><span>'+escape(t('研读总览'))+'</span>';
+    const pillsGroup=document.createElement('div');
+    pillsGroup.className='research-nav-pills';
+    pillsGroup.replaceChildren(...children.map((child,idx)=>{
       const button=document.createElement('button');
       button.type='button';
-      button.className='outline-button';
+      button.className='research-nav-pill';
       button.dataset.view=child.id;
       button.setAttribute('aria-controls',child.panelId);
-      button.textContent=t(child.label);
+      button.innerHTML='<span class="research-nav-num">'+String(idx+1).padStart(2,'0')+'</span><span>'+escape(t(child.label))+'</span>';
       return button;
     }));
+    researchNav.replaceChildren(backBtn,pillsGroup);
     hydrateIcons(tabs);
   }
   const registry=new ModuleRegistry(WORKSPACE_MODULES,definition=>{
@@ -59,25 +68,29 @@ export function createWorkspaceModules(config){
       setCount:value=>{if(config.getView()===definition.id)document.getElementById('visible-count').textContent=value;},
       getChildViews:()=>registry.list().filter(child=>child.parentView===definition.id),
       openAISettings:config.openAISettings,
+      openStudySource:config.openStudySource,
       workbenchFilterResults:config.workbenchFilterResults,openWorkbenchFilters:config.openWorkbenchFilters,
-      getSelectedIds:config.getSelectedIds,openPaper:config.openPaper,
+      getTimelinePapers:config.getTimelinePapers,openPaper:config.openPaper,
+      getCollections:()=>config.getCollections?config.getCollections():[],
+      openReader:(id,page)=>config.openReader?.(id,page),
+      setReadingStatus:(ids,status)=>config.setReadingStatus?.({ids,status}),
+      readPaperBytes:id=>config.readPaperBytes?.(id),
+      openExternal:url=>{if(typeof url!=='string'||!/^https?:\/\//i.test(url))return;if(config.native?.agentOpenLink)void config.native.agentOpenLink(url).catch(()=>{});else window.open(url,'_blank','noopener,noreferrer');},
       release:()=>{scope.abort();for(const link of links)link.remove();styles.delete(definition.id);if(definition.bodyClass)document.body.classList.remove(definition.bodyClass);if(!definition.required){host.replaceChildren();host.hidden=true;}}
     };
   },{onChange:navigation,persist:config.persistPreferences});
   navigation();
   async function render(){
     const token=++generation,id=config.getView(),definition=registry.definitions.get(id);if(!available(id))return;
-    researchNav.hidden=workspaceTab(id)!=='research'||!researchNav.childElementCount;
+    researchNav.hidden=workspaceTab(id)!=='research'||id==='research'||!researchNav.childElementCount;
     if(!researchNav.hidden){
       const panel=document.getElementById(definition.panelId);
-      if(id==='research'){
-        if(researchNav.parentElement!==panel)panel.append(researchNav);
-      }else if(researchNav.nextElementSibling!==panel){
+      if(researchNav.nextElementSibling!==panel){
         const focused=researchNav.contains(document.activeElement)?document.activeElement:null;
         container.insertBefore(researchNav,panel);
         focused?.focus();
       }
-      for(const button of researchNav.children){
+      for(const button of researchNav.querySelectorAll('[data-view]')){
         if(button.dataset.view===id)button.setAttribute('aria-current','page');
         else button.removeAttribute('aria-current');
       }

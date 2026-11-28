@@ -122,7 +122,36 @@ function providerBody(config, messages, tools) {
   return { model: config.model, input, ...(tools.length?{tools:tools.map(tool => ({ type: 'function', ...tool, strict: false })),tool_choice:'auto'}:{}), store: false, include: ['reasoning.encrypted_content'], stream: false };
 }
 
-export async function completeWithProvider(configValue, { messages, tools = [], signal }, fetcher = fetch) {
+function extractProviderUsage(protocol, data, config) {
+  const usage = data?.usage;
+  if (!usage || typeof usage !== 'object') return null;
+  let inputTokens = 0, outputTokens = 0, cachedTokens = 0;
+  if (protocol === 'anthropic') {
+    inputTokens = Number(usage.input_tokens || 0);
+    outputTokens = Number(usage.output_tokens || 0);
+    cachedTokens = Number(usage.cache_read_input_tokens || 0);
+  } else if (protocol === 'chat') {
+    inputTokens = Number(usage.prompt_tokens || 0);
+    outputTokens = Number(usage.completion_tokens || 0);
+    cachedTokens = Number(usage.prompt_tokens_details?.cached_tokens || 0);
+  } else {
+    inputTokens = Number(usage.input_tokens || 0);
+    outputTokens = Number(usage.output_tokens || 0);
+    cachedTokens = Number(usage.input_tokens_details?.cached_tokens || 0);
+  }
+  const totalTokens = Number(usage.total_tokens || 0) || (inputTokens + outputTokens);
+  if (totalTokens <= 0 && inputTokens <= 0 && outputTokens <= 0) return null;
+  return {
+    provider: config.provider || 'custom',
+    model: config.model || '',
+    inputTokens,
+    outputTokens,
+    cachedTokens,
+    totalTokens,
+  };
+}
+
+export async function completeWithProvider(configValue, { messages, tools = [], signal, onUsage }, fetcher = fetch) {
   if(['antigravity','local-gemini'].includes(configValue?.connection))return completeWithAntigravity(configValue,{messages,tools,signal});
   const config = normalizeAgentConfig(configValue);
   const issue=agentCredentialIssue(config);if(issue)throw new Error(issue);
@@ -145,15 +174,18 @@ export async function completeWithProvider(configValue, { messages, tools = [], 
   try { data = JSON.parse(raw); } catch { throw new Error('AI 服务未返回 JSON，请检查 API 地址及协议。'); }
   if(config.protocol==='anthropic'){
     if(!Array.isArray(data.content)||['max_tokens','pause_turn'].includes(data.stop_reason)||data.error)throw new Error('Claude 返回不完整，请缩小问题范围或检查模型设置。');
+    const summary=extractProviderUsage('anthropic',data,config);if(summary)onUsage?.(summary);
     return {content:data.content.filter(b=>b.type==='text').map(b=>b.text).join('\n'),tool_calls:data.content.filter(b=>b.type==='tool_use').map(b=>({id:b.id,type:'function',function:{name:b.name,arguments:JSON.stringify(b.input)}})),providerOutput:data.content};
   }
   if (config.protocol === 'chat') {
     const choice = data.choices?.[0];
     if (!choice?.message || choice.finish_reason === 'length') throw new Error('模型返回不完整，请缩小问题范围或更换模型。');
+    const summary=extractProviderUsage('chat',data,config);if(summary)onUsage?.(summary);
     const message=choice.message,providerOutput={};
     for(const field of ['reasoning_content','reasoning_details','extra_content'])if(message[field]!==undefined)providerOutput[field]=message[field];
     return {...message,...(Object.keys(providerOutput).length?{providerOutput}:{})};
   }
   if (!Array.isArray(data.output) || data.status === 'incomplete' || data.error) throw new Error('Responses API 返回不完整，请检查模型与服务支持。');
+  const summary=extractProviderUsage('responses',data,config);if(summary)onUsage?.(summary);
   return { content: data.output.filter(o => o.type === 'message').flatMap(o => o.content || []).filter(c => c.type === 'output_text').map(c => c.text).join('\n'), tool_calls: data.output.filter(o => o.type === 'function_call').map(o => ({ id: o.call_id, type: 'function', function: { name: o.name, arguments: o.arguments } })), providerOutput: data.output };
 }

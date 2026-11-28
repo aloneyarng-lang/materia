@@ -1,4 +1,5 @@
 import {createFlowAchievements,reportAchievement} from './flow-achievements.js';
+import {setBrandOrbitActivity} from './ui-motion.js';
 import {t as tr,html,msg} from './i18n.js';
 import {bindStaticDOM,getLocale} from './i18n.js';
 import {icon} from './icons.js';
@@ -65,7 +66,7 @@ export function createAgentController(options) {
       <p id="agent-voice-language-help" class="agent-help" hidden>当前 AI 服务同时生成回复和朗读稿。台词随语音显示，完整回复保存在记录中。</p>
     </section>
     <section id="agent-memory-page" class="agent-memory-page" hidden></section>
-    <section id="agent-flow-page" hidden><button type="button" class="outline-button" data-character="flow">${icon('orbit')} 国际象棋</button> <button type="button" class="outline-button" data-character="flow-go">${icon('orbit')} 和红莉栖下围棋</button> <button type="button" class="outline-button" data-character="flow-achievements">${icon('orbit')} 科研成就</button></section>
+    <section id="agent-flow-page" hidden><button type="button" class="outline-button" data-character="flow">${icon('orbit')} 国际象棋</button> <button type="button" class="outline-button" data-character="flow-go">${icon('orbit')} 和红莉栖下围棋</button> <button type="button" class="outline-button" data-character="xiangqi">${icon('orbit')} 中国象棋</button> <button type="button" class="outline-button" data-character="shogi">${icon('orbit')} 日本将棋</button> <button type="button" class="outline-button" data-character="flow-achievements">${icon('orbit')} 科研成就</button></section>
     </div></details>
     <div id="agent-tools-menu" class="ui-action-popover" popover="auto" role="menu" aria-label="工具"><button type="button" data-agent-action="note">${icon('notes')} AI 笔记</button><button type="button" data-agent-action="reader">${icon('speaker')} 朗读器</button></div>
     <section id="agent-history" class="agent-history" aria-label="历史聊天记录" hidden><div class="agent-history-heading"><strong>历史聊天记录</strong><button type="button" class="text-button" data-agent-action="back">返回对话</button></div><input id="agent-history-search" type="search" placeholder="搜索标题或聊天内容" aria-label="搜索聊天历史"><div id="agent-history-list" class="agent-history-list"></div></section>
@@ -313,6 +314,7 @@ export function createAgentController(options) {
 
   function busyState(value) {
     busy = value;
+    setBrandOrbitActivity('ai', Boolean(value));
     characterStage.busy(value);
     $('#agent-send').disabled = value; $('#agent-scope').disabled = value;
     $('[data-agent-action="history"]').disabled = value;
@@ -626,6 +628,14 @@ export function createAgentController(options) {
     const button = event.target.closest('button'); if (!button) return;
     const action = button.dataset.agentAction;
     if (button.dataset.character === 'flow-achievements') { flowAchievements.show(); return; }
+    if (['xiangqi','shogi'].includes(button.dataset.character)) {
+      autoplayCtrl.pause();
+      voiceCtrl.stopVoice();
+      import('./flow-variants.js').then(({showVariant}) => {
+        if (!panel.hidden) showVariant(button.dataset.character);
+      }).catch(e => status(e.message));
+      return;
+    }
     if (button.dataset.character === 'flow-go') {
       button.disabled = true;
       import('./flow-go.js').then(({ createFlowGo }) => {

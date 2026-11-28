@@ -1,0 +1,32 @@
+{
+  "name": "@signal-app/firebaseui-web-react",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.tsx",
+      "types": "./src/index.tsx"
+    }
+  },
+  "scripts": {
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit",
+    "lint:fix": "biome check . --write",
+    "format": "biome format . --write"
+  },
+  "author": "ryohey",
+  "license": "MIT",
+  "peerDependencies": {
+    "firebase": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "firebaseui": "catalog:"
+  },
+  "devDependencies": {
+    "@emotion/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -72,7 +72,11 @@ export async function validatePackagedAssets(root, options = {}) {
       for (const m of text.matchAll(/url\(\s*['"]?(\.\.?\/[^\s)'"?#]+)['"]?\s*\)/g)) refs.push(m[1]);
     }
     for (const ref of refs) {
-      const target = path.posix.normalize(path.posix.join(path.dirname(name).replaceAll('\\', '/'), ref.split(/[?#]/)[0]));
+      // Signal resolves its transcription model against the editor document.
+      const documentRelative = name.replaceAll('\\','/').includes('signal/assets/') &&
+        ref === './basic-pitch/model.json' && /new URL\(["']\.\/basic-pitch\/model\.json["'],\s*document\.baseURI\)/.test(text);
+      const base = documentRelative ? path.posix.dirname(path.posix.dirname(name.replaceAll('\\','/'))) : path.dirname(name).replaceAll('\\', '/');
+      const target = path.posix.normalize(path.posix.join(base, ref.split(/[?#]/)[0]));
       if (ref.endsWith('/')) {
         try {
           if ((await lstat(path.join(root, target))).isDirectory()) continue;

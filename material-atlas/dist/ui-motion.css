@@ -1,0 +1,587 @@
+/* Global micro-animations for modals, sliding segmented pills, smooth accordions, and detail transitions. */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+/* 1. Native @starting-style modal & command palette entrance */
+.modal[open],
+.workspace-command-dialog[open] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 190ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@starting-style {
+  .modal[open],
+  .workspace-command-dialog[open] {
+    opacity: 0;
+    transform: translateY(10px) scale(0.982);
+  }
+}
+
+.modal[open]::backdrop,
+.workspace-command-dialog[open]::backdrop {
+  opacity: 1;
+  transition: opacity 180ms ease-out;
+}
+
+@starting-style {
+  .modal[open]::backdrop,
+  .workspace-command-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* 2. Toast micro-entrance */
+@keyframes ui-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.toast {
+  animation: ui-toast-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 3. Universal sliding glass pill indicator */
+[data-sliding-ready="true"] {
+  position: relative;
+}
+
+[data-sliding-ready="true"] > :not(.ui-pill-indicator) {
+  position: relative;
+  z-index: 1;
+}
+
+.ui-pill-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 140ms ease;
+  will-change: transform, width, height;
+}
+
+.ui-pill-indicator[data-no-transition="true"] {
+  transition: none !important;
+}
+
+/* View switcher (.view-tabs) */
+.view-tabs[data-sliding-ready="true"] .ui-pill-indicator {
+  border-radius: 8px;
+  background: var(--glass-card, var(--surface));
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+html[data-liquid-glass="true"] .view-tabs[data-sliding-ready="true"] .ui-pill-indicator {
+  border-radius: 20px;
+}
+
+html[data-liquid-glass="true"] :is(.view-tabs, .sidebar .main-nav, .theme-mode-control, .ai-usage-pills)[data-sliding-ready="true"] > .ui-pill-indicator {
+  background: var(--glass-card);
+  box-shadow:
+    0 2px 8px var(--shadow),
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-edge);
+}
+
+html .view-tabs[data-sliding-ready="true"] .view-tab.active,
+html[data-liquid-glass="true"] .view-tabs[data-sliding-ready="true"] .view-tab.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Sidebar primary navigation (.main-nav) */
+.sidebar .main-nav[data-sliding-ready="true"] .ui-pill-indicator {
+  border-radius: var(--button-radius, 6px);
+  background: var(--panel);
+}
+
+
+
+html .sidebar .main-nav[data-sliding-ready="true"] .nav-item.active,
+html[data-liquid-glass="true"] .sidebar .main-nav[data-sliding-ready="true"] .nav-item.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Theme light/dark switcher (.theme-mode-control) */
+.theme-mode-control[data-sliding-ready="true"] .ui-pill-indicator {
+  border-radius: 18px;
+  background: var(--glass-card);
+  box-shadow:
+    0 2px 9px var(--shadow),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+.theme-mode-control[data-sliding-ready="true"] button.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* AI Usage HUD segmented pills (.ai-usage-pills) */
+.ai-usage-pills[data-sliding-ready="true"] .ui-pill-indicator {
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow:
+    0 1px 4px var(--shadow),
+    inset 0 0 0 1px var(--hud-border);
+}
+
+html[data-theme-mode="dark"] .ai-usage-pills[data-sliding-ready="true"] .ui-pill-indicator {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ai-usage-pills[data-sliding-ready="true"] .ai-usage-pill.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 4. Smooth <details> accordions inside Paper Detail drawer */
+:is(.detail-disclosure, .author-details)::details-content {
+  block-size: 0;
+  opacity: 0;
+  overflow: clip;
+  transition:
+    block-size 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    content-visibility 220ms allow-discrete;
+}
+
+:is(.detail-disclosure, .author-details)[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+/* 5. Detail panel gentle crossfade when switching selected papers */
+@keyframes ui-detail-fade {
+  from {
+    opacity: 0.45;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+#detail-panel.detail-entering > * {
+  animation: ui-detail-fade 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 6. Easter egg: top-left brand satellite orbit on hover or active AI/sync work */
+@keyframes ui-satellite-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.brand-satellite {
+  transform-box: view-box;
+  transform-origin: 248px 258px;
+}
+
+.brand:is(:hover, :focus-visible) .brand-satellite {
+  animation: ui-satellite-orbit 3.6s linear infinite;
+}
+
+html[data-brand-orbiting="true"] .brand-satellite {
+  animation: ui-satellite-orbit 2.8s linear infinite;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--teal) 60%, transparent));
+}
+
+/* 7. Easter egg: Settings import-activity heatmap hover pop & column wave */
+.activity-day {
+  transform-origin: center;
+  transition:
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.activity-day:not(:disabled):is(:hover, :focus-visible) {
+  transform: scale(1.28);
+  filter: brightness(1.14);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--teal) 28%, transparent);
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes ui-activity-wave {
+  from {
+    opacity: 0.15;
+    transform: scale(0.76);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.activity-calendar.activity-wave .activity-day:not(:disabled) {
+  animation: ui-activity-wave 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--col, 0) * 8ms);
+}
+
+/* 8. Four View-Transition Theme Switch Animations (iris / curtain / shutter / prism) */
+html[data-theme-preview-flash="true"] body {
+  filter: saturate(1.12) contrast(1.04) brightness(0.95);
+}
+
+html[data-theme-mode="dark"][data-theme-preview-flash="true"] body {
+  filter: saturate(1.16) contrast(1.06) brightness(1.08);
+}
+
+.ui-theme-transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+}
+
+html[data-theme-transition] ::view-transition-old(root),
+html[data-theme-transition] ::view-transition-new(root) {
+  animation-fill-mode: both;
+  mix-blend-mode: normal;
+}
+
+/* 8a. Iris Ripple */
+html[data-theme-transition="iris"] ::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+html[data-theme-transition="iris"] ::view-transition-new(root) {
+  z-index: 2;
+  animation: ui-vt-iris 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-vt-iris {
+  from {
+    clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+.ui-theme-transition-veil[data-style="iris"] {
+  background: radial-gradient(circle at var(--vt-x, 50%) var(--vt-y, 50%), transparent 60%, color-mix(in srgb, var(--teal) 45%, #ffffff) 68%, transparent 74%);
+  animation: ui-veil-iris 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-veil-iris {
+  from {
+    clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+    opacity: 0.75;
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 50%));
+    opacity: 0;
+  }
+}
+
+/* 8b. Drafting Curtain Sweep */
+html[data-theme-transition="curtain"] ::view-transition-old(root) {
+  z-index: 1;
+  animation: ui-vt-curtain-old 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html[data-theme-transition="curtain"] ::view-transition-new(root) {
+  z-index: 2;
+  animation: ui-vt-curtain-new 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-vt-curtain-old {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0.78; transform: translateX(-14px); }
+}
+@keyframes ui-vt-curtain-new {
+  from {
+    clip-path: polygon(-18% 0, -6% 0, -18% 100%, -30% 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 125% 0, 113% 100%, 0 100%);
+  }
+}
+.ui-theme-transition-veil[data-style="curtain"] {
+  background: linear-gradient(102deg, transparent 42%, color-mix(in srgb, var(--teal) 55%, #ffffff) 50%, transparent 58%);
+  animation: ui-veil-curtain 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-veil-curtain {
+  from { transform: translateX(-65%); opacity: 0.85; }
+  to { transform: translateX(65%); opacity: 0; }
+}
+
+/* 8c. Optical Shutter Slit */
+html[data-theme-transition="shutter"] ::view-transition-old(root) {
+  z-index: 1;
+  animation: ui-vt-shutter-old 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+html[data-theme-transition="shutter"] ::view-transition-new(root) {
+  z-index: 2;
+  animation: ui-vt-shutter-new 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ui-vt-shutter-old {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.72; transform: scale(0.985); }
+}
+@keyframes ui-vt-shutter-new {
+  from { clip-path: inset(50% 0 50% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+.ui-theme-transition-veil[data-style="shutter"] {
+  background: linear-gradient(180deg, transparent 48.5%, color-mix(in srgb, var(--teal) 60%, #ffffff) 50%, transparent 51.5%);
+  animation: ui-veil-shutter 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ui-veil-shutter {
+  from { transform: scaleY(1); opacity: 0.9; }
+  to { transform: scaleY(36); opacity: 0; }
+}
+
+/* 8d. Prism Spectral Dissolve */
+html[data-theme-transition="prism"] ::view-transition-old(root) {
+  z-index: 1;
+  animation: ui-vt-prism-old 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+html[data-theme-transition="prism"] ::view-transition-new(root) {
+  z-index: 2;
+  animation: ui-vt-prism-new 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-vt-prism-old {
+  from { opacity: 1; filter: blur(0px); transform: scale(1); }
+  to { opacity: 0; filter: blur(5px); transform: scale(0.988); }
+}
+@keyframes ui-vt-prism-new {
+  from { opacity: 0; filter: blur(6px); transform: scale(1.014); }
+  to { opacity: 1; filter: blur(0px); transform: scale(1); }
+}
+.ui-theme-transition-veil[data-style="prism"] {
+  background: linear-gradient(125deg, transparent 22%, rgba(104, 216, 255, 0.16) 44%, color-mix(in srgb, var(--teal) 28%, transparent) 52%, rgba(255, 255, 255, 0.18) 60%, transparent 78%);
+  animation: ui-veil-prism 540ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes ui-veil-prism {
+  from { transform: translate(-35%, -20%); opacity: 0.9; }
+  to { transform: translate(35%, 20%); opacity: 0; }
+}
+
+/* 9. Star Graph Natural Layout Observatory Telescope Overlay */
+.graph-telescope {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  --focus-p: 0;
+  opacity: 0;
+  animation: ui-telescope-in 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.graph-telescope[data-state="locked"] {
+  animation: ui-telescope-out 540ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes ui-telescope-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ui-telescope-out {
+  0% { opacity: 1; }
+  45% { opacity: 0.92; }
+  100% { opacity: 0; }
+}
+
+.telescope-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 34%,
+    color-mix(in srgb, var(--teal) 5%, transparent) 54%,
+    color-mix(in srgb, var(--paper) 64%, transparent) 84%
+  );
+}
+
+html[data-theme-mode="dark"] .telescope-vignette {
+  background: radial-gradient(
+    circle at 50% 50%,
+    transparent 34%,
+    color-mix(in srgb, var(--teal) 8%, transparent) 56%,
+    rgba(6, 9, 15, 0.62) 86%
+  );
+}
+
+.telescope-brackets {
+  position: absolute;
+  inset: 18px;
+}
+
+.telescope-brackets i {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: color-mix(in srgb, var(--teal) 58%, transparent);
+  border-style: solid;
+  border-width: 0;
+}
+
+.telescope-brackets i:nth-child(1) { top: 0; left: 0; border-top-width: 1.5px; border-left-width: 1.5px; }
+.telescope-brackets i:nth-child(2) { top: 0; right: 0; border-top-width: 1.5px; border-right-width: 1.5px; }
+.telescope-brackets i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.telescope-brackets i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+.telescope-reticle {
+  width: min(76%, 520px);
+  height: min(76%, 520px);
+  overflow: visible;
+}
+
+.telescope-ring-track {
+  stroke: color-mix(in srgb, var(--teal) 14%, transparent);
+  stroke-width: 1;
+}
+
+.telescope-ring-outer {
+  stroke: color-mix(in srgb, var(--teal) 36%, transparent);
+  stroke-width: 1.25;
+  transform-origin: 300px 300px;
+  animation: ui-satellite-orbit 18s linear infinite;
+}
+
+.telescope-ring-mid {
+  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
+  stroke-width: 1;
+  transform-origin: 300px 300px;
+  animation: ui-telescope-counter 12s linear infinite;
+}
+
+@keyframes ui-telescope-counter {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.telescope-focus-group {
+  transform-origin: 300px 300px;
+  transform: scale(calc(1.14 - 0.14 * var(--focus-p, 0)));
+  transition: transform 140ms ease-out;
+}
+
+.telescope-ring-focus {
+  stroke: color-mix(in srgb, var(--teal) 52%, transparent);
+  stroke-width: 1.25;
+  stroke-dasharray: 18 8;
+}
+
+.telescope-lock-ring {
+  stroke: var(--teal);
+  stroke-width: 2;
+  opacity: 0;
+  transform-origin: 300px 300px;
+}
+
+.graph-telescope[data-state="locked"] .telescope-lock-ring {
+  animation: ui-telescope-lock 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes ui-telescope-lock {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.22); }
+}
+
+.telescope-crosshairs line {
+  stroke: color-mix(in srgb, var(--teal) 30%, transparent);
+  stroke-width: 1;
+}
+
+.telescope-stars .t-star {
+  fill: color-mix(in srgb, var(--teal) 72%, #ffffff);
+  animation: ui-star-twinkle 1.8s ease-in-out infinite;
+}
+.telescope-stars .s2 { animation-delay: 0.45s; }
+.telescope-stars .s3 { animation-delay: 0.9s; }
+.telescope-stars .s4 { animation-delay: 1.35s; }
+
+@keyframes ui-star-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+
+.telescope-hud {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--teal) 28%, var(--line));
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  backdrop-filter: blur(10px);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.telescope-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+}
+
+.graph-telescope[data-state="locked"] .telescope-hud {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+/* Accessibility: respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal[open],
+  .workspace-command-dialog[open],
+  .modal[open]::backdrop,
+  .workspace-command-dialog[open]::backdrop,
+  .ui-pill-indicator,
+  :is(.detail-disclosure, .author-details)::details-content,
+  .activity-day,
+  .telescope-focus-group {
+    transition: none;
+  }
+
+  .toast,
+  #detail-panel.detail-entering > *,
+  .brand:is(:hover, :focus-visible) .brand-satellite,
+  html[data-brand-orbiting="true"] .brand-satellite,
+  .activity-calendar.activity-wave .activity-day:not(:disabled),
+  .ui-theme-transition-veil,
+  .graph-telescope,
+  .telescope-ring-outer,
+  .telescope-ring-mid,
+  .telescope-lock-ring,
+  .telescope-stars .t-star {
+    animation: none;
+  }
+
+  html[data-theme-transition] ::view-transition-old(root),
+  html[data-theme-transition] ::view-transition-new(root) {
+    animation: none;
+  }
+}

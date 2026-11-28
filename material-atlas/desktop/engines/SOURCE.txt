@@ -1,0 +1,3 @@
+https://github.com/fairy-stockfish/Fairy-Stockfish/releases/download/fairy_sf_14/fairy-stockfish-largeboard_x86-64.exe
+https://github.com/fairy-stockfish/Fairy-Stockfish/tree/fairy_sf_14
+https://github.com/fairy-stockfish/Fairy-Stockfish/archive/refs/tags/fairy_sf_14.tar.gz

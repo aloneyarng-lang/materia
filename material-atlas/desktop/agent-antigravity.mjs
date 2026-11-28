@@ -111,6 +111,7 @@ export function antigravityModels(status){
     name:row.label.slice(0,200),
     selector:row.modelOrAlias,
     remaining:typeof row.quotaInfo?.remainingFraction==='number'?Math.max(0,Math.min(1,row.quotaInfo.remainingFraction)):null,
+    ...(row.quotaInfo?.resetTime ? { resetTime: String(row.quotaInfo.resetTime) } : {}),
     supportsPng:row.supportedMimeTypes?.['image/png'] ?? (row.supportsImages === true),
   }));
 }

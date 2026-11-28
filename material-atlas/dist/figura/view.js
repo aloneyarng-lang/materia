@@ -9,46 +9,81 @@ export function figuraIcon(action,label,glyph,attributes='',group='fig'){
   return `<button type="button" class="icon-button" data-${group}-action="${action}" aria-label="${escape(t(label))}" title="${escape(t(label))}" data-i18n-aria-label="${escape(label)}" data-i18n-title="${escape(label)}" ${attributes}>${icon(glyph)}</button>`;
 }
 
+export function figuraButton(action,label,glyph,extraClass='outline-button',attributes=''){
+  return `<button type="button" class="${extraClass}" data-fig-action="${action}" title="${escape(t(label))}" data-i18n-title="${escape(label)}" ${attributes}>${icon(glyph)}<span>${escape(t(label))}</span></button>`;
+}
+
 export function workspaceHTML(native) {
   const desktopOnly = native ? '' : 'disabled';
   return html`
     <div class="figura-layout">
       <aside class="figura-gallery" aria-label="绘图方案">
-        <div class="figura-gallery-heading"><h3>绘图方案</h3>${figuraIcon('schemes','管理方案','settings')}</div>
-        <label class="figura-search">${icon('search')}<input data-fig="query" type="search" aria-label="搜索方案" placeholder="搜索方案"></label>
-        <select data-fig="category" aria-label="方案分类"></select>
+        <div class="figura-gallery-heading">
+          <div>
+            <span class="figura-eyebrow">FIGURA // ATELIER</span>
+            <h3>绘图方案 <span class="figura-scheme-count" data-fig="scheme-count">0</span></h3>
+          </div>
+          ${figuraIcon('schemes','管理方案','settings')}
+        </div>
+        <label class="figura-search">${icon('search')}<input data-fig="query" type="search" aria-label="搜索方案" placeholder="搜索图型、名称或关键词…"></label>
+        <div class="figura-category-pills" data-fig="category-pills" role="group" aria-label="方案分类筛选"></div>
+        <select data-fig="category" class="figura-category-select" aria-label="方案分类"></select>
         <div data-fig="schemes" class="figura-schemes"></div>
       </aside>
       <section class="figura-main" aria-label="绘图工作区">
         <div class="figura-workbar">
-        <div class="figura-project-bar">
-          <input data-fig="name" type="text" maxlength="250" placeholder="绘图项目名称" aria-label="绘图项目名称">
-          ${figuraIcon('save','保存项目','save')}
-          ${figuraIcon('projects','绘图项目','folder')}
-          ${figuraIcon('quick-import','Markdown 一键导入','upload')}
-        </div>
-        <div class="figura-toolbar">
-          <div class="figura-mode" role="group" aria-label="绘图视图">
-            ${figuraIcon('preview-tab','预览','eye','aria-pressed="true"')}
-            ${figuraIcon('data-tab','数据','table','aria-pressed="false"')}
+          <div class="figura-project-bar">
+            ${figuraIcon('toggle-gallery','收起或展开方案画廊','panel-left','aria-pressed="false"')}
+            <div class="figura-title-group">
+              <span class="figura-active-scheme" data-fig="active-scheme" hidden></span>
+              <input data-fig="name" type="text" maxlength="250" placeholder="绘图项目名称" aria-label="绘图项目名称">
+            </div>
+            ${figuraIcon('save','保存项目','save')}
+            ${figuraIcon('projects','绘图项目','folder')}
+            ${figuraIcon('quick-import','Markdown 一键导入','upload')}
           </div>
-          <label class="figura-theme-select" title="绘图主题">${icon('palette')}<select data-fig="theme" aria-label="绘图主题"><option value="">方案原色</option>${FIGURE_THEMES.map(({id,label})=>t(`<option value="${id}">${label}</option>`)).join('')}</select><span class="figura-theme-swatches" data-fig="theme-swatches" aria-hidden="true" hidden></span></label>
-          ${figuraIcon('parameters','绘图参数','sliders')}
-          ${figuraIcon('montage','论文拼版','overview')}
-          ${figuraIcon('export','导出绘图','download')}
-          <button type="button" class="outline-button figura-comparison" data-comparison-action="open">${icon('table')}对比与作图</button>
-        </div>
+          <div class="figura-toolbar">
+            <div class="figura-mode" role="group" aria-label="绘图视图">
+              <button type="button" data-fig-action="preview-tab" aria-pressed="true" title="预览舞台">${icon('eye')}<span>预览</span></button>
+              <button type="button" data-fig-action="data-tab" aria-pressed="false" title="数据与映射">${icon('table')}<span>数据</span></button>
+            </div>
+            <label class="figura-theme-select" title="绘图主题">${icon('palette')}<select data-fig="theme" aria-label="绘图主题"><option value="">方案原色</option>${FIGURE_THEMES.map(({id,label})=>t(`<option value="${id}">${label}</option>`)).join('')}</select><span class="figura-theme-swatches" data-fig="theme-swatches" aria-hidden="true" hidden></span></label>
+            ${figuraButton('parameters','参数','sliders')}
+            ${figuraButton('montage','拼版','overview')}
+            ${figuraButton('export','导出','download','primary')}
+            <button type="button" class="outline-button figura-comparison" data-comparison-action="open">${icon('table')}<span>对比与作图</span></button>
+          </div>
         </div>
         <p class="figura-status" data-fig="notice" role="status"></p>
         <section data-fig="preview-page" class="figura-preview-page">
-          <div class="figura-stage" data-fig="stage">
-            <div class="figura-empty" data-fig="placeholder">${icon('chart')}<strong>选择一个绘图方案</strong><span>先看示例，再导入你的表格。</span></div>
+          <div class="figura-stage" data-fig="stage" data-stage-bg="paper" data-stage-zoom="fit">
+            <div class="figura-stage-marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div class="figura-empty" data-fig="placeholder">
+              <div class="figura-empty-badge">${icon('chart')}</div>
+              <strong>从左侧画廊选择一个绘图方案</strong>
+              <span>支持即时主题着色、实时表格编辑与 300/600 DPI 矢量导出。</span>
+            </div>
             <img data-fig="image" alt="绘图预览" hidden>
           </div>
           <div class="figura-preview-footer">
-            <span data-fig="plot-status" role="status"></span>
-            <span data-fig="save-status" class="figura-help" role="status"></span>
-            ${figuraIcon('refresh','更新预览','refresh')}
+            <div class="figura-telemetry-group">
+              <span class="figura-telemetry-dot" aria-hidden="true"></span>
+              <span data-fig="plot-status" role="status"></span>
+              <span data-fig="save-status" class="figura-help" role="status"></span>
+            </div>
+            <div class="figura-stage-controls">
+              <div class="figura-pill-group" role="group" aria-label="舞台背景">
+                <button type="button" data-fig-stage-bg="paper" aria-pressed="true">纸感</button>
+                <button type="button" data-fig-stage-bg="darkroom" aria-pressed="false">暗房</button>
+                <button type="button" data-fig-stage-bg="grid" aria-pressed="false">网格</button>
+              </div>
+              <div class="figura-pill-group" role="group" aria-label="预览比例">
+                <button type="button" data-fig-stage-zoom="fit" aria-pressed="true">适合</button>
+                <button type="button" data-fig-stage-zoom="100" aria-pressed="false">100%</button>
+                <button type="button" data-fig-stage-zoom="135" aria-pressed="false">135%</button>
+              </div>
+              ${figuraIcon('refresh','更新预览','refresh')}
+            </div>
           </div>
         </section>
         <section data-fig="data-page" class="figura-data-page" hidden>

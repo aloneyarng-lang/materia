@@ -39,8 +39,8 @@ html[data-liquid-glass=true] .sidebar .collection-item {
 html[data-liquid-glass=true] .sidebar .collection-item {margin:4px 0;}
 html[data-liquid-glass=true] .sidebar .nav-count {font-size:.6875rem;color:var(--muted);font-weight:400;}
 html[data-liquid-glass=true] :is(.sidebar .nav-item.active,.collection-item.active) {
-  background:color-mix(in srgb,var(--ink) 9%,transparent);color:var(--teal);
-  box-shadow:0 2px 8px var(--shadow),inset 0 1px 0 var(--glass-highlight);
+  background:var(--glass-card);color:var(--teal);
+  box-shadow:0 2px 8px var(--shadow),inset 0 1px 0 var(--glass-highlight),inset 0 0 0 1px var(--glass-edge);
 }
 html[data-liquid-glass=true] .surface-toolbar {padding:14px 18px;gap:10px;flex-wrap:wrap;}
 html[data-liquid-glass=true] .view-tabs {padding:4px;flex:0 0 auto;box-shadow:inset 0 1px 0 var(--glass-highlight);}

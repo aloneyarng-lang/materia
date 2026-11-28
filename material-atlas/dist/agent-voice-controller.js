@@ -32,7 +32,7 @@ export function createAgentVoiceController({
 }) {
   let voiceAvailable = false, voiceEnabled = false, voicePlayback = null, voiceSubtitle = null;
   let voiceLanguage = 'follow', voiceLanguageSaving = false, voiceSettingEpoch = 0, voiceCharacterId;
-  let goPlayback = null, goVoiceMeta = null;
+  let goPlayback = null, goVoiceMeta = null, goSpeechEpoch = 0, goPending = null;
   const clipQueues = new WeakMap();
   const goWavCache = new Map();
   const getVoiceButton = () => voiceButton || panel.querySelector('[data-character="voice"]');
@@ -132,6 +132,8 @@ export function createAgentVoiceController({
   const canSpeak = () => voiceAvailable && voiceEnabled && !panel.hidden && !document.hidden;
 
   function stopVoice() {
+    goSpeechEpoch++;
+    goPending = null;
     replyVoice.stop();
     voiceSubtitle = null;
     renderStage();
@@ -141,6 +143,8 @@ export function createAgentVoiceController({
   }
 
   function stopGoCommentary() {
+    goSpeechEpoch++;
+    goPending = null;
     if (!goPlayback) return;
     replyVoice.stop();
     goPlayback = null;
@@ -303,6 +307,8 @@ export function createAgentVoiceController({
     const nextVoiceId = voiceIdFor(currentCharacter());
     if (voiceCharacterId === nextVoiceId) return false;
     voiceCharacterId = nextVoiceId;
+    goSpeechEpoch++;
+    goPending = null;
     replyVoice.stop();
     voicePlayback = null;
     goPlayback = null;
@@ -358,41 +364,9 @@ export function createAgentVoiceController({
     }
   }
 
-  async function speakGoCommentary({ id, speech, language = 'zh', manual = false } = {}) {
-    if (panel.hidden || document.hidden || !native?.agentVoiceSynthesize || !speech) return false;
-    const meta = await ensureGoVoiceMeta();
-    if (!manual && (!meta.available || !meta.enabled)) return false;
-    const lang = language === 'zh-CN' ? 'zh' : language;
-    const cacheKey = `${KURISU_ID}|${lang}|${id}`;
-    const libraryKey = getHistoryKey();
-    const loadWav = async () => {
-      if (goWavCache.has(cacheKey)) {
-        const hit = goWavCache.get(cacheKey);
-        setGoRamCache(cacheKey, hit);
-        return hit;
-      }
-      const disk = readGoDiskIndex()[cacheKey];
-      if (disk && disk.libraryKey === libraryKey && disk.id && native.agentVoiceRead) {
-        try {
-          const wav = await native.agentVoiceRead({ libraryKey: disk.libraryKey, id: disk.id });
-          if (typeof wav === 'string' && wav.startsWith('UklGR')) {
-            setGoRamCache(cacheKey, wav);
-            return wav;
-          }
-        } catch {}
-      }
-      const wav = await native.agentVoiceSynthesize({ text: speech, language: lang, characterId: KURISU_ID, manual });
-      if (typeof wav === 'string' && wav.startsWith('UklGR')) {
-        setGoRamCache(cacheKey, wav);
-        if (libraryKey && native.agentVoiceSave) {
-          void native.agentVoiceSave({ libraryKey, wav }).then(clipId => {
-            if (clipId) writeGoDiskIndex(cacheKey, { libraryKey, id: clipId, language: lang });
-          }).catch(() => {});
-        }
-      }
-      return wav;
-    };
-    const playback = replyVoice.replay({ language: lang }, loadWav);
+  async function playGoWav(wav, lang, epoch) {
+    if (!wav || panel.hidden || document.hidden) return false;
+    const playback = replyVoice.replay({ language: lang }, async () => wav);
     goPlayback = playback;
     try {
       const ok = await playback;
@@ -402,13 +376,71 @@ export function createAgentVoiceController({
       return false;
     } finally {
       if (goPlayback === playback) goPlayback = null;
+      if (goPending && goPending.epoch === goSpeechEpoch && !panel.hidden && !document.hidden) {
+        const next = goPending;
+        goPending = null;
+        void playGoWav(next.wav, next.lang, next.epoch);
+      }
     }
+  }
+
+  async function speakGoCommentary({ id, speech, language = 'zh', manual = false, dynamic = false } = {}) {
+    if (panel.hidden || document.hidden || !native?.agentVoiceSynthesize || !speech) return false;
+    const meta = await ensureGoVoiceMeta();
+    if (!manual && (!meta.available || !meta.enabled)) return false;
+    const epoch = ++goSpeechEpoch;
+    goPending = null;
+    const lang = language === 'zh-CN' ? 'zh' : language;
+    const cacheKey = `${KURISU_ID}|${lang}|${id}`;
+    const libraryKey = getHistoryKey();
+    const loadWav = async () => {
+      if (goWavCache.has(cacheKey)) {
+        const hit = goWavCache.get(cacheKey);
+        setGoRamCache(cacheKey, hit);
+        return hit;
+      }
+      if (!dynamic) {
+        const disk = readGoDiskIndex()[cacheKey];
+        if (disk && disk.libraryKey === libraryKey && disk.id && native.agentVoiceRead) {
+          try {
+            const wav = await native.agentVoiceRead({ libraryKey: disk.libraryKey, id: disk.id });
+            if (typeof wav === 'string' && wav.startsWith('UklGR')) {
+              setGoRamCache(cacheKey, wav);
+              return wav;
+            }
+          } catch {}
+        }
+      }
+      const wav = await native.agentVoiceSynthesize({ text: speech, language: lang, characterId: KURISU_ID, manual });
+      if (typeof wav === 'string' && wav.startsWith('UklGR')) {
+        setGoRamCache(cacheKey, wav);
+        if (!dynamic && libraryKey && native.agentVoiceSave) {
+          void native.agentVoiceSave({ libraryKey, wav }).then(clipId => {
+            if (clipId) writeGoDiskIndex(cacheKey, { libraryKey, id: clipId, language: lang });
+          }).catch(() => {});
+        }
+      }
+      return wav;
+    };
+    let wav;
+    try {
+      wav = await loadWav();
+    } catch {
+      return false;
+    }
+    if (!wav || epoch !== goSpeechEpoch || panel.hidden || document.hidden) return false;
+    if (!manual && goPlayback) {
+      goPending = { epoch, lang, wav };
+      return true;
+    }
+    return await playGoWav(wav, lang, epoch);
   }
 
   function getGoVoiceBridge() {
     return {
       speakCommentary: speakGoCommentary,
       stopCommentary: stopGoCommentary,
+      commentGo: native?.commentGo ? payload => native.commentGo(payload) : null,
       getVoiceState: () => ({
         available: Boolean(goVoiceMeta?.available),
         enabled: goVoiceMeta?.enabled !== false,

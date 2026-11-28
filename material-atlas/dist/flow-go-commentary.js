@@ -1,4 +1,4 @@
-import { BLACK } from './flow-go-rules.js';
+import { BLACK, SIZE, coordinate } from './flow-go-rules.js';
 
 export const GO_COMMENTARY_LINES = Object.freeze({
   opening: Object.freeze([
@@ -19,6 +19,346 @@ export const GO_COMMENTARY_LINES = Object.freeze({
       zh: '十九路棋盘可不讲直觉糊弄。来吧，你的第一手打算落哪里？',
       ja: '十九路盤は勘だけじゃ誤魔化せないわよ。さあ、初手はどこに打つ？',
       en: 'A 19x19 board will not let intuition bluff its way through. Well, where is your first stone going?',
+    },
+  ]),
+  opening_corner: Object.freeze([
+    {
+      id: 'ocorner-1',
+      zh: '先占角部打基础，稳扎稳打的开局思路。那我也把这边守住。',
+      ja: 'まずは隅から堅実に固めてくるのね。なら私もこっちを構えておくわ。',
+      en: 'Securing the corner first—solid opening habits. Then I will claim my share on this side.',
+    },
+    {
+      id: 'ocorner-2',
+      zh: '挂角还是守角我都先记下了。看看你接下来想把外势往哪边铺。',
+      ja: 'この隅への一手、意図は読めたわ。次はどう外勢を広げるつもり？',
+      en: 'Noted your corner move. Let us see which way you plan to build influence next.',
+    },
+    {
+      id: 'ocorner-3',
+      zh: '角上落子很标准，不过真正的分歧通常从下一个选点开始。',
+      ja: '隅の構えは教科書通りね。でも本当の駆け引きはこの次の選択からよ。',
+      en: 'Textbook corner placement, though the real divergence usually starts on the very next choice.',
+    },
+    {
+      id: 'ocorner-4',
+      zh: '把边角实地先攥在手里，倒是符合你小心试探的风格。轮到你了。',
+      ja: '辺と隅の実利を先に押さえるあたり、慎重派らしい手ね。はい、あなたの番。',
+      en: 'Locking down corner territory early fits your cautious probing style. Your turn.',
+    },
+  ]),
+  opening_flow: Object.freeze([
+    {
+      id: 'oflow-1',
+      zh: '棋盘还空旷得很，这一带大场的张力开始起来了。继续。',
+      ja: 'まだ盤面は広いけど、この辺りの大場が効いてきそうね。続けて。',
+      en: 'Plenty of open board left, and the tension around these big points is starting to build.',
+    },
+    {
+      id: 'oflow-2',
+      zh: '布局阶段每一步都在给中盘埋坐标。我应完这手，看你怎么接。',
+      ja: '布石の一手一手は全部中盤への座標設定よ。私のはこう、次はどう来る？',
+      en: 'Every opening move sets coordinates for the middlegame. That is my reply—what is yours?',
+    },
+    {
+      id: 'oflow-3',
+      zh: '两边模样的架子慢慢搭起来了，你想先挑哪一侧动手？',
+      ja: 'お互い模様の形が見えてきたわね。先にどちらの側面から仕掛けるつもり？',
+      en: 'Both frameworks are taking shape now. Which side are you going to test first?',
+    },
+    {
+      id: 'oflow-4',
+      zh: '这手拆边把空间先划出来了。好啊，我也把这边的连络理顺。',
+      ja: 'そこへ開いて空間を確保したのね。いいわ、私もこっちの連絡を整えておく。',
+      en: 'Splitting that side stakes out your space. Fine, I will tidy up my connections over here.',
+    },
+  ]),
+  local_fight: Object.freeze([
+    {
+      id: 'local-1',
+      zh: '果然还是贴上来了……既然要在这一块短兵相接，我可不会退。',
+      ja: 'やっぱり接近戦を仕掛けてきたわね……ここで競り合うなら引かないわよ。',
+      en: 'So you are pressing right in locally... if we are fighting at close quarters, I am not backing down.',
+    },
+    {
+      id: 'local-2',
+      zh: '紧跟着这一手贴靠过来，局部的气顿时紧起来了。看招。',
+      ja: 'すぐそばに付けてきたか。局面のダメが一気に詰まってきたわね、受けてみなさい。',
+      en: 'Attaching right next to me tightens the liberties at once. Here is my answer.',
+    },
+    {
+      id: 'local-3',
+      zh: '好，局部接触战我奉陪。不过你自己留下的断点可别回头忘补。',
+      ja: 'いいわ、接近戦なら望むところよ。ただし自分に残した切りは忘れないことね。',
+      en: 'Alright, I will gladly play the local fight. Just do not forget the cutting points behind you.',
+    },
+    {
+      id: 'local-4',
+      zh: '你这手压迫感挺足的嘛。那我就先在这里顶住，看你后招。',
+      ja: 'なかなかのプレッシャーね。じゃあここはしっかりハネて、次の手を見せてもらうわ。',
+      en: 'Plenty of pressure on that stone. I will resist right here and see your follow-up.',
+    },
+    {
+      id: 'local-5',
+      zh: '连着两手都在这块缠斗，看来这片定型之前谁都不打算放手。',
+      ja: '連続で同じ箇所の攻防ね。ここが一段落するまで、どちらも譲る気はなさそう。',
+      en: 'Back-to-back moves in the same scuffle—neither of us is letting go until this settles.',
+    },
+  ]),
+  tenuki: Object.freeze([
+    {
+      id: 'tenuki-1',
+      zh: '噢？居然直接脱先跑到那边去了。那我先在这边收一点便宜再说。',
+      ja: 'へえ、そこは手を抜いてあっちへ回るの？なら私はこっちで少し利かしておくわ。',
+      en: 'Oh? Playing tenuki straight over there? Then I will cash in a little locally first.',
+    },
+    {
+      id: 'tenuki-2',
+      zh: '把刚才那块先搁置，转去抢全局大场——挺果断的嘛。',
+      ja: 'さっきの戦いを保留して大場へ転換……思い切りがいいじゃない。',
+      en: 'Leaving that skirmish aside to seize the big point elsewhere—pretty decisive.',
+    },
+    {
+      id: 'tenuki-3',
+      zh: '敢在这儿脱先，说明你觉得那块已经够厚了？那我偏要去试探一下。',
+      ja: 'ここで手を抜くってことは、あっちはもう十分厚いって判断？……試してあげる。',
+      en: 'Daring to tenuki here means you think that group is settled? Let me test that assumption.',
+    },
+    {
+      id: 'tenuki-4',
+      zh: '转场转得倒快，刚才的局部还没彻底算清呢，我也顺手跟进一处。',
+      ja: '転換が早いわね。さっきの箇所もまだ余韻が残ってるけど、まずは一手進めるわ。',
+      en: 'Fast switch across the board. That last area still has loose ends, while I follow along here.',
+    },
+  ]),
+  black_ahead: Object.freeze([
+    {
+      id: 'bahead-1',
+      zh: '这手下得挺稳，看来你是想把现在的优势一点点锁定下来。',
+      ja: '堅実な手ね。今のリードをこのまま少しずつ固めきるつもりかしら。',
+      en: 'Steady move—looks like you want to lock down your current lead piece by piece.',
+    },
+    {
+      id: 'bahead-2',
+      zh: '确实没给我留太多乱战的缝隙……不过我还会再找机会搅局的。',
+      ja: '確かに紛れを残さない手つきね……でも、まだ揺さぶる余地は探させてもらうわ。',
+      en: 'You are not leaving much room for complications... though I will still hunt for counterplay.',
+    },
+    {
+      id: 'bahead-3',
+      zh: '领先的时候反而走得这么冷静，现在的你比刚才棘手多了。',
+      ja: '優勢でも焦らずこういう手を打たれると、さすがに厄介だわ。',
+      en: 'Staying this calm while ahead makes you much trickier to deal with than earlier.',
+    },
+    {
+      id: 'bahead-4',
+      zh: '又被你补强了一处薄味。行吧，那我只能从别的方向另辟蹊径了。',
+      ja: 'また薄いところを補強されたわね。仕方ない、別のルートから切り込むしかないか。',
+      en: 'Another thin spot reinforced. Fine, I will just have to probe from a different angle.',
+    },
+  ]),
+  white_ahead: Object.freeze([
+    {
+      id: 'wahead-1',
+      zh: '光靠这种平稳的步调可追不回来哦，再不多制造点变化试试？',
+      ja: 'その程度の落ち着いた進行じゃ追いつけないわよ。もっと変化を起こしてみたら？',
+      en: 'Quiet moves like that will not catch up now. Care to stir up some sharper complications?',
+    },
+    {
+      id: 'wahead-2',
+      zh: '我这边厚实得很，你的这手试探暂且照单全收，后面看你怎么破局。',
+      ja: 'こっちは十分厚いわ。その程度の揺さぶりは冷静に受けておくから、次どうする？',
+      en: 'My shape is solid enough to answer that calmly. Let us see how you try to break through.',
+    },
+    {
+      id: 'wahead-3',
+      zh: '盘面还在我的计算节奏里。想翻盘的话，得下出更出人意料的一手才行。',
+      ja: 'まだ私の計算通りのペースね。覆したいなら、もっと意表を突く手が必要よ。',
+      en: 'Still right on my calculation pace. If you want a comeback, you will need something bolder.',
+    },
+    {
+      id: 'wahead-4',
+      zh: '顺着这步把外围连起来，你的反击空间又缩水了一点。',
+      ja: 'この手で外側を繋いでおけば、あなたの反撃スペースもさらに狭まるわね。',
+      en: 'Connecting along the outside here shrinks your room for counterattack a little more.',
+    },
+  ]),
+  close_game: Object.freeze([
+    {
+      id: 'close-1',
+      zh: '这步走完，局面还是咬得很紧，接下来每一手的分量都在往上翻。',
+      ja: 'この手を打ってもまだ互角ね。ここからは一手の重みがどんどん増していくわ。',
+      en: 'Even after that stone, the position stays razor-tight. Every move carries more weight now.',
+    },
+    {
+      id: 'close-2',
+      zh: '细棋最考验耐心了，谁先手急谁就容易出错。我应在这里。',
+      ja: '接戦ほど忍耐が試されるわね。先に焦った方の負けよ。私はここ。',
+      en: 'Close games test patience most—whoever blinks first slips. Here is my response.',
+    },
+    {
+      id: 'close-3',
+      zh: '互相都在试探底线呢……这手交换完，重心又往中央移了半格。',
+      ja: 'お互いに踏み込みどころを探り合ってるわね。この交換で焦点がまた少し中央へ寄った。',
+      en: 'Still testing each other’s boundaries... that exchange nudges the focal point toward the center.',
+    },
+    {
+      id: 'close-4',
+      zh: '胜率线几乎走成一条水平线了，真是一点便宜都不肯让啊。',
+      ja: '勝率グラフがほとんど平行線じゃない。ほんの少しの得も譲る気がないのね。',
+      en: 'The win-rate line is practically flat—neither side is giving up half a point easily.',
+    },
+    {
+      id: 'close-5',
+      zh: '好，先稳稳把这口气护住，真正的胜负点还在后头。',
+      ja: 'よし、まずはここを固めておいて……本当の勝負どころはもう少し先ね。',
+      en: 'Alright, securing this shape first—the real deciding clash is still a few moves ahead.',
+    },
+  ]),
+  endgame_push: Object.freeze([
+    {
+      id: 'end-1',
+      zh: '已经进入收官细节了，哪怕一两目的出入现在都得斤斤计较。',
+      ja: 'もうヨセの細かい計算に入ってるわ。一、二目の出入りも油断できない局面ね。',
+      en: 'We are deep into endgame precision now—every single point of boundary work matters.',
+    },
+    {
+      id: 'end-2',
+      zh: '这种官子次序抓得还挺准的，不过我这边也有先手便宜可以抢。',
+      ja: 'ヨセの手順はなかなか正確ね。でもこっちにも先手で利かせる箇所が残ってるわ。',
+      en: 'Sharp endgame ordering there, though I still have a forcing move left to claim.',
+    },
+    {
+      id: 'end-3',
+      zh: '收官阶段最怕随手应错次序，我也认真把这里挡住。',
+      ja: 'ヨセで手順を間違えると命取りになるから、ここもしっかり押さえておくわね。',
+      en: 'One careless endgame response can flip the count, so I am blocking cleanly right here.',
+    },
+    {
+      id: 'end-4',
+      zh: '棋盘上的空位越来越少了，每一处边角的价值几乎都已经明牌。',
+      ja: '盤上の空きも残りわずか。どの箇所に何目あるか、ほぼ見えてきたわね。',
+      en: 'Fewer empty intersections left now—the value of every border point is laid bare.',
+    },
+  ]),
+  pass_move: Object.freeze([
+    {
+      id: 'pass-1',
+      zh: '你先停一手了？让我确认一下盘上还有没有值得补的官子或死活。',
+      ja: 'パスするの？盤上にまだ打つべきヨセやダメが残っていないか確認するわね。',
+      en: 'Passing here? Let me check if any endgame points or dame remain on the board.',
+    },
+    {
+      id: 'pass-2',
+      zh: '选择停一手意味着你认为局面已经定型了。让我最后验算一遍。',
+      ja: 'パスということは、もう終局でいいって判断ね。最後に一度だけ検算させて。',
+      en: 'Passing means you consider the board settled. Give me one last verification check.',
+    },
+    {
+      id: 'pass-3',
+      zh: '好，你停一手的话，我也看看这边是不是同样可以收束了。',
+      ja: 'わかった。あなたがパスなら、こっちもそろそろ収束できるか確かめるわ。',
+      en: 'Alright, if you are passing, let me see whether I am ready to close the game too.',
+    },
+  ]),
+  streak_brilliant: Object.freeze([
+    {
+      id: 'sbril-1',
+      zh: '连续两手都踩在最佳选点上……你今天的大脑是接了外部加速器吗？',
+      ja: '連続で最善手クラスを当ててくるなんて……今日のあなた、何か別の演算器でも繋いでる？',
+      en: 'Two top-tier moves in a row... did you plug an external co-processor into your brain today?',
+    },
+    {
+      id: 'sbril-2',
+      zh: '喂，又跟上一手连成一体了。连续的敏锐判断可真让人没办法掉以轻心。',
+      ja: 'ちょっと、さっきの手と見事に連動してるじゃない。連続で鋭い手を出されると気が抜けないわ。',
+      en: 'Hey, that connects straight from your last move! Back-to-back sharp reads give me no room to relax.',
+    },
+    {
+      id: 'sbril-3',
+      zh: '刚才那步已经够犀利了，这手居然还能把效率再往上推半档。',
+      ja: 'さっきので十分鋭かったのに、ここからさらに効率を上げてくるの？',
+      en: 'Your last stone was already razor-sharp, and somehow you pushed the efficiency even higher here.',
+    },
+  ]),
+  recover_after_blunder: Object.freeze([
+    {
+      id: 'recov-1',
+      zh: '总算冷静下来把刚才的节奏止损了。刚刚那下可真是吓人一跳。',
+      ja: 'ようやく落ち着いて立て直してきたわね。さっきの一手は本当に冷や汗ものだったんだから。',
+      en: 'Finally calmed down and stopped the bleeding. Your previous move gave even me a scare.',
+    },
+    {
+      id: 'recov-2',
+      zh: '好，总算没在刚才那个失误上继续往坑里踩，这手补得还算清醒。',
+      ja: 'よし、さっきのミスを引きずらずに踏みとどまったわね。この手は冷静で悪くない。',
+      en: 'Good, you did not compound the earlier slip—this stabilizing move is much clearer.',
+    },
+    {
+      id: 'recov-3',
+      zh: '刚才那手之后能立刻稳住阵脚，你的心态调整比预想得更快嘛。',
+      ja: 'さっきの直後にすぐ立て直せるなんて、気持ちの切り替えは思ったより早いのね。',
+      en: 'Steadying yourself right after that slip—you reset your focus faster than I expected.',
+    },
+  ]),
+  double_blunder: Object.freeze([
+    {
+      id: 'dblund-1',
+      zh: '喂！刚才那步还没缓过来，这手怎么又跟着漏了一拍啊！',
+      ja: 'ちょっと！さっきの分もまだ取り返せてないのに、なんでまた同じ調子で緩めるのよ！',
+      en: 'Hey! We had not even recovered from your last slip, and you dropped another beat right after!',
+    },
+    {
+      id: 'dblund-2',
+      zh: '连续两步都有点上头了吧？先深呼吸把刚才的算路清零再看一眼棋盘。',
+      ja: '二度続けて熱くなりすぎじゃない？一度深呼吸して、前の読みをリセットしなさいってば。',
+      en: 'Two hasty moves in a row? Take a breath, clear that tunnel vision, and look at the whole board.',
+    },
+    {
+      id: 'dblund-3',
+      zh: '连着两处破绽摆在面前，我就算想手下留情都找不到理由了。',
+      ja: '連続で隙を晒されたら、いくら私でも遠慮する理由がなくなるわよ。',
+      en: 'Two openings in a row right in front of me—even if I wanted to go easy, you left me no excuse.',
+    },
+  ]),
+  lead_swing_black: Object.freeze([
+    {
+      id: 'swingb-1',
+      zh: '等一下，这步走完胜率曲线直接翻过中线了……局面居然被你抢过来了？',
+      ja: '待って、今の交換で勝率ラインが逆転したわ……形勢を持っていかれたの！？',
+      en: 'Hold on, the win-rate curve just crossed the midline—you actually flipped the lead here?',
+    },
+    {
+      id: 'swingb-2',
+      zh: '刚才还占优的节奏一下子被你扳平反超了。好，现在轮到我认真追了。',
+      ja: 'さっきまでこっちのペースだったのに一気に逆転ね。いいわ、ここからは私が追う番よ。',
+      en: 'You just overturned my comfortable lead in one sequence. Fine, now it is my turn to chase.',
+    },
+    {
+      id: 'swingb-3',
+      zh: '啧，这一串连招直接把局面拧过去了。你的后劲确实不能小看。',
+      ja: 'ちっ、この一連の運びで流れをひっくり返されたか。粘り強さだけは認めるわ。',
+      en: 'Tch, that sequence wrestled the momentum right away. I will not underestimate your persistence.',
+    },
+  ]),
+  lead_swing_white: Object.freeze([
+    {
+      id: 'swingw-1',
+      zh: '这一手交换之后，天平正式倒回我这边了。多谢配合。',
+      ja: 'このやり取りで天秤は完全にこっちへ傾いたわ。ご協力ありがとう。',
+      en: 'After that exchange, the balance tips cleanly back to my side. Thanks for cooperating.',
+    },
+    {
+      id: 'swingw-2',
+      zh: '刚刚还焦灼的局势，现在主导权已经回到我手里了哦。',
+      ja: 'さっきまで競っていたのに、これで主導権は完全に私のものね。',
+      en: 'It was neck-and-neck a moment ago, and now the initiative is back in my hands.',
+    },
+    {
+      id: 'swingw-3',
+      zh: '好，反超成功。接下来你要想再把局面拉回去可没那么轻松了。',
+      ja: 'よし、逆転完了。ここからもう一度引き戻すのは簡単じゃないわよ。',
+      en: 'Lead reclaimed. Pulling the momentum back from here will not be nearly as easy.',
     },
   ]),
   blunder: Object.freeze([
@@ -255,18 +595,42 @@ export const GO_COMMENTARY_LINES = Object.freeze({
   ]),
 });
 
-export function resolveGoVoiceLanguage(voiceLanguage, displayLocale = 'zh-CN') {
-  if (voiceLanguage === 'ja' || voiceLanguage === 'en') return voiceLanguage;
-  if (voiceLanguage === 'zh-CN' || voiceLanguage === 'zh') return 'zh';
+export function movePhase(moveCount = 0) {
+  if (moveCount <= 30) return 'opening';
+  if (moveCount <= 140) return 'midgame';
+  return 'endgame';
+}
+
+export function moveDistance(p1, p2) {
+  if (!Number.isInteger(p1) || !Number.isInteger(p2)) return null;
+  if (p1 < 0 || p2 < 0 || p1 >= SIZE * SIZE || p2 >= SIZE * SIZE) return null;
+  const x1 = p1 % SIZE, y1 = Math.floor(p1 / SIZE);
+  const x2 = p2 % SIZE, y2 = Math.floor(p2 / SIZE);
+  return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+}
+
+export function isCornerArea(point) {
+  if (!Number.isInteger(point) || point < 0 || point >= SIZE * SIZE) return false;
+  const x = point % SIZE;
+  const y = Math.floor(point / SIZE);
+  return (x <= 4 || x >= SIZE - 5) && (y <= 4 || y >= SIZE - 5);
+}
+
+export function resolveGoDisplayLanguage(displayLocale = 'zh-CN') {
   const loc = String(displayLocale || '').toLowerCase();
   if (loc.startsWith('ja')) return 'ja';
   if (loc.startsWith('en')) return 'en';
   return 'zh';
 }
 
+export function resolveGoVoiceLanguage(voiceLanguage, displayLocale = 'zh-CN') {
+  if (voiceLanguage === 'ja' || voiceLanguage === 'en') return voiceLanguage;
+  if (voiceLanguage === 'zh-CN' || voiceLanguage === 'zh') return 'zh';
+  return resolveGoDisplayLanguage(displayLocale);
+}
+
 export function selectGoSpeech(entry, voiceLanguage = 'follow', displayLocale = 'zh-CN') {
-  const loc = String(displayLocale || '').toLowerCase();
-  const displayKey = loc.startsWith('ja') ? 'ja' : loc.startsWith('en') ? 'en' : 'zh';
+  const displayKey = resolveGoDisplayLanguage(displayLocale);
   const language = resolveGoVoiceLanguage(voiceLanguage, displayLocale);
   return {
     id: entry.id,
@@ -276,84 +640,236 @@ export function selectGoSpeech(entry, voiceLanguage = 'follow', displayLocale = 
   };
 }
 
-const COOLDOWN_RULES = {
-  opening: { immediate: true },
-  dispute: { immediate: true },
-  black_win: { immediate: true },
-  white_win: { immediate: true },
-  resign: { immediate: true },
-  blunder: { minMoveGap: 2, minMs: 10_000 },
-  black_big_capture: { minMoveGap: 2, minMs: 10_000 },
-  white_big_capture: { minMoveGap: 2, minMs: 10_000 },
-  undo: { minMoveGap: 2, minMs: 10_000 },
-  brilliant: { minMoveGap: 4, minMs: 20_000 },
-  black_capture: { minMoveGap: 4, minMs: 20_000 },
-  white_capture: { minMoveGap: 4, minMs: 20_000 },
+const LANGUAGE_NAMES = {
+  zh: '简体中文',
+  ja: '日本語',
+  en: 'English',
 };
 
-export function createGoCommentary({ now = () => Date.now() } = {}) {
+export function buildGoCommentaryMessages({
+  turn = {},
+  recentDialogue = [],
+  displayLocale = 'zh-CN',
+  voiceLanguage = 'follow',
+} = {}) {
+  const displayLang = resolveGoDisplayLanguage(displayLocale);
+  const speechLang = resolveGoVoiceLanguage(voiceLanguage, displayLocale);
+  const sameLang = displayLang === speechLang;
+
+  const dist = moveDistance(turn.blackPoint, turn.prevWhitePoint);
+  const relation = turn.blackPass
+    ? '停一手'
+    : dist !== null && dist <= 3
+      ? '紧跟局部'
+      : dist !== null && dist >= 7
+        ? '脱先转场'
+        : isCornerArea(turn.blackPoint) && (turn.moveCount || 0) <= 20
+          ? '占角/守角'
+          : '全局行棋';
+
+  const formatSchema = sameLang
+    ? `只输出 JSON 对象 {"text": "..."}，使用${LANGUAGE_NAMES[displayLang]}。`
+    : `只输出 JSON 对象 {"text": "...", "speech": "..."}，其中 text 使用${LANGUAGE_NAMES[displayLang]}展示在棋盘侧栏，speech 使用${LANGUAGE_NAMES[speechLang]}表达完全相同的台词供语音播报。`;
+
+  const system = `你是牧濑红莉栖（Makise Kurisu），正在和冈部伦太郎（用户执黑，你执白）面对面下十九路围棋。
+保持你一贯聪明、直率、略带科研人的冷静与微妙傲娇的口吻，对每一步棋自然接话、接着上一轮的话题往下聊。
+要求：
+1. 必须自然承接 recent 里你刚说过的上一句话，同时点出刚刚黑棋落子与你白棋应手带来的局面变化（吃子、局部交锋、脱先、胜率变化、领先/追赶等），像真人在棋盘前边下边聊天一样。
+2. 只说 1 句自然流畅的口语（中文 14–42 字 / 日语 18–54 字 / 英文 10–26 词）。
+3. 禁止使用引号、括号动作描写、Emoji 或重复上一句相同的开头词。
+4. ${formatSchema}`;
+
+  const context = {
+    recent: (Array.isArray(recentDialogue) ? recentDialogue : []).slice(-6).map(item => ({
+      move: item.moveCount,
+      text: item.text,
+    })),
+    moveCount: turn.moveCount ?? 0,
+    phase: movePhase(turn.moveCount ?? 0),
+    categoryHint: turn.categoryHint || 'close_game',
+    relation,
+    blackMove: turn.blackPass ? 'PASS' : (turn.blackCoord || (Number.isInteger(turn.blackPoint) ? coordinate(turn.blackPoint) : null)),
+    whiteReply: turn.whitePass ? 'PASS' : (turn.whiteCoord || (Number.isInteger(turn.whitePoint) ? coordinate(turn.whitePoint) : null)),
+    blackCaptured: turn.blackCaptured || 0,
+    whiteCaptured: turn.whiteCaptured || 0,
+    winRateBefore: Number.isFinite(turn.prevWinRate) ? Number(turn.prevWinRate.toFixed(1)) : null,
+    winRateAfter: Number.isFinite(turn.nextWinRate) ? Number(turn.nextWinRate.toFixed(1)) : null,
+    playedTopHint: Boolean(turn.playedTopHint),
+  };
+
+  return [
+    { role: 'system', content: system },
+    { role: 'user', content: JSON.stringify(context) },
+  ];
+}
+
+function cleanLine(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/^[「『"“']|[」』"”']$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function parseGoCommentaryReply(raw, { displayLocale = 'zh-CN', voiceLanguage = 'follow' } = {}) {
+  const plain = String(raw ?? '')
+    .trim()
+    .replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, '$1')
+    .trim();
+  if (!plain) return null;
+
+  let text = '';
+  let speech = '';
+  try {
+    const parsed = JSON.parse(plain);
+    if (parsed && typeof parsed === 'object') {
+      text = cleanLine(parsed.text);
+      speech = cleanLine(parsed.speech);
+    }
+  } catch {
+    if (!plain.startsWith('{') && !plain.startsWith('[')) {
+      text = cleanLine(plain.split(/\r?\n/)[0]);
+    }
+  }
+
+  if (!text || text.length > 160) return null;
+  const language = resolveGoVoiceLanguage(voiceLanguage, displayLocale);
+  const finalSpeech = speech && speech.length <= 180 ? speech : text;
+  return {
+    text,
+    speech: finalSpeech,
+    language,
+  };
+}
+
+export function createGoCommentary() {
   const cursors = new Map();
-  let lastSpokenAt = 0;
-  let lastSpokenMove = -999;
+  const recentDialogue = [];
+  let lastCategory = null;
+  let lastLineId = null;
 
   function pickLine(category) {
     const bank = GO_COMMENTARY_LINES[category];
     if (!bank?.length) return null;
-    const index = cursors.get(category) || 0;
+    let index = cursors.get(category) || 0;
+    let entry = bank[index];
+    if (bank.length > 1 && entry.id === lastLineId) {
+      index = (index + 1) % bank.length;
+      entry = bank[index];
+    }
     cursors.set(category, (index + 1) % bank.length);
-    return bank[index];
+    return entry;
   }
 
-  function trigger(category, moveCount = 0) {
-    const rule = COOLDOWN_RULES[category] || { minMoveGap: 4, minMs: 20_000 };
-    const ts = now();
-    if (!rule.immediate) {
-      if (moveCount - lastSpokenMove < rule.minMoveGap) return null;
-      if (lastSpokenAt > 0 && ts - lastSpokenAt < rule.minMs) return null;
-    }
+  function trigger(category) {
     const entry = pickLine(category);
     if (!entry) return null;
     if (category !== 'opening') {
-      lastSpokenAt = ts;
-      lastSpokenMove = moveCount;
+      lastCategory = category;
     }
+    lastLineId = entry.id;
     return { category, entry };
+  }
+
+  function classifyTurn({
+    blackPoint = null,
+    prevWhitePoint = null,
+    blackCaptured = 0,
+    whiteCaptured = 0,
+    captured = 0,
+    prevWinRate = null,
+    nextWinRate = null,
+    moveCount = 0,
+    playedTopHint = false,
+    blackPass = false,
+    isPass = false,
+  } = {}) {
+    const bCap = blackCaptured || captured || 0;
+    const wCap = whiteCaptured || 0;
+    const pass = Boolean(blackPass || isPass);
+    const hasPrev = Number.isFinite(prevWinRate);
+    const hasNext = Number.isFinite(nextWinRate);
+    const delta = hasPrev && hasNext ? nextWinRate - prevWinRate : null;
+    const live = hasPrev && prevWinRate >= 12 && prevWinRate <= 88;
+    const winRate = hasNext ? nextWinRate : hasPrev ? prevWinRate : 50;
+
+    if (wCap >= 3) return 'white_big_capture';
+    if (bCap >= 3) return 'black_big_capture';
+
+    if (delta !== null && (delta <= -12 || (live && delta <= -8))) {
+      return lastCategory === 'blunder' || lastCategory === 'double_blunder'
+        ? 'double_blunder'
+        : 'blunder';
+    }
+
+    if (hasPrev && hasNext && prevWinRate < 47 && nextWinRate >= 53) return 'lead_swing_black';
+    if (hasPrev && hasNext && prevWinRate > 53 && nextWinRate <= 47) return 'lead_swing_white';
+
+    if ((delta !== null && live && delta >= 8)
+        || (!pass && playedTopHint && moveCount >= 10 && live && (delta === null || delta >= -1.5))) {
+      return lastCategory === 'brilliant' || lastCategory === 'streak_brilliant'
+        ? 'streak_brilliant'
+        : 'brilliant';
+    }
+
+    if (wCap >= 1) return 'white_capture';
+    if (bCap >= 1) return 'black_capture';
+    if (pass) return 'pass_move';
+
+    if ((lastCategory === 'blunder' || lastCategory === 'double_blunder') && (delta === null || delta >= -2.5)) {
+      return 'recover_after_blunder';
+    }
+
+    if (moveCount <= 16 && isCornerArea(blackPoint)) return 'opening_corner';
+    if (moveCount <= 30) return 'opening_flow';
+    if (moveCount > 140) return 'endgame_push';
+
+    const dist = moveDistance(blackPoint, prevWhitePoint);
+    if (dist !== null && dist <= 3) return 'local_fight';
+    if (dist !== null && dist >= 7) return 'tenuki';
+
+    if (winRate >= 58) return 'black_ahead';
+    if (winRate <= 42) return 'white_ahead';
+    return 'close_game';
   }
 
   return {
     reset() {
-      lastSpokenAt = 0;
-      lastSpokenMove = -999;
+      lastCategory = null;
+      lastLineId = null;
+      recentDialogue.length = 0;
     },
     onOpening() {
-      return trigger('opening', 0);
+      return trigger('opening');
     },
-    onUndo(moveCount = 0) {
-      lastSpokenMove = Math.min(lastSpokenMove, moveCount - 2);
-      return trigger('undo', moveCount);
+    onUndo() {
+      return trigger('undo');
     },
     onDispute() {
-      return trigger('dispute', 0);
+      return trigger('dispute');
     },
-    onBlackEvaluated({ prevWinRate, nextWinRate, captured = 0, moveCount = 0, playedTopHint = false, isPass = false } = {}) {
-      const delta = Number.isFinite(prevWinRate) && Number.isFinite(nextWinRate) ? nextWinRate - prevWinRate : null;
-      const live = Number.isFinite(prevWinRate) && prevWinRate >= 12 && prevWinRate <= 88;
-      let category = null;
-      if (delta !== null && (delta <= -12 || (live && delta <= -8))) category = 'blunder';
-      else if (captured >= 3) category = 'black_big_capture';
-      else if (delta !== null && live && delta >= 8) category = 'brilliant';
-      else if (captured >= 1) category = 'black_capture';
-      else if (!isPass && playedTopHint && moveCount >= 12 && live && (delta === null || delta >= -1.5)) category = 'brilliant';
-      return category ? trigger(category, moveCount) : null;
+    onTurnEvaluated(turn = {}) {
+      return trigger(classifyTurn(turn));
     },
-    onWhiteMove({ captured = 0, moveCount = 0 } = {}) {
-      if (captured >= 3) return trigger('white_big_capture', moveCount);
-      if (captured >= 1) return trigger('white_capture', moveCount);
+    onBlackEvaluated(turn = {}) {
+      return trigger(classifyTurn(turn));
+    },
+    onWhiteMove({ captured = 0 } = {}) {
+      if (captured >= 3) return trigger('white_big_capture');
+      if (captured >= 1) return trigger('white_capture');
       return null;
     },
     onGameEnd({ reason, winner } = {}) {
-      if (reason === 'resign') return trigger('resign', 0);
-      return trigger(winner === BLACK ? 'black_win' : 'white_win', 0);
+      if (reason === 'resign') return trigger('resign');
+      return trigger(winner === BLACK ? 'black_win' : 'white_win');
+    },
+    recordSpoken({ moveCount = 0, category = null, text = '', speech = '' } = {}) {
+      if (!text) return;
+      recentDialogue.push({ moveCount, category, text, speech: speech || text });
+      if (recentDialogue.length > 8) recentDialogue.shift();
+    },
+    getRecentDialogue() {
+      return recentDialogue.map(item => ({ ...item }));
     },
   };
 }

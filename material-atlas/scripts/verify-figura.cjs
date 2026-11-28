@@ -12,6 +12,7 @@ const root = path.resolve(__dirname,'..');
 const output = process.env.MATERIA_FIGURA_TEST_OUTPUT || path.join(root,'.local/figura-verification');
 let app, page, browser, server, networkProbe;
 const errors = [];
+const bundledIds = require('../dist/figura/schemes/catalog.json');
 const ui = key => page.locator('#figura-workspace [data-fig="'+key+'"]');
 const action = async key => {
   if(['choose-data','sample','style-sample'].includes(key)&&!await page.locator('#figura-data-source').isVisible())await page.locator('[data-menu-toggle="figura-data-source"]').click();
@@ -93,7 +94,14 @@ export async function render({params}) {
   await start();
   assert.deepEqual(await page.locator('.view-tabs .view-tab').evaluateAll(nodes=>nodes.map(node=>node.dataset.view)),['graph','list']);
   assert.equal(await page.locator('.workspace-ribbon [data-view=figura]').getAttribute('aria-current'),'page');
-  assert.equal(await page.locator('.figura-scheme').count(),16);
+  assert.equal(await page.locator('.figura-scheme').count(),bundledIds.length);
+  await page.locator('.figura-scheme img').evaluateAll(async images => {
+    await Promise.all(images.map(async image => {
+      image.loading = 'eager';
+      await image.decode();
+      if (!image.naturalWidth) throw Error(image.closest('button').dataset.id);
+    }));
+  });
   await template('grouped-line').click();
   await updated();
   assert.equal(await ui('theme').locator('option').count(),6);
@@ -304,7 +312,7 @@ async function visual(testRoot) {
     }
     return schemes.length;
   });
-  assert.equal(rendered,16);
+  assert.equal(rendered,bundledIds.length);
   await page.locator('[data-view=figura]').click();
   await template('interval-trend').click();
   await updated();

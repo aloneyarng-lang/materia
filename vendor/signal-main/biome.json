@@ -1,0 +1,67 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "!!**/.claude",
+      "!electron/scripts/generate-appx-manifest"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "useIterableCallbackReturn": "off"
+      },
+      "style": {
+        "noUnusedTemplateLiteral": "off",
+        "useImportType": "error",
+        "useNodejsImportProtocol": "off",
+        "useTemplate": "off",
+        "useBlockStatements": "error",
+        "useExportType": "error"
+      },
+      "correctness": {},
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useAltText": "off",
+        "noStaticElementInteractions": "off"
+      },
+      "complexity": {
+        "noUselessFragments": "off",
+        "useLiteralKeys": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "all"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    }
+  }
+}

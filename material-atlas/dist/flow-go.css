@@ -156,7 +156,9 @@
 .go-readout [data-go="notice"]:not(:empty) { margin-top: 6px; color: #f9a46d; }
 .go-commentary-box { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: start; gap: 6px 8px; margin-top: 7px; padding: 6px 8px; border: 1px solid #6b4e34; border-radius: 3px; background: #221c16; box-shadow: inset 0 0 0 1px #0f0d0b; }
 .go-commentary-tag { padding: 1px 5px; border: 1px solid #a66a3c; border-radius: 2px; background: #3b2416; color: #ffba76; font-size: .62rem; letter-spacing: .12em; line-height: 1.4; }
+.go-commentary-stack { display: grid; gap: 3px; min-width: 0; }
 .go-commentary-box p { margin: 0; color: #f4dfbe; font-size: clamp(.68rem,.9vw,.86rem); line-height: 1.48; overflow-wrap: anywhere; }
+.go-commentary-box p.go-commentary-prev { color: #b5a087; font-size: clamp(.62rem,.78vw,.74rem); opacity: .78; line-height: 1.35; }
 .flow-go .go-commentary-replay { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 1px solid #8a6948; border-radius: 3px; background: #2c241b; color: #ffba76; font-size: .68rem; line-height: 1; cursor: pointer; }
 .flow-go .go-commentary-replay:hover { border-color: #f18543; background: #463222; color: #fff2d8; }
 .go-review-options { display: grid; gap: 6px; margin-top: 8px; color: var(--go-dim); font-size: .75rem; }

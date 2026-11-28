@@ -1,5 +1,6 @@
 import {cleanIconShapes,ICON_DEFAULTS} from './theme-model.js';
 const icons = {
+  music:'<path d="M3 10v4m4-8v12m5-16v20m5-16v12m4-8v4"/>',
   flask: '<path d="M9 3h6m-5 0v7l-5.4 8.4A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.4-2.6L14 10V3M8 15h8"/>',
   command:'<path d="M9 9H6a3 3 0 1 1 3-3v12a3 3 0 1 1-3-3h12a3 3 0 1 1-3 3V6a3 3 0 1 1 3 3H9Z"/>',
   dictionary:'<path d="M5 3h14v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm0 14h14M6 3v14M9 12l2-6 2 6m-3.4-2h2.8M15 7h2m-2 3h2"/>',

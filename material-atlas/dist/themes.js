@@ -5,9 +5,10 @@ import {icon} from './icons.js';
 import {createThemeRuntime,validateThemeResources} from './theme-runtime.js';
 import {setGraphThemeOptions} from './graph-appearance.js';
 import {THEME_TOKENS,BUILTIN_THEMES,FONT_OPTIONS,MAX_THEME_BYTES,themeCSS,themePackage,resolveTheme,cleanThemePreferences,cleanFontScale,importThemeFiles,removeTheme,parseThemeCSS} from './theme-model.js';
+import {runThemeTransition} from './ui-motion.js';
 export * from './theme-model.js';
 export function createThemeController(config){
- let preferences=cleanThemePreferences(),pending=null,busy=false,epoch=0,importRevision=0;const esc=config.escape,runtime=createThemeRuntime(()=>config.changed?.());
+ let preferences=cleanThemePreferences(),pending=null,busy=false,transitioning=false,epoch=0,importRevision=0;const esc=config.escape,runtime=createThemeRuntime(()=>config.changed?.());
  const current=()=>pending||preferences;
  function applyFontScale(value){
   const percent=cleanFontScale(value);document.documentElement.style.setProperty('--ui-font-scale',String(percent/100));
@@ -33,7 +34,23 @@ export function createThemeController(config){
   config.showModal(tr('主题与字体'),pending?tr('预览中，应用后保存。'):'',html`<div class="theme-intro"><div class="theme-mode-row"><div class="theme-mode-control" role="group" aria-label="明暗外观">${[['light',tr('浅色')],['dark',tr('深色')]].map(([id,label])=>`<button data-theme-mode-choice="${id}" aria-pressed="${mode===id}" class="${mode===id?'active':''}" ${busy||pending?'disabled':''}>${label}</button>`).join('')}</div>${actionMenu('theme-file-menu',tr('主题文件'),tr('<button type="button" data-theme-action="import">导入主题…</button><button type="button" data-theme-action="export">导出当前主题…</button><hr><button type="button" data-theme-action="template">下载主题模板</button><button type="button" data-theme-action="template-css">下载 CSS 模板</button><button type="button" data-theme-action="export-css">导出 CSS…</button>'),{iconName:'folder'})}</div></div><div class="theme-grid">${themes.map(theme=>html`<article class="theme-card ${prefs.selected===theme.id?'is-selected':''}"><button class="theme-choice" data-theme-id="${esc(theme.id)}" aria-pressed="${prefs.selected===theme.id}" ${busy||pending?'disabled':''}><span class="theme-preview" ${swatches(theme)} aria-hidden="true">${theme.assets?.artwork?.logo?`<span class="theme-official-preview"><img class="theme-preview-logo" src="${artworkURL(theme.assets.artwork.logo)}" alt="${esc(theme.assets.artwork.logo.alt)}">${theme.assets.artwork.portrait?`<img class="theme-preview-portrait" src="${artworkURL(theme.assets.artwork.portrait)}" alt="">`:""}</span>`:""}<i class="theme-preview-rail"></i><i class="theme-preview-panel"><b></b><b></b><b></b></i><span class="theme-preview-sample"><strong>材料研究</strong><small>结构与研究记录</small><span>${icon('assistant',theme.icons)}${icon('folder',theme.icons)}${icon('chart',theme.icons)}</span></span></span><span class="theme-card-name"><strong>${esc(theme.custom?theme.name:tr(theme.name))}</strong><small>${prefs.selected===theme.id?pending?tr('预览中'):'✓':''}</small></span><span class="theme-card-description">${esc(theme.custom?theme.description:tr(theme.description))}</span></button>${theme.custom&&!pending?html`<button class="theme-delete" data-theme-remove="${esc(theme.id)}" aria-label="删除主题 ${esc(theme.name)}" title="删除主题">${icon('close')}</button>`:''}</article>`).join('')}</div>${fontSettings()}<details class="theme-resource-details"><summary>字体状态</summary><p id="theme-resource-status" role="status">${esc(tr(runtime.status()))}</p></details><div class="modal-footer">${pending?tr('<button class="text-button" data-theme-action="cancel-preview">取消</button><button class="primary" data-theme-action="apply-import">应用主题</button>'):tr('<button class="text-button" data-theme-action="reset">恢复默认</button><button class="primary" data-action="close-modal">完成</button>')}</div>`,'themes');
   requestAnimationFrame(()=>document.querySelector('.theme-grid .is-selected')?.scrollIntoView({block:'nearest'}));
  }
- async function save(next){if(busy)return false;busy=true;const ticket=epoch;try{const clean=cleanThemePreferences(next);await config.persist(clean);if(ticket!==epoch)return false;preferences=clean;pending=null;apply();return true;}finally{busy=false;}}
+ async function save(next, {transitionOrigin = null, onApplied = null} = {}){
+  if(busy||transitioning)return false;busy=true;const ticket=epoch;
+  let commit=null;
+  try{
+    const clean=cleanThemePreferences(next);
+    await config.persist(clean);
+    if(ticket!==epoch)return false;
+    commit=()=>{preferences=clean;pending=null;apply();onApplied?.();};
+  }finally{busy=false;}
+  if(!commit)return false;
+  if(transitionOrigin){
+    transitioning=true;
+    try{await runThemeTransition(config.getThemeTransition?.(),commit,transitionOrigin);}
+    finally{transitioning=false;}
+  }else{commit();}
+  return true;
+ }
  function cancelPreview(){if(!pending)return;pending=null;apply();}
  async function importFiles(files){
   if(!files.length||busy)return;busy=true;const ticket=epoch,revision=++importRevision;
@@ -60,9 +77,18 @@ export function createThemeController(config){
   try{if(await save({...preferences,fonts:{...preferences.fonts,[role]:event.target.value}})){const status=document.querySelector('#theme-font-status');if(status)status.textContent=tr('个人字体覆盖已保存');}}
   catch(error){event.target.value=preferences.fonts?.[role]||'theme';config.toast(msg`字体未更改：${error.message}`,true);}finally{controls.forEach(control=>control.disabled=false);}
  });
- document.addEventListener('click',async event=>{const button=event.target.closest('[data-theme-id],[data-theme-action],[data-theme-remove],[data-theme-mode-choice]');if(!button||button.disabled||busy)return;try{
-  if(button.dataset.themeModeChoice){if(await save({...preferences,mode:button.dataset.themeModeChoice}))open();}
-  if(button.dataset.themeId){cancelPreview();if(await save({...preferences,selected:button.dataset.themeId,mode:resolveTheme(preferences).tokens['--theme-mode']}))open();}
+ document.querySelector('[data-theme-toggle]')?.addEventListener('click',async event=>{
+  if(pending||busy||transitioning)return;
+  const mode=resolveTheme(preferences).tokens['--theme-mode']==='dark'?'light':'dark';
+  const box=event.currentTarget.getBoundingClientRect();
+  const origin=event.detail ? {x:event.clientX,y:event.clientY} : {x:box.left+box.width/2,y:box.top+box.height/2};
+  try{await save({...preferences,mode},{transitionOrigin:origin});}
+  catch(error){config.toast(msg`主题未更改：${error.message}`,true);}
+ });
+ document.addEventListener('click',async event=>{const button=event.target.closest('[data-theme-id],[data-theme-action],[data-theme-remove],[data-theme-mode-choice]');if(!button||button.disabled||busy||transitioning)return;try{
+  const origin = {x: event.clientX, y: event.clientY};
+  if(button.dataset.themeModeChoice){await save({...preferences,mode:button.dataset.themeModeChoice},{transitionOrigin:origin,onApplied:open});}
+  if(button.dataset.themeId){cancelPreview();await save({...preferences,selected:button.dataset.themeId,mode:resolveTheme(preferences).tokens['--theme-mode']},{transitionOrigin:origin,onApplied:open});}
   if(button.dataset.themeRemove){if(await save(removeTheme(preferences,button.dataset.themeRemove)))open();}
   const action=button.dataset.themeAction;
   if(action==='import')document.querySelector('#theme-input').click();
@@ -70,7 +96,7 @@ export function createThemeController(config){
   if(action==='template-css')await config.saveText(themeCSS(tr('我的学术主题'),THEME_TOKENS),'materia-theme-template.css','css');
   if(action==='export'){const theme=resolveTheme(current());await config.saveText(themePackage(theme),`materia-theme-${theme.id}.mtheme.json`,'json');}
   if(action==='export-css'){const theme=resolveTheme(current());await config.saveText(themeCSS(theme.name,theme.tokens),`materia-theme-${theme.id}.css`,'css');}
-  if(action==='reset'){cancelPreview();if(await save({...preferences,selected:'paper'})){open();config.toast(tr('已恢复默认主题。'));}}
+  if(action==='reset'){cancelPreview();await save({...preferences,selected:'paper'},{transitionOrigin:origin,onApplied:()=>{open();config.toast(tr('已恢复默认主题。'));}});}
   if(action==='reset-fonts'){if(await save({...preferences,fonts:{body:'theme',heading:'theme',mono:'theme',numeric:'theme'}})){open();document.querySelector('.theme-fonts').open=true;config.toast(tr('字体已恢复跟随主题。'));}}
   if(action==='reset-font-scale'){if(await save({...preferences,fontScale:100})){open();document.querySelector('.theme-fonts').open=true;config.toast(tr('字号已恢复为 100%。'));}}
   if(action==='cancel-preview'){cancelPreview();open();}

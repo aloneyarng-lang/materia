@@ -1,0 +1,24 @@
+dialog.exhibition-hall {box-sizing:border-box;position:fixed;inset:0;margin:auto;width:100vw;height:100dvh;max-width:none;max-height:none;padding:0 clamp(18px,5vw,84px) 5vh;border:0;border-radius:0;background:#eeede6;color:#242621;overflow:auto;font:16px system-ui,sans-serif}
+.exhibition-hall header,.exhibition-hall footer{display:flex;align-items:center;gap:1.2rem;justify-content:space-between}
+.exhibition-hall header{min-height:76px;border-bottom:1px solid #aaa99f;flex-wrap:wrap}
+.exhibition-hall h1{font:600 clamp(22px,3vw,40px) serif;letter-spacing:.14em;margin:0}
+.exhibition-hall nav{margin-left:auto}
+.exhibition-hall button{border:0;border-radius:0;background:transparent;color:inherit;padding:.7em;cursor:pointer;font:inherit}
+.exhibition-hall button:hover,.exhibition-hall button:focus-visible{text-decoration:underline;text-underline-offset:.3em}
+.ex-status:empty{display:none}
+.ex-stage{height:clamp(240px,53vh,720px);overflow:hidden;background:#dbd9d0;margin-top:3vh}
+.ex-stage iframe{display:block;width:100%;height:100%;border:0;pointer-events:none;animation:ex-reveal .55s ease-out}
+.exhibition-hall footer{padding:1.4rem 0 2rem;align-items:flex-end}
+.exhibition-hall h2{font:500 clamp(32px,5vw,86px)/1.1 Georgia,serif;margin:.15em 0 0;overflow-wrap:anywhere}
+.exhibition-hall small{font:12px monospace;letter-spacing:.14em}
+.ex-index{display:flex;flex-direction:column}
+.ex-index button{text-align:left;border-top:1px solid #b2b2a6;padding:1em 0;font-size:clamp(18px,2vw,34px);transition:padding .3s}
+.ex-index button[aria-current=true],.ex-index button:hover{padding-left:1em}
+.ex-index button[aria-current=true]::before{content:'↗ ';color:#686f43}
+.ex-return{display:none}
+.ex-viewing .ex-stage{position:fixed;inset:0 0 52px;margin:0;height:auto;z-index:2}
+.ex-viewing .ex-stage iframe{pointer-events:auto}
+.ex-viewing .ex-return{display:block;position:fixed;bottom:0;left:0;width:100%;height:52px;background:#242621;color:white;z-index:3}
+.ex-viewing header,.ex-viewing footer,.ex-viewing .ex-index{visibility:hidden}
+@keyframes ex-reveal{from{clip-path:inset(0 0 18% 0);transform:translateY(12px)}to{clip-path:inset(0);transform:none}}
+@media(prefers-reduced-motion:reduce){.ex-stage iframe,.ex-index button{animation:none;transition:none}}

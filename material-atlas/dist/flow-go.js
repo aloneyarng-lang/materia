@@ -161,7 +161,10 @@ export function createFlowGo(panel, options = {}) {
             <p data-go="notice" role="status" aria-live="polite"></p>
             <div class="go-commentary-box" data-go="commentary-box" hidden>
               <span class="go-commentary-tag">KURISU</span>
-              <p data-go="commentary" role="status" aria-live="polite"></p>
+              <div class="go-commentary-stack">
+                <p class="go-commentary-prev" data-go="commentary-prev" hidden></p>
+                <p data-go="commentary" role="status" aria-live="polite"></p>
+              </div>
               <button type="button" class="go-commentary-replay" data-go="commentary-replay" aria-label="重听红莉栖吐槽" title="重听">▶</button>
             </div>
             <div class="go-review-options">
@@ -234,17 +237,75 @@ export function createFlowGo(panel, options = {}) {
   let focused = center, analysis, hints = [], analyzing = false, analysisFailed = false, confirmation = '';
   let marked = new Set(), notice = '', mail = '';
   const commentary = createGoCommentary();
-  let lastRemark = null, lastBlackWinRate = null, lastBlackHints = [], pendingBlackMove = null, hasGreeted = false;
+  let lastRemark = null, prevRemark = null, lastBlackWinRate = null, lastBlackHints = [], pendingBlackMove = null, prevWhitePoint = [...game.moves].reverse().find(m => m.color === WHITE)?.point ?? null, remarkEpoch = 0, hasGreeted = false;
 
-  function deliverRemark(picked, { manual = false } = {}) {
-    if (!picked?.entry || replay || !dialog.open) return;
+  function deliverRemark(picked, { manual = false, moveCount = game.moves.length } = {}) {
+    if (!picked || replay || !dialog.open) return;
     const state = options.getVoiceState?.() || { available: false, enabled: true, language: 'follow' };
-    const spoken = selectGoSpeech(picked.entry, state.language || 'follow', getLocale());
-    lastRemark = { entry: picked.entry, ...spoken };
+    const spoken = picked.entry
+      ? selectGoSpeech(picked.entry, state.language || 'follow', getLocale())
+      : {
+          id: picked.id,
+          text: picked.text,
+          speech: picked.speech || picked.text,
+          language: picked.language || 'zh',
+        };
+    if (!spoken?.text) return;
+    if (!manual) {
+      commentary.recordSpoken({
+        moveCount,
+        category: picked.category || null,
+        text: spoken.text,
+        speech: spoken.speech,
+      });
+      if (lastRemark && lastRemark.text !== spoken.text) {
+        prevRemark = lastRemark;
+      }
+    }
+    lastRemark = {
+      ...spoken,
+      entry: picked.entry || null,
+      category: picked.category || null,
+      dynamic: Boolean(picked.dynamic),
+    };
     render();
     if (options.speakCommentary && (manual || voiceEnabled)) {
-      void options.speakCommentary({ ...spoken, manual }).catch(() => {});
+      void options.speakCommentary({ ...spoken, manual, dynamic: Boolean(picked.dynamic) }).catch(() => {});
     }
+  }
+
+  async function deliverTurnRemark(turnContext) {
+    const fallback = commentary.onTurnEvaluated(turnContext);
+    if (!fallback || replay || !dialog.open) return;
+    const epoch = ++remarkEpoch;
+    if (typeof options.commentGo === 'function' && voiceEnabled) {
+      const state = options.getVoiceState?.() || { language: 'follow' };
+      try {
+        const live = await Promise.race([
+          options.commentGo({
+            turn: { ...turnContext, categoryHint: fallback.category },
+            recentDialogue: commentary.getRecentDialogue(),
+            displayLocale: getLocale(),
+            voiceLanguage: state.language || 'follow',
+          }),
+          new Promise(resolve => setTimeout(() => resolve({ ok: false, timeout: true }), 4200)),
+        ]);
+        if (epoch !== remarkEpoch || replay || !dialog.open) return;
+        if (live?.ok && live.text) {
+          deliverRemark({
+            id: `live-${turnContext.moveCount}-${epoch}`,
+            category: fallback.category,
+            text: live.text,
+            speech: live.speech || live.text,
+            language: live.language,
+            dynamic: true,
+          }, { moveCount: turnContext.moveCount });
+          return;
+        }
+      } catch {}
+    }
+    if (epoch !== remarkEpoch || replay || !dialog.open) return;
+    deliverRemark(fallback, { moveCount: turnContext.moveCount });
   }
 
   let countedDate = game.state.phase === 'finished' ? gameDate : null;
@@ -379,7 +440,12 @@ export function createFlowGo(panel, options = {}) {
     get('notice').textContent = replay ? '' : notice;
     const remarkBox = get('commentary-box');
     remarkBox.hidden = Boolean(replay) || !lastRemark;
-    if (!remarkBox.hidden) get('commentary').textContent = lastRemark.text;
+    if (!remarkBox.hidden) {
+      const prevEl = get('commentary-prev');
+      prevEl.hidden = !prevRemark;
+      prevEl.textContent = prevRemark ? prevRemark.text : '';
+      get('commentary').textContent = lastRemark.text;
+    }
     get('mail').textContent = mail || t('退回你上一手之前');
     get('count').textContent = String(moves.length);
     get('moves').innerHTML = moves.map(({color,point},i)=>
@@ -443,23 +509,32 @@ export function createFlowGo(panel, options = {}) {
         lastBlackHints = hints.slice();
         render();
       } else {
-        if (pendingBlackMove) {
-          const blackRemark = commentary.onBlackEvaluated({ ...pendingBlackMove, nextWinRate: result.winRate });
-          pendingBlackMove = null;
-          if (blackRemark) deliverRemark(blackRemark);
-        }
+        const blackInfo = pendingBlackMove;
+        pendingBlackMove = null;
         const choice = result.ranked[0];
         if (game.apply(choice === null ? {type:'pass'} : {type:'move',point:choice})) {
           analysisFailed = true;
           render();
           return;
         }
-        const whiteCaptured = game.moves.at(-1)?.captured || 0;
+        const whiteMove = game.moves.at(-1);
+        const whitePoint = whiteMove?.point ?? null;
+        const whiteCaptured = whiteMove?.captured || 0;
+        const priorWhitePoint = prevWhitePoint;
+        prevWhitePoint = whitePoint;
         if (game.state.phase === 'finished') {
           deliverRemark(commentary.onGameEnd({ reason: 'score', winner: game.state.winner, margin: game.state.score?.margin }));
-        } else if (whiteCaptured > 0) {
-          const whiteRemark = commentary.onWhiteMove({ captured: whiteCaptured, moveCount: game.moves.length });
-          if (whiteRemark) deliverRemark(whiteRemark);
+        } else if (blackInfo) {
+          void deliverTurnRemark({
+            ...blackInfo,
+            nextWinRate: result.winRate,
+            whitePoint,
+            whiteCoord: whitePoint === null ? 'PASS' : coordinate(whitePoint),
+            whiteCaptured,
+            whitePass: whitePoint === null,
+            prevWhitePoint: priorWhitePoint,
+            moveCount: game.moves.length,
+          });
         }
         persist();
         void nextTurn();
@@ -481,11 +556,17 @@ export function createFlowGo(panel, options = {}) {
       render();
       return;
     }
+    const blackMove = game.moves.at(-1);
+    const blackPoint = blackMove?.point ?? null;
     pendingBlackMove = {
-      captured: game.moves.at(-1)?.captured || 0,
+      blackPoint,
+      blackCoord: blackPoint === null ? 'PASS' : coordinate(blackPoint),
+      blackCaptured: blackMove?.captured || 0,
+      captured: blackMove?.captured || 0,
       moveCount: game.moves.length,
       prevWinRate: lastBlackWinRate,
       playedTopHint: action.type === 'move' && lastBlackHints[0] === action.point,
+      blackPass: action.type === 'pass',
       isPass: action.type === 'pass',
     };
     notice = '';
@@ -520,6 +601,7 @@ export function createFlowGo(panel, options = {}) {
   }
 
   function close() {
+    remarkEpoch++;
     cancelAnalysis();
     options.stopCommentary?.();
     confirmation = '';
@@ -566,10 +648,12 @@ export function createFlowGo(panel, options = {}) {
       case 'retry': void nextTurn(); break;
       case 'undo':
         if (!game.undoRound()) return;
+        remarkEpoch++;
         mail = t('D-Mail 已送达。已回到你上一手之前。');
         confirmation = notice = '';
         pendingBlackMove = null;
         lastBlackWinRate = null;
+        prevWhitePoint = [...game.moves].reverse().find(m => m.color === WHITE)?.point ?? null;
         marked.clear();
         persist();
         deliverRemark(commentary.onUndo(game.moves.length));
@@ -590,7 +674,21 @@ export function createFlowGo(panel, options = {}) {
         }
         break;
       case 'commentary-replay':
-        if (lastRemark) deliverRemark({ entry: lastRemark.entry }, { manual: true });
+        if (lastRemark) {
+          deliverRemark(
+            lastRemark.entry
+              ? { category: lastRemark.category, entry: lastRemark.entry }
+              : {
+                  id: lastRemark.id,
+                  category: lastRemark.category,
+                  text: lastRemark.text,
+                  speech: lastRemark.speech,
+                  language: lastRemark.language,
+                  dynamic: true,
+                },
+            { manual: true },
+          );
+        }
         break;
       case 'resume': notice = ''; settle({type:'resume'}); break;
       case 'new':
@@ -614,8 +712,11 @@ export function createFlowGo(panel, options = {}) {
           gameDate = date;
           game.reset();
           commentary.reset();
+          remarkEpoch++;
           lastRemark = null;
+          prevRemark = null;
           pendingBlackMove = null;
+          prevWhitePoint = null;
           lastBlackWinRate = null;
           lastBlackHints = [];
           hasGreeted = true;

@@ -1,0 +1,17 @@
+{
+  "name": "perf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "puppeteer": "^24.7.2"
+  }
+}

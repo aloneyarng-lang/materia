@@ -1,0 +1,222 @@
+import { Emitter } from "@signal-app/observable"
+
+export type DeserializedOrderedItem = {
+  id: number
+  rowIndex?: number
+  [key: string]: unknown
+}
+
+export type SerializedOrderedArray<T> = {
+  array?: T[]
+  descending?: boolean
+  lookupMap?: T[]
+}
+
+/**
+ * A class that efficiently maintains array order using a key extractor
+ */
+export class OrderedArray<
+  T extends { id: number },
+  K extends number | string = number,
+> {
+  private readonly lookupMap: Map<number, T>
+  private transactionDepth = 0
+  private pendingRemoved: T[] = []
+  private pendingAdded: T[] = []
+  readonly onChange = new Emitter<
+    { removed: T[] } | { added: T[] } | { removed: T[]; added: T[] }
+  >()
+
+  constructor(
+    readonly array: T[],
+    private readonly keyExtractor: (item: T) => K,
+    private readonly descending: boolean = false,
+    private readonly generateId: () => number = () => Math.random() * 1000000,
+  ) {
+    this.lookupMap = new Map(array.map((item) => [item.id, item]))
+    this.sort()
+  }
+
+  getArray(): readonly T[] {
+    return this.array
+  }
+
+  transaction<R>(callback: () => R): R {
+    this.transactionDepth += 1
+    try {
+      return callback()
+    } finally {
+      this.transactionDepth -= 1
+      if (this.transactionDepth === 0) {
+        this.flushPendingChanges()
+      }
+    }
+  }
+
+  /**
+   * Get an element by its id in O(1) time
+   */
+  get(id: number): T | undefined {
+    return this.lookupMap.get(id)
+  }
+
+  private findInsertionIndex(element: T): number {
+    const elementKey = this.keyExtractor(element)
+    let low = 0
+    let high = this.array.length - 1
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2)
+      const midKey = this.keyExtractor(this.array[mid])
+
+      let comparison: number
+      if (elementKey < midKey) {
+        comparison = -1
+      } else if (elementKey > midKey) {
+        comparison = 1
+      } else {
+        comparison = 0
+      }
+
+      if (this.descending) {
+        comparison = -comparison
+      }
+
+      if (comparison < 0) {
+        high = mid - 1
+      } else if (comparison > 0) {
+        low = mid + 1
+      } else {
+        if ("id" in element && "id" in this.array[mid]) {
+          const idComparison = element.id - this.array[mid].id
+          if (idComparison < 0) {
+            high = mid - 1
+          } else if (idComparison > 0) {
+            low = mid + 1
+          } else {
+            return mid
+          }
+        } else {
+          return mid
+        }
+      }
+    }
+
+    return low
+  }
+
+  add(element: T): ReadonlyArray<T> {
+    const insertionIndex = this.findInsertionIndex(element)
+    this.array.splice(insertionIndex, 0, element)
+    this.lookupMap.set(element.id, element)
+    this.emitChange({ added: [element] })
+    return this.array
+  }
+
+  create(element: Omit<T, "id">): T {
+    const newElement = { ...element, id: this.generateId() } as T
+    this.add(newElement)
+    return newElement
+  }
+
+  remove(id: number): ReadonlyArray<T> {
+    const obj = this.lookupMap.get(id)
+    if (obj === undefined) {
+      return this.array
+    }
+    const index = this.array.indexOf(obj)
+    if (index !== undefined) {
+      this.array.splice(index, 1)
+      this.lookupMap.delete(id)
+      this.emitChange({ removed: [obj] })
+    }
+    return this.array
+  }
+
+  update(id: number, updatedElement: Partial<T>): ReadonlyArray<T> {
+    const obj = this.lookupMap.get(id)
+    if (obj === undefined) {
+      return this.array
+    }
+    const index = this.array.indexOf(obj)
+    if (index !== undefined) {
+      const originalElement = this.array[index]
+      this.array.splice(index, 1)
+
+      const updatedItem = { ...originalElement, ...updatedElement } as T
+
+      const newIndex = this.findInsertionIndex(updatedItem)
+      this.array.splice(newIndex, 0, updatedItem)
+      this.lookupMap.set(updatedItem.id, updatedItem)
+      this.emitChange({ removed: [originalElement], added: [updatedItem] })
+    }
+    return this.array
+  }
+
+  private emitChange(
+    change: { removed: T[] } | { added: T[] } | { removed: T[]; added: T[] },
+  ): void {
+    if (this.transactionDepth > 0) {
+      if ("removed" in change) {
+        this.pendingRemoved.push(...change.removed)
+      }
+      if ("added" in change) {
+        this.pendingAdded.push(...change.added)
+      }
+      return
+    }
+
+    this.onChange.emit(change)
+  }
+
+  private flushPendingChanges(): void {
+    if (this.pendingRemoved.length === 0 && this.pendingAdded.length === 0) {
+      return
+    }
+
+    this.onChange.emit({
+      removed: this.pendingRemoved,
+      added: this.pendingAdded,
+    })
+    this.pendingRemoved = []
+    this.pendingAdded = []
+  }
+
+  private sort(): void {
+    this.array.sort((a, b) => {
+      const keyA = this.keyExtractor(a)
+      const keyB = this.keyExtractor(b)
+
+      let comparison: number
+      if (keyA < keyB) {
+        comparison = -1
+      } else if (keyA > keyB) {
+        comparison = 1
+      } else {
+        comparison = a.id - b.id
+      }
+
+      return this.descending ? -comparison : comparison
+    })
+  }
+
+  serialize(): SerializedOrderedArray<T> {
+    return {
+      array: this.array,
+      descending: this.descending,
+      lookupMap: Array.from(this.lookupMap.values()),
+    }
+  }
+}
+
+export function deserializeOrderedArray(
+  json: unknown,
+): OrderedArray<DeserializedOrderedItem, number> {
+  const serialized = json as SerializedOrderedArray<DeserializedOrderedItem>
+  const source = [...(serialized.lookupMap ?? serialized.array ?? [])]
+  return new OrderedArray<DeserializedOrderedItem, number>(
+    source,
+    (item) => item.rowIndex as number,
+    serialized.descending ?? false,
+  )
+}

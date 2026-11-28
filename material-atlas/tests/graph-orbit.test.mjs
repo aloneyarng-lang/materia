@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {orbitPlane, orbitPlanetStyle, projectOrbit, rankOrbitPapers, reverseRandomSatellite, rotateOrbitView} from '../dist/graph-orbit.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {interpolateOrbitView, normalizeOrbitStyle, orbitEntryView, orbitPlane, orbitPlanetStyle, orbitViewAngles, orbitWakePath, orbitWarpStreaks, projectOrbit, rankOrbitPapers, reverseRandomSatellite, rotateOrbitView} from '../dist/graph-orbit.js';
 import {ACHIEVEMENTS} from '../dist/flow-achievements.js';
 import {GRAPH_DEFAULTS} from '../dist/graph-settings.js';
 
@@ -67,4 +70,59 @@ test('orbit drops matches below the research similarity threshold even when spac
   assert.ok(entries.every(({paper}) => paper.id !== weak.id));
   const strict = rankOrbitPapers(center, papers, {...GRAPH_DEFAULTS, similarityThreshold: .5});
   assert.deepEqual(ids(strict), ['rare']);
+});
+
+test('orbit wake trails behind the active phase along the 3D ellipse in either direction', () => {
+  const plane = orbitPlane('center', 'nearby');
+  const forward = orbitWakePath(plane, 180, 1.4, 1);
+  const reverse = orbitWakePath(plane, 180, 1.4, -1);
+  assert.match(forward.d, /^M /);
+  const expectedHead = projectOrbit(plane, 180, 1.4);
+  assert.ok(Math.abs(forward.head.x - expectedHead.x) < 0.05);
+  assert.ok(Math.abs(forward.head.y - expectedHead.y) < 0.05);
+  assert.notEqual(forward.tail.x, reverse.tail.x);
+});
+
+test('orbitViewAngles, interpolateOrbitView, and normalizeOrbitStyle preserve 3D camera geometry', () => {
+  const identity = [{x: 1, y: 0, z: 0}, {x: 0, y: 1, z: 0}, {x: 0, y: 0, z: 1}];
+  assert.deepEqual(orbitViewAngles(identity), {azimuth: 0, elevation: 0});
+  const rotated = rotateOrbitView(identity, 0.5, -0.3);
+  const angles = orbitViewAngles(rotated);
+  assert.notEqual(angles.azimuth, 0);
+  assert.notEqual(angles.elevation, 0);
+
+  const mid = interpolateOrbitView(rotated, identity, 0.5);
+  for (const axis of mid) assert.ok(Math.abs(Math.hypot(axis.x, axis.y, axis.z) - 1) < 1e-8);
+  assert.ok(Math.abs(mid[0].x * mid[1].x + mid[0].y * mid[1].y + mid[0].z * mid[1].z) < 1e-8);
+
+  assert.equal(normalizeOrbitStyle('armillary'), 'armillary');
+  assert.equal(normalizeOrbitStyle('cosmos'), 'cosmos');
+  assert.equal(normalizeOrbitStyle('other'), 'cosmos');
+});
+
+test('orbitEntryView and orbitWarpStreaks drive Star-Map to Orbit warp entry', () => {
+  const entryView = orbitEntryView();
+  for (const axis of entryView) assert.ok(Math.abs(Math.hypot(axis.x, axis.y, axis.z) - 1) < 1e-10);
+  const angles = orbitViewAngles(entryView);
+  assert.ok(angles.azimuth !== 0 || angles.elevation !== 0);
+
+  const identity = [{x: 1, y: 0, z: 0}, {x: 0, y: 1, z: 0}, {x: 0, y: 0, z: 1}];
+  assert.deepEqual(orbitViewAngles(interpolateOrbitView(entryView, identity, 1)), {azimuth: 0, elevation: 0});
+
+  const streaks = orbitWarpStreaks(310, 24);
+  assert.equal(streaks.length, 24);
+  for (const s of streaks) {
+    const r1 = Math.hypot(s.x1 - 500, s.y1 - 310);
+    const r2 = Math.hypot(s.x2 - 500, s.y2 - 310);
+    assert.ok(r2 > r1);
+    assert.ok(s.delay >= 0 && s.delay < 0.25);
+  }
+
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const viewJs = fs.readFileSync(path.join(root, 'dist/graph-view.js'), 'utf8');
+  const graphCss = fs.readFileSync(path.join(root, 'dist/graph.css'), 'utf8');
+  assert.match(viewJs, /captureOrbitOrigin/);
+  assert.match(viewJs, /data-orbit-entering|orbitEntering/);
+  assert.match(graphCss, /\.graph-orbit-warp-streak/);
+  assert.match(graphCss, /\.graph-orbit-lock-iris/);
 });

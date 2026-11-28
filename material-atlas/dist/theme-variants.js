@@ -30,9 +30,11 @@ export function curateThemes(themes){
   if(gemini)designs.push([gemini.id,gemini.name,gemini.description,gemini.variants.light,gemini.variants.dark]);
   const qingming=themes.find(theme=>theme.id==='qingming');
   if(qingming)designs.push([qingming.id,qingming.name,qingming.description,qingming.variants.light,qingming.variants.dark]);
+  const liquidChrome=themes.find(theme=>theme.id==='liquid-chrome');
+  if(liquidChrome)designs.push([liquidChrome.id,liquidChrome.name,liquidChrome.description,liquidChrome.variants.light,liquidChrome.variants.dark]);
   return designs.map(([id,name,description,light,dark])=>{
     const source=themes.find(t=>t.id===id);
-    return {...source,id,name,description,ui:glassUI({...source.ui,controlHeight:36,cardPadding:18,cardGap:12,...(id==='liquid-glass'?{sidebarWidth:236,controlHeight:38,cardPadding:20,cardGap:14}:{})}),tokens:{...source.tokens,...light,'--radius':'16px','--sans':APPLE_UI_STACK,'--serif':id==='sand'||id==='paper'||id==='qingming'?"'Materia New York', 'Materia Source Han Sans', serif":APPLE_UI_STACK,'--numeric':id==='steins-gate'||id==='gemini'||id==='qingming'?APPLE_MONO_STACK:APPLE_UI_STACK,'--mono':APPLE_MONO_STACK,'--font-size':id==='liquid-glass'?'14px':'13px','--font-weight':'400','--heading-weight':'600','--line-height':'1.65','--heading-line-height':'1.4'},variants:{light,dark}};
+    return {...source,id,name,description,ui:glassUI({...source.ui,controlHeight:36,cardPadding:18,cardGap:12,...(id==='liquid-glass'?{sidebarWidth:236,controlHeight:38,cardPadding:20,cardGap:14}:{})}),tokens:{...source.tokens,...light,'--radius':'16px','--sans':APPLE_UI_STACK,'--serif':id==='sand'||id==='paper'||id==='qingming'||id==='liquid-chrome'?"'Materia New York', 'Materia Source Han Sans', serif":APPLE_UI_STACK,'--numeric':id==='steins-gate'||id==='gemini'||id==='qingming'||id==='liquid-chrome'?APPLE_MONO_STACK:APPLE_UI_STACK,'--mono':APPLE_MONO_STACK,'--font-size':id==='liquid-glass'?'14px':'13px','--font-weight':'400','--heading-weight':'600','--line-height':'1.65','--heading-line-height':'1.4'},variants:{light,dark}};
   });
 }
 function rgb(value){

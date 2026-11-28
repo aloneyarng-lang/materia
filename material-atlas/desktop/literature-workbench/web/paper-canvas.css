@@ -119,8 +119,10 @@
 
 .paper-canvas-viewport {
   position: relative;
-  height: 420px;
-  background: color-mix(in srgb, var(--canvas, #f7f8fa) 75%, transparent);
+  height: 440px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--muted, #94a3b8) 26%, transparent) 1px, transparent 1px) 0 0 / 18px 18px,
+    color-mix(in srgb, var(--canvas, #f7f8fa) 84%, transparent);
   overflow: hidden;
   cursor: grab;
   user-select: none;

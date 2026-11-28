@@ -5,16 +5,55 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleAgentRequest } from './desktop/agent-http.mjs';
 import { createGoAnalysis } from './desktop/go-analysis.mjs';
+import { collectAiUsageSnapshot } from './desktop/ai-usage.mjs';
+import { createCitationAtlas } from './desktop/citation-atlas.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
 const port = Number(process.env.PORT || 4173);
 const mime = { '.mjs':'text/javascript; charset=utf-8', '.wasm':'application/wasm', '.bcmap':'application/octet-stream', '.ttf':'font/ttf', '.pfb':'application/octet-stream', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json; charset=utf-8' };
 export function createPreviewServer() {
 const go = createGoAnalysis();
+const citationAtlas = createCitationAtlas(null);
 const server = http.createServer(async (req, res) => {
   try {
     if (await handleAgentRequest(req, res)) return;
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (pathname === '/api/ai-usage') {
+      const host = req.headers.host || '';
+      if (req.method !== 'GET' || !/^(?:127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(host) ||
+          req.headers['x-materia-usage'] !== '1') {
+        res.writeHead(403, { 'Content-Type': 'application/json' }).end(JSON.stringify({ error: '只接受来自本机 Materia 页面的查询。' }));
+        return;
+      }
+      const snapshot = await collectAiUsageSnapshot({});
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }).end(JSON.stringify(snapshot));
+      return;
+    }
+    if (pathname === '/api/citation-atlas/query') {
+      const host = req.headers.host || '';
+      if (req.method !== 'POST' || !/^(?:127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(host) ||
+          req.headers['x-materia-citation'] !== '1') {
+        res.writeHead(403, { 'Content-Type': 'application/json' }).end(JSON.stringify({ error: '只接受来自本机 Materia 页面的查询。' }));
+        return;
+      }
+      try {
+        const chunks = [];
+        let size = 0;
+        for await (const chunk of req) {
+          size += chunk.length;
+          if (size > 512 * 1024) throw new Error('引文交叉查询请求过大。');
+          chunks.push(chunk);
+        }
+        const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        const result = await citationAtlas.query(payload);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }).end(JSON.stringify(result));
+      } catch (error) {
+        if (!res.destroyed) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' }).end(JSON.stringify({ error: error.message }));
+        }
+      }
+      return;
+    }
     if (pathname === '/api/flow-go/analyze') {
       const host = req.headers.host || '';
       if (req.method !== 'POST' || !/^(?:127\.0\.0\.1|localhost|\[::1\]):\d+$/.test(host) ||

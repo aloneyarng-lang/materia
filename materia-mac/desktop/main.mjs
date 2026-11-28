@@ -1,4 +1,6 @@
 ﻿import {CanvasFile} from './canvases.mjs';
+import {exhibitionLibrary} from './exhibition.mjs';
+import {net} from 'electron';
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu, safeStorage, protocol } from 'electron';
 import {createStartup} from './startup.mjs';
 import {WINDOWS_APP_ID, WINDOWS_APP_NAME, windowsAppDetails} from './windows-identity.mjs';
@@ -25,7 +27,15 @@ import { translateText, translateVoiceLines } from './translation.mjs';
 import {t,setLocale,normalizeLocale} from '../dist/i18n.js';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-protocol.registerSchemesAsPrivileged([{scheme:'materia-figure', privileges:{standard:true, secure:true, supportFetchAPI:true}}]);
+const exhibitions = exhibitionLibrary(path.join(app.isPackaged ? path.dirname(process.env.MATERIA_LIBRARY_DIR || path.join(app.getPath('documents'),'Materia','文献库')) : path.dirname(appRoot),'展览库'));
+ipcMain.handle('exhibition:list', () => exhibitions.list());
+ipcMain.handle('exhibition:add', async (event, mode) => {
+  if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) throw Error('无效的导入窗口');
+  const directory = mode === 'directory';
+  const choice = await dialog.showOpenDialog(mainWindow, {properties:[directory?'openDirectory':'openFile'], filters:directory?[]:[{name:'HTML',extensions:['html','htm']}]});
+  if (!choice.canceled) return exhibitions.add(choice.filePaths[0],directory);
+});
+protocol.registerSchemesAsPrivileged([{scheme:'materia-exhibition',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true}},{scheme:'materia-figure', privileges:{standard:true, secure:true, supportFetchAPI:true}}]);
 app.commandLine.appendSwitch('force-renderer-accessibility');
 const profile = process.env.MATERIA_PROFILE_DIR || (app.isPackaged ? app.getPath('userData') : path.join(app.getPath('appData'), 'Materia'));
 app.setPath('userData', profile);
@@ -55,6 +65,18 @@ app.on('before-quit',event=>{
 });
 
 async function start() {
+  protocol.handle('materia-exhibition', async request => {
+    try {
+      const url = new URL(request.url);
+      const file = await exhibitions.resolve(url.hostname,url.pathname);
+      const result = await net.fetch(file);
+      const headers = new Headers(result.headers);
+      headers.set('Access-Control-Allow-Origin','*');
+      headers.set('Content-Security-Policy', "sandbox allow-scripts; object-src 'none'; frame-src 'none'; base-uri 'self'");
+      return new Response(result.body,{status:result.status,headers});
+    } catch { return new Response(null,{status:404}); }
+  });
+
   await mkdir(profile, { recursive: true });
   let config = {};
   try { config = JSON.parse(await readFile(path.join(profile, 'preferences.json'), 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
